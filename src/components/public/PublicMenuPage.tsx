@@ -10,7 +10,7 @@ import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
-  menu_item_tags?: { tags: { name: string } }[]
+  menu_item_tags?: { tags: { id: number; name: string } }[]
 }
 
 interface PublicMenuPageProps {
@@ -114,26 +114,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-              {profile.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {profile.location}
-                </div>
-              )}
-              {profile.phone && (
-                <div className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  {profile.phone}
-                </div>
-              )}
-              {profile.website && (
-                <div className="flex items-center gap-1">
-                  <Globe className="h-4 w-4" />
-                  <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    Website
-                  </a>
-                </div>
-              )}
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4" />
+                {profile.view_count || 0} views
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -180,15 +164,16 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Dietary Preferences</h3>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <Badge
+                    <Button
                       key={tag.id}
                       variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                      className="cursor-pointer hover:bg-gray-100"
+                      size="sm"
+                      className="cursor-pointer"
                       onClick={() => toggleTag(tag.id)}
                     >
                       <Tag className="h-3 w-3 mr-1" />
                       {tag.name}
-                    </Badge>
+                    </Button>
                   ))}
                 </div>
               </div>

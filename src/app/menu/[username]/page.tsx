@@ -64,7 +64,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       *,
       menu_categories(name),
       menu_item_tags(
-        tags(name)
+        tags(id, name)
       )
     `)
     .eq('user_id', profile.id)
