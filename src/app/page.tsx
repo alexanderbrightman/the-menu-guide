@@ -5,9 +5,9 @@ import { AuthForm } from '@/components/auth/AuthForm'
 import { Dashboard } from '@/components/dashboard/Dashboard'
 import { SetupGuide } from '@/components/setup/SetupGuide'
 import { useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 
-export default function Home() {
+function HomeContent() {
   const { user, loading, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
 
@@ -45,4 +45,16 @@ export default function Home() {
   }
 
   return <Dashboard />
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  )
 }
