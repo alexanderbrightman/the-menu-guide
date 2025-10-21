@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { Dashboard } from '@/components/dashboard/Dashboard'
 import { SetupGuide } from '@/components/setup/SetupGuide'
+import { LandingPage } from '@/components/landing/LandingPage'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
 
@@ -41,7 +42,7 @@ function HomeContent() {
   }
 
   if (!user) {
-    return <AuthForm />
+    return <LandingPage />
   }
 
   return <Dashboard />

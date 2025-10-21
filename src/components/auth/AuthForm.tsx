@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-export function AuthForm() {
+export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -22,6 +22,9 @@ export function AuthForm() {
     setMessage('')
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not configured')
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -51,6 +54,9 @@ export function AuthForm() {
     setMessage('')
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not configured')
+      }
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -58,6 +64,8 @@ export function AuthForm() {
 
       if (error) {
         setMessage(error.message)
+      } else {
+        onSuccess?.()
       }
     } catch (error) {
       setMessage('An error occurred during sign in')
