@@ -139,8 +139,8 @@ async function manageSubscriptionStatusChange(
         subscription_status: subscriptionStatus,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
-        subscription_current_period_end: subscription.current_period_end 
-          ? new Date(subscription.current_period_end * 1000).toISOString() 
+        subscription_current_period_end: (subscription as any).current_period_end 
+          ? new Date((subscription as any).current_period_end * 1000).toISOString() 
           : null,
       })
       .eq('id', profile.id)

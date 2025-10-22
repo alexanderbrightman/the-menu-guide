@@ -15,7 +15,7 @@ import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
-  menu_item_tags?: { tags: { name: string } }[]
+  menu_item_tags?: { tags: { id: number; name: string } }[]
 }
 
 interface MenuItemManagerProps {
@@ -47,6 +47,10 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
   const fetchData = async () => {
     if (!user) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     try {
       // Get session token
@@ -146,6 +150,10 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim()) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     setUploading(true)
     try {
@@ -206,6 +214,10 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const handleEditItem = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingItem || !formData.title.trim()) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     setUploading(true)
     try {
@@ -268,6 +280,10 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
   const handleDeleteItem = async (itemId: string) => {
     if (!confirm('Are you sure you want to delete this menu item?')) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession()

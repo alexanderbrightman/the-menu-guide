@@ -2,14 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // Only ignore ESLint errors in development
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
   },
   typescript: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has type errors.
-    ignoreBuildErrors: true,
+    // Only ignore TypeScript errors in development
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
 };
 

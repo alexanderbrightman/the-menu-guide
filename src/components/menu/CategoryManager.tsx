@@ -26,6 +26,10 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
 
   const fetchCategories = async () => {
     if (!user) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     try {
       // Get the current session token
@@ -62,6 +66,10 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!categoryName.trim()) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     try {
       // Get the current session token
@@ -100,6 +108,10 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     try {
       // Get the current session token
@@ -135,6 +147,10 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
   const handleEditCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingCategory || !categoryName.trim()) return
+    if (!supabase) {
+      setMessage('Error: Supabase client not available')
+      return
+    }
 
     try {
       // Get the current session token
