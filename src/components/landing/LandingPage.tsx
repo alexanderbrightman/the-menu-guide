@@ -73,20 +73,10 @@ export function LandingPage() {
           {/* Story Section */}
           <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 md:p-12 shadow-xl border border-red-100 max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-1000 delay-500">
             <div className="prose-lg max-w-none text-black">
-              <h2 className="text-3xl md:text-4xl font-bold text-black mb-6 text-center">Why Choose The Menu Guide?</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-black mb-6 text-center">Boost Your Restaurant's Performance</h2>
               <p className="text-lg leading-relaxed mb-8 font-light text-gray-700">
-                We understand that running a restaurant is hard work. That&apos;s why we&apos;ve created a simple, 
-                powerful platform that takes the complexity out of menu management. Our digital menus are designed 
-                to work seamlessly with your existing operations while providing your customers with an exceptional experience.
+                Digital menus streamline your service by helping customers make decisions faster. When diners can see photos and descriptions of dishes instantly, they spend less time deciding and more time enjoying their meal. This efficiency means quicker table turnover and more customers served during busy periods. Plus, visual menus naturally encourage customers to order additional items when they can see appetizing photos of your specialties.
               </p>
-              
-              <div className="bg-red-50 rounded-xl p-6 border-l-4 border-red-800 shadow-sm">
-                <p className="font-semibold text-red-800 text-lg mb-3">Coming Soon</p>
-                <p className="text-gray-700 leading-relaxed">
-                  Advanced analytics, custom branding options, and priority support are just around the corner. 
-                  Stay tuned for exciting updates that will help you take your restaurant to the next level.
-                </p>
-              </div>
             </div>
           </div>
         </div>
