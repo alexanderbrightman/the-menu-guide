@@ -391,18 +391,18 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {items.map((item) => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
+                <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden p-0">
+                  <CardContent className="p-0">
                     {item.image_url && (
-                      <div className="mb-4">
-                        <img 
-                          src={item.image_url} 
+                      <div className="aspect-[4/3] overflow-hidden">
+                        <img
+                          src={item.image_url}
                           alt={item.title}
-                          className="w-full h-32 object-cover rounded-md"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     )}
-                    <div className="space-y-2">
+                    <div className="p-4 space-y-2">
                       <div className="flex items-start justify-between">
                         <h3 className="font-semibold text-lg">{item.title}</h3>
                         <div className="flex items-center gap-2">

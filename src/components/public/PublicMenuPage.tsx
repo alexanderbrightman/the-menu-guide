@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tag, Filter, Star, MapPin, Phone, Globe } from 'lucide-react'
+import { Tag, Filter } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 
 interface MenuItemWithTags extends MenuItem {
@@ -77,12 +77,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 <p className="text-sm text-gray-500">@{profile.username}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="text-green-600 border-green-200">
-                <Star className="h-3 w-3 mr-1" />
-                Live Menu
-              </Badge>
-            </div>
           </div>
         </div>
       </header>
@@ -107,19 +101,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   )}
                 </div>
               </div>
-              <div className="text-right text-sm text-gray-500">
-                <p>{profile.view_count || 0} views</p>
-              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4" />
-                {profile.view_count || 0} views
-              </div>
-            </div>
-          </CardContent>
         </Card>
 
         {/* Filters */}
