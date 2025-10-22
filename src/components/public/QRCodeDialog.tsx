@@ -19,7 +19,7 @@ export function QRCodeDialog({ profile, isOpen, onClose }: QRCodeDialogProps) {
   const [copied, setCopied] = useState(false)
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('')
   
-  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/menu/${profile.username}`
+  const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/menu/${profile.username}`
   
   // Generate QR code when dialog opens
   useEffect(() => {
