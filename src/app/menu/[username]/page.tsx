@@ -16,8 +16,6 @@ interface PublicProfilePageProps {
 export default async function PublicProfilePage({ params }: PublicProfilePageProps) {
   const { username } = await params
 
-  console.log('Fetching profile for username:', username)
-
   // Fetch profile by username
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
@@ -26,10 +24,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .eq('is_public', true)
     .single()
 
-  console.log('Profile query result:', { profile, profileError })
-
   if (profileError) {
-    console.error('Profile fetch error:', profileError)
     notFound()
   }
 
