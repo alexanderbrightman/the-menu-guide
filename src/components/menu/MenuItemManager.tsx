@@ -117,7 +117,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     
     const fileExt = file.name.split('.').pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-    const filePath = fileName
+    const filePath = `${user?.id}/${fileName}`
 
     const { data, error } = await supabase.storage
       .from('menu_items')

@@ -73,7 +73,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
       // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop()
       const fileName = `${profile.id}.${fileExt}`
-      const filePath = fileName
+      const filePath = `${profile.id}/${fileName}`
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
