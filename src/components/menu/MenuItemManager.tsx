@@ -394,7 +394,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden p-0">
                   <CardContent className="p-0">
                     {item.image_url && (
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="aspect-[3/2] overflow-hidden">
                         <img
                           src={item.image_url}
                           alt={item.title}

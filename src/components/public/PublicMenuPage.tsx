@@ -206,10 +206,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredItems.map((item) => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow">
+                <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden p-0">
                   <CardContent className="p-0">
                     {item.image_url && (
-                      <div className="aspect-video overflow-hidden rounded-t-lg">
+                      <div className="aspect-[3/2] overflow-hidden">
                         <img 
                           src={item.image_url} 
                           alt={item.title}
