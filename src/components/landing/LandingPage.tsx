@@ -95,22 +95,22 @@ export function LandingPage() {
       {/* Auth Modal */}
       {showAuthForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-red-200 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 pb-4">
-              <div className="flex justify-between items-start mb-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-red-200 max-w-sm w-full max-h-[85vh] overflow-hidden">
+            <div className="p-4 pb-2">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-black">Welcome to The Menu Guide</h2>
-                  <p className="text-gray-700 mt-2">Sign in to your account or create a new one</p>
+                  <h2 className="text-xl font-bold text-black">Welcome to The Menu Guide</h2>
+                  <p className="text-sm text-gray-700 mt-1">Sign in to your account or create a new one</p>
                 </div>
                 <button
                   onClick={() => setShowAuthForm(false)}
-                  className="p-3 hover:bg-red-50 rounded-xl transition-colors group"
+                  className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
                 >
-                  <X className="h-5 w-5 text-red-600 group-hover:text-red-800" />
+                  <X className="h-4 w-4 text-red-600 group-hover:text-red-800" />
                 </button>
               </div>
             </div>
-            <div className="px-6 pb-6">
+            <div className="px-4 pb-4 overflow-y-auto max-h-[calc(85vh-80px)]">
               <AuthForm onSuccess={() => setShowAuthForm(false)} />
             </div>
           </div>

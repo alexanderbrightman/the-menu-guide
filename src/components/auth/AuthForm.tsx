@@ -75,11 +75,11 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">The Menu Guide</CardTitle>
-          <CardDescription>
+    <div className="w-full">
+      <Card className="w-full">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-lg font-bold">The Menu Guide</CardTitle>
+          <CardDescription className="text-sm">
             Create and manage your restaurant's digital menu
           </CardDescription>
         </CardHeader>
