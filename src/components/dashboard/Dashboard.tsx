@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -10,25 +11,81 @@ import { LogOut, Settings, QrCode } from 'lucide-react'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { CategoryManager } from '@/components/menu/CategoryManager'
 import { MenuItemManager } from '@/components/menu/MenuItemManager'
-import { QRCodeDialog } from '@/components/public/QRCodeDialog'
 import { UpgradeCard } from '@/components/payment/UpgradeCard'
 
 export function Dashboard() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, signingOut } = useAuth()
   const [showProfileEdit, setShowProfileEdit] = useState(false)
-  const [showQRCode, setShowQRCode] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [qrCodeLoading, setQrCodeLoading] = useState(false)
+
+  const generateQRCode = async () => {
+    if (!user || !supabase) return
+
+    setQrCodeLoading(true)
+    try {
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        console.error('Not authenticated')
+        return
+      }
+
+      // Generate QR code
+      const response = await fetch('/api/qr-code', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        setQrCodeUrl(url)
+      } else {
+        console.error('Error generating QR code')
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error)
+    } finally {
+      setQrCodeLoading(false)
+    }
+  }
+
+  // Auto-generate QR code when component mounts
+  useEffect(() => {
+    if (user && profile && !qrCodeUrl && !qrCodeLoading) {
+      generateQRCode()
+    }
+  }, [user, profile])
+
+  const downloadQRCode = () => {
+    if (qrCodeUrl) {
+      const link = document.createElement('a')
+      link.href = qrCodeUrl
+      link.download = `menu-qr-code-${profile?.username}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
+  }
 
   if (!user || !profile) {
     return <div>Loading...</div>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#DBD3CB' }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="shadow-sm border-b" style={{ backgroundColor: '#F4F2EE' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3.5">
+              <img 
+                src="/logo_notext.png" 
+                alt="The Menu Guide Logo" 
+                className="h-10 w-10 object-contain"
+              />
               <h1 className="text-xl font-semibold text-gray-900">The Menu Guide</h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -36,9 +93,14 @@ export function Dashboard() {
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
-              <Button variant="outline" size="sm" onClick={signOut}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={signOut}
+                disabled={signingOut}
+              >
                 <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+                {signingOut ? 'Signing Out...' : 'Sign Out'}
               </Button>
             </div>
           </div>
@@ -75,9 +137,8 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex space-x-4">
-              <Button onClick={() => setShowQRCode(true)}>
-                <QrCode className="h-4 w-4 mr-2" />
-                View QR Code
+              <Button onClick={() => window.open(`/menu/${profile.username}`, '_blank')}>
+                View Menu
               </Button>
               <Button variant="outline" onClick={() => setShowProfileEdit(true)}>
                 <Settings className="h-4 w-4 mr-2" />
@@ -86,6 +147,7 @@ export function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
 
 
         {/* Menu Management */}
@@ -101,6 +163,52 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* QR Code Section - Above Payment Portal */}
+        {qrCodeUrl && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="h-5 w-5" />
+                Your Menu QR Code
+              </CardTitle>
+              <CardDescription>
+                Download this QR code to add to your physical menu. Customers can scan it to view your digital menu.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="Menu QR Code" 
+                    className="w-64 h-64 object-contain"
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <Button onClick={downloadQRCode} className="flex items-center gap-2">
+                    <QrCode className="h-4 w-4" />
+                    Download PNG
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 text-center max-w-md">
+                  The QR code links to: <br />
+                  <code className="bg-gray-100 px-2 py-1 rounded text-xs">
+                    {window.location.origin}/menu/{profile.username}
+                  </code>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Subscription Status */}
         <div className="mt-8">
           <UpgradeCard />
@@ -111,13 +219,6 @@ export function Dashboard() {
       {showProfileEdit && (
         <ProfileEditForm onClose={() => setShowProfileEdit(false)} />
       )}
-
-      {/* QR Code Dialog */}
-      <QRCodeDialog
-        profile={profile}
-        isOpen={showQRCode}
-        onClose={() => setShowQRCode(false)}
-      />
     </div>
   )
 }

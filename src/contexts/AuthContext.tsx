@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  signingOut: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [signingOut, setSigningOut] = useState(false)
 
   const fetchProfile = async (userId: string) => {
     if (!supabase) return null
@@ -76,15 +78,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
+        // Only fetch profile if user actually changed
+        if (session?.user && session.user.id !== user?.id) {
           const profileData = await fetchProfile(session.user.id)
           setProfile(profileData)
-        } else {
+        } else if (!session?.user) {
           setProfile(null)
         }
         
+        setUser(session?.user ?? null)
         setLoading(false)
       }
     )
@@ -93,8 +95,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut()
+    if (!supabase || signingOut) return
+    
+    setSigningOut(true)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+        // Still clear local state even if server signout fails
+        setUser(null)
+        setProfile(null)
+      }
+    } catch (error) {
+      console.error('Error signing out:', error)
+      // Clear local state on any error
+      setUser(null)
+      setProfile(null)
+    } finally {
+      setSigningOut(false)
     }
   }
 
@@ -103,7 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     loading,
     signOut,
-    refreshProfile
+    refreshProfile,
+    signingOut
   }
 
   return (

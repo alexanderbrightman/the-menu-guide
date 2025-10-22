@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sanitizeTextInput, sanitizeUrl, sanitizePrice } from '@/lib/sanitize'
 
 // GET - Fetch all menu items for the authenticated user
 export async function GET(request: NextRequest) {
@@ -99,16 +100,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, description, price, category_id, image_url, tag_ids } = body
 
+    // Sanitize inputs
+    const sanitizedTitle = sanitizeTextInput(title)
+    const sanitizedDescription = description ? sanitizeTextInput(description) : ''
+    const sanitizedPrice = price ? sanitizePrice(price) : null
+    const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : ''
+
+    // Validate required fields
+    if (!sanitizedTitle) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
+
     // Create the menu item
     const { data: item, error } = await supabase
       .from('menu_items')
       .insert({
         user_id: user.id,
-        title,
-        description,
-        price: price ? parseFloat(price) : null,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        price: sanitizedPrice,
         category_id: category_id || null,
-        image_url: image_url || ''
+        image_url: sanitizedImageUrl || ''
       })
       .select()
       .single()

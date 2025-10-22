@@ -23,7 +23,7 @@ function HomeContent() {
     } else if (canceled === 'true') {
       alert('❌ Payment was canceled. You can try again anytime.')
     }
-  }, [searchParams, refreshProfile])
+  }, [searchParams]) // Removed refreshProfile from dependencies
 
   // Check if Supabase is configured
   const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -259,7 +260,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500">
-          <p>Powered by The Menu Guide</p>
+          <Link
+            href="/"
+            className="text-black underline hover:text-gray-800 transition-colors"
+          >
+            Want to show off your food?
+          </Link>
         </div>
       </div>
     </div>

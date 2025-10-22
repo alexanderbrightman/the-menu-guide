@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { ImageUpload } from '@/components/ui/image-upload'
 import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag } from 'lucide-react'
 import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase'
+import { useImageUpload } from '@/hooks/useImageUpload'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -43,7 +45,9 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
-  const [uploading, setUploading] = useState(false)
+  
+  // Use optimized image upload hook
+  const { uploading, uploadImage } = useImageUpload()
 
   const fetchData = async () => {
     if (!user) return
@@ -112,39 +116,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     setMessage('')
   }
 
-  const handleImageUpload = async (file: File): Promise<string> => {
-    if (!supabase) throw new Error('Supabase not configured')
-    
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-    const filePath = `${user?.id}/${fileName}`
-
-    const { data, error } = await supabase.storage
-      .from('menu_items')
-      .upload(filePath, file)
-
-    if (error) {
-      console.error('Upload error:', error)
-      throw error
-    }
-
-    const { data: urlData } = supabase.storage
-      .from('menu_items')
-      .getPublicUrl(filePath)
-
-    return urlData.publicUrl
+  const handleImageSelect = (file: File, preview: string) => {
+    setImageFile(file)
+    setImagePreview(preview)
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setImageFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
+  const handleImageRemove = () => {
+    setImageFile(null)
+    setImagePreview('')
   }
 
   const handleCreateItem = async (e: React.FormEvent) => {
@@ -155,7 +134,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       return
     }
 
-    setUploading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
@@ -165,14 +143,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
       let imageUrl = formData.image_url
 
-      // Upload image if file is selected
-      if (imageFile) {
+      // Upload image if file is selected using optimized upload
+      if (imageFile && user) {
         try {
-          imageUrl = await handleImageUpload(imageFile)
+          const result = await uploadImage(imageFile, user.id, 'menu_items')
+          imageUrl = result.url
         } catch (error) {
           console.error('Image upload failed:', error)
-          setMessage('Error uploading image')
-          setUploading(false)
+          setMessage('Error uploading image. Please try again.')
           return
         }
       }
@@ -206,8 +184,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     } catch (error) {
       console.error('Error creating menu item:', error)
       setMessage('Error creating menu item')
-    } finally {
-      setUploading(false)
     }
   }
 
@@ -219,7 +195,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       return
     }
 
-    setUploading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
@@ -229,14 +204,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
       let imageUrl = formData.image_url
 
-      // Upload image if file is selected
-      if (imageFile) {
+      // Upload image if file is selected using optimized upload
+      if (imageFile && user) {
         try {
-          imageUrl = await handleImageUpload(imageFile)
+          const result = await uploadImage(imageFile, user.id, 'menu_items')
+          imageUrl = result.url
         } catch (error) {
           console.error('Image upload failed:', error)
-          setMessage('Error uploading image')
-          setUploading(false)
+          setMessage('Error uploading image. Please try again.')
           return
         }
       }
@@ -273,8 +248,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     } catch (error) {
       console.error('Error updating menu item:', error)
       setMessage('Error updating menu item')
-    } finally {
-      setUploading(false)
     }
   }
 
@@ -507,23 +480,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="image">Image</Label>
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="cursor-pointer"
+              <Label>Image</Label>
+              <ImageUpload
+                onImageSelect={handleImageSelect}
+                onImageRemove={handleImageRemove}
+                selectedFile={imageFile}
+                preview={imagePreview}
+                disabled={uploading}
               />
-              {imagePreview && (
-                <div className="mt-2">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-32 h-32 object-cover rounded-md border"
-                  />
-                </div>
-              )}
               <div className="text-sm text-gray-500">
                 Or enter an image URL:
               </div>
@@ -626,23 +590,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="edit-image">Image</Label>
-              <Input
-                id="edit-image"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="cursor-pointer"
+              <Label>Image</Label>
+              <ImageUpload
+                onImageSelect={handleImageSelect}
+                onImageRemove={handleImageRemove}
+                selectedFile={imageFile}
+                preview={imagePreview}
+                disabled={uploading}
               />
-              {imagePreview && (
-                <div className="mt-2">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-32 h-32 object-cover rounded-md border"
-                  />
-                </div>
-              )}
               <div className="text-sm text-gray-500">
                 Or enter an image URL:
               </div>
