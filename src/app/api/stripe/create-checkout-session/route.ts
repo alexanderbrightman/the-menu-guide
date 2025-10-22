@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
+    // Get base URL with proper protocol
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const successUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
+    const cancelUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -65,8 +70,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}?canceled=true`,
+      success_url: `${successUrl}?success=true`,
+      cancel_url: `${cancelUrl}?canceled=true`,
       customer_email: user.email,
       metadata: {
         userId: user.id,
