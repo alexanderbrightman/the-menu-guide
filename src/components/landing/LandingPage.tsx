@@ -44,7 +44,7 @@ export function LandingPage() {
         <div className="text-center max-w-4xl mx-auto">
           {/* Main Title */}
           <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight tracking-tight text-black drop-shadow-sm">
-            Transform Your Restaurant Menu
+            The Menu Guide
           </h1>
           
           {/* Description */}
