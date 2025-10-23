@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag } from 'lucide-react'
+import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag, ChevronDown, ChevronUp } from 'lucide-react'
 import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
 
@@ -35,6 +35,8 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('none')
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [message, setMessage] = useState('')
+  const [isMinimized, setIsMinimized] = useState(false)
+
 
   // Form state
   const [formData, setFormData] = useState({
@@ -338,13 +340,28 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
               </CardTitle>
               <CardDescription>Manage your menu items and their details</CardDescription>
             </div>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="w-8 h-8 p-0 flex items-center justify-center group"
+              >
+                {isMinimized ? (
+                  <ChevronDown className="h-4 w-4 transition-transform duration-300 group-hover:animate-bounce" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 transition-transform duration-300 group-hover:animate-bounce" />
+                )}
+              </Button>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        {!isMinimized && (
+          <CardContent>
           {message && (
             <div className={`mb-4 p-3 text-sm rounded-md ${
               message.includes('Error') 
@@ -432,6 +449,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             </div>
           )}
         </CardContent>
+        )}
       </Card>
 
       {/* Create Item Dialog */}

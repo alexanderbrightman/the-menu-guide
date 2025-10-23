@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tag, Filter } from 'lucide-react'
+import { Tag, Filter, ChevronDown } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 
 interface MenuItemWithTags extends MenuItem {
@@ -24,6 +24,7 @@ interface PublicMenuPageProps {
 export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicMenuPageProps) {
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [isBioExpanded, setIsBioExpanded] = useState(false)
 
   // Filter menu items based on selected tags and category
   const filteredItems = useMemo(() => {
@@ -65,7 +66,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-start justify-between py-4">
             <div className="flex items-center space-x-4">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={profile.avatar_url || ''} />
@@ -76,6 +77,35 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{profile.display_name}</h1>
                 <p className="text-sm text-gray-500">@{profile.username}</p>
+                {profile.bio && (
+                  <div className="mt-2">
+                    <div className="text-sm text-gray-700">
+                      {profile.bio.length > 100 && !isBioExpanded ? (
+                        <>
+                          {profile.bio.substring(0, 100)}...
+                          <button
+                            onClick={() => setIsBioExpanded(true)}
+                            className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {profile.bio}
+                          {profile.bio.length > 100 && isBioExpanded && (
+                            <button
+                              onClick={() => setIsBioExpanded(false)}
+                              className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
+                            >
+                              <ChevronDown className="h-3 w-3 rotate-180" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -83,29 +113,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Restaurant Info */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={profile.avatar_url || ''} />
-                  <AvatarFallback className="text-2xl">
-                    {profile.display_name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-2xl">{profile.display_name}</CardTitle>
-                  <CardDescription className="text-lg">@{profile.username}</CardDescription>
-                  {profile.bio && (
-                    <p className="text-gray-600 mt-2">{profile.bio}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
         {/* Filters */}
         <Card className="mb-8">
           <CardHeader>

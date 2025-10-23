@@ -97,7 +97,7 @@ export function UpgradeCard({ onUpgrade }: UpgradeCardProps) {
         <CardHeader>
           <CardTitle className="text-green-800 flex items-center gap-2">
             <Crown className="h-5 w-5" />
-            Pro Plan Active
+            Premium Plan Active
           </CardTitle>
           <CardDescription className="text-green-700">
             You have access to all premium features
@@ -107,7 +107,7 @@ export function UpgradeCard({ onUpgrade }: UpgradeCardProps) {
           <div className="flex items-center gap-2">
             <Badge variant="default" className="bg-green-600">
               <Check className="h-3 w-3 mr-1" />
-              Pro Member
+              Premium Member
             </Badge>
             <span className="text-sm text-green-600">
               $18/month
@@ -132,7 +132,7 @@ export function UpgradeCard({ onUpgrade }: UpgradeCardProps) {
             </Button>
           ) : (
             <div className="text-sm text-green-600">
-              Pro account (managed by admin)
+              Premium account (managed by admin)
             </div>
           )}
         </CardContent>
@@ -145,7 +145,7 @@ export function UpgradeCard({ onUpgrade }: UpgradeCardProps) {
       <CardHeader>
         <CardTitle className="text-orange-800 flex items-center gap-2">
           <Zap className="h-5 w-5" />
-          Upgrade to Pro
+          Upgrade to Premium
         </CardTitle>
         <CardDescription className="text-orange-700">
           Unlock public menus, QR codes, and advanced features
@@ -181,7 +181,7 @@ export function UpgradeCard({ onUpgrade }: UpgradeCardProps) {
             disabled={loading}
             className="bg-orange-600 hover:bg-orange-700 text-white"
           >
-            {loading ? 'Processing...' : 'Upgrade Now'}
+            {loading ? 'Processing...' : 'Publish Your Menu'}
           </Button>
         </div>
       </CardContent>

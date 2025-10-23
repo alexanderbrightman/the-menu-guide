@@ -51,6 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const clearAuthData = async () => {
+    try {
+      if (supabase) {
+        await supabase.auth.signOut()
+      }
+      // Clear any stored auth data from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token')
+      }
+    } catch (error) {
+      console.error('Error clearing auth data:', error)
+    }
+  }
+
   useEffect(() => {
     if (!supabase) {
       setLoading(false)
@@ -63,31 +77,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
       
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        const profileData = await fetchProfile(session.user.id)
-        setProfile(profileData)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Session error:', error)
+          // If it's a refresh token error, clear the session
+          if (error.message.includes('refresh token')) {
+            setUser(null)
+            setProfile(null)
+            await clearAuthData()
+          }
+          setLoading(false)
+          return
+        }
+        
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          const profileData = await fetchProfile(session.user.id)
+          setProfile(profileData)
+        }
+      } catch (error) {
+        console.error('Error getting session:', error)
+        // Clear session on any error
+        setUser(null)
+        setProfile(null)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
 
     getSession()
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(
       async (event, session) => {
-        // Only fetch profile if user actually changed
-        if (session?.user && session.user.id !== user?.id) {
-          const profileData = await fetchProfile(session.user.id)
-          setProfile(profileData)
-        } else if (!session?.user) {
-          setProfile(null)
+        try {
+          // Handle different auth events
+          if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            setUser(session?.user ?? null)
+            if (!session?.user) {
+              setProfile(null)
+            }
+          } else if (event === 'SIGNED_IN') {
+            setUser(session?.user ?? null)
+            if (session?.user) {
+              const profileData = await fetchProfile(session.user.id)
+              setProfile(profileData)
+            }
+          } else if (session?.user && session.user.id !== user?.id) {
+            // Only fetch profile if user actually changed
+            const profileData = await fetchProfile(session.user.id)
+            setProfile(profileData)
+            setUser(session.user)
+          } else if (!session?.user) {
+            setProfile(null)
+            setUser(null)
+          }
+          
+          setLoading(false)
+        } catch (error) {
+          console.error('Auth state change error:', error)
+          // If there's an auth error, clear the session
+          if (error instanceof Error && error.message.includes('refresh token')) {
+            setUser(null)
+            setProfile(null)
+            // Clear any stored auth data
+            await clearAuthData()
+          }
+          setLoading(false)
         }
-        
-        setUser(session?.user ?? null)
-        setLoading(false)
       }
     )
 

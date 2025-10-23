@@ -5,12 +5,13 @@ import { AuthForm } from '@/components/auth/AuthForm'
 import { Dashboard } from '@/components/dashboard/Dashboard'
 import { SetupGuide } from '@/components/setup/SetupGuide'
 import { LandingPage } from '@/components/landing/LandingPage'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
 
 function HomeContent() {
   const { user, loading, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   // Handle payment success/cancel messages
   useEffect(() => {
@@ -18,12 +19,20 @@ function HomeContent() {
     const canceled = searchParams.get('canceled')
     
     if (success === 'true') {
-      alert('🎉 Payment successful! Your account has been upgraded to Pro!')
+      alert('🎉 Payment successful! Your account has been upgraded to Premium!')
       refreshProfile() // Refresh profile to get updated subscription status
+      // Redirect to dashboard after showing success message
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
     } else if (canceled === 'true') {
       alert('❌ Payment was canceled. You can try again anytime.')
+      // Redirect to dashboard after showing cancel message
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
     }
-  }, [searchParams]) // Removed refreshProfile from dependencies
+  }, [searchParams, router, refreshProfile])
 
   // Check if Supabase is configured
   const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
@@ -45,6 +54,7 @@ function HomeContent() {
     return <LandingPage />
   }
 
+  // If user is authenticated, show dashboard
   return <Dashboard />
 }
 

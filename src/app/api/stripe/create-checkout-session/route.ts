@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: STRIPE_CONFIG.currency,
             product_data: {
-              name: 'The Menu Guide Pro',
+              name: 'The Menu Guide Premium',
               description: 'Unlock public menus, QR codes, and advanced features',
             },
             unit_amount: STRIPE_CONFIG.amount,
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'subscription',
       success_url: `${successUrl}?success=true`,
-      cancel_url: `${cancelUrl}?canceled=true`,
+      cancel_url: `${cancelUrl}/dashboard?canceled=true`,
       customer_email: user.email,
       metadata: {
         userId: user.id,

@@ -27,38 +27,114 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [retryCount, setRetryCount] = useState(0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
-    if (!supabase) {
-      setMessage('Supabase not configured')
+    if (!supabase || !profile) {
+      setMessage('Supabase not configured or profile not found')
       setLoading(false)
       return
     }
 
+    // Add timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      setMessage('Save operation timed out. Please try again.')
+      setLoading(false)
+    }, 10000) // 10 second timeout
+
     try {
+      // Validate required fields
+      if (!formData.display_name.trim()) {
+        clearTimeout(timeoutId)
+        setMessage('Restaurant name is required')
+        setLoading(false)
+        return
+      }
+
+      if (!formData.username.trim()) {
+        clearTimeout(timeoutId)
+        setMessage('Username is required')
+        setLoading(false)
+        return
+      }
+
+      // Check if username is already taken by another user
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', formData.username.trim())
+        .neq('id', profile.id)
+        .single()
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Username check error:', checkError)
+        clearTimeout(timeoutId)
+        setMessage('Error checking username availability')
+        setLoading(false)
+        return
+      }
+
+      if (existingProfile) {
+        clearTimeout(timeoutId)
+        setMessage('Username is already taken')
+        setLoading(false)
+        return
+      }
+
+      // Update profile
       const { error } = await supabase
         .from('profiles')
         .update({
-          display_name: formData.display_name,
-          bio: formData.bio,
-          username: formData.username,
+          display_name: formData.display_name.trim(),
+          bio: formData.bio.trim(),
+          username: formData.username.trim(),
           is_public: formData.is_public
         })
-        .eq('id', profile?.id)
+        .eq('id', profile.id)
 
       if (error) {
         console.error('Profile update error:', error)
+        clearTimeout(timeoutId)
         setMessage(`Error: ${error.message}`)
-      } else {
-        await refreshProfile()
-        onClose()
+        setLoading(false)
+        return
       }
+
+      // Refresh profile data with retry mechanism
+      let refreshSuccess = false
+      let attempts = 0
+      const maxAttempts = 3
+
+      while (!refreshSuccess && attempts < maxAttempts) {
+        try {
+          await refreshProfile()
+          refreshSuccess = true
+        } catch (refreshError) {
+          console.error(`Profile refresh attempt ${attempts + 1} failed:`, refreshError)
+          attempts++
+          if (attempts < maxAttempts) {
+            // Wait 1 second before retry
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        }
+      }
+
+      if (!refreshSuccess) {
+        console.error('Profile refresh failed after all attempts')
+        setMessage('Profile updated successfully, but there was an issue refreshing the data. Please refresh the page.')
+      }
+
+      // Clear timeout and close the dialog
+      clearTimeout(timeoutId)
+      onClose()
+      
     } catch (error) {
       console.error('Profile update error:', error)
+      clearTimeout(timeoutId)
       setMessage('An error occurred while updating your profile')
     } finally {
       setLoading(false)

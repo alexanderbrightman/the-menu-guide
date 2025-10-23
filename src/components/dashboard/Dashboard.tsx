@@ -80,7 +80,7 @@ export function Dashboard() {
       <header className="shadow-sm border-b" style={{ backgroundColor: '#F4F2EE' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3.5">
+            <div className="flex items-center space-x-2">
               <img 
                 src="/logo_notext.png" 
                 alt="The Menu Guide Logo" 
@@ -147,8 +147,6 @@ export function Dashboard() {
             </div>
           </CardContent>
         </Card>
-
-
 
         {/* Menu Management */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
