@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getCachedResponse, setCachedResponse, getProfileCacheKey, createCacheableResponse } from '@/lib/cache'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -14,6 +15,52 @@ const getSupabaseClientWithAuth = (token: string) => {
       }
     }
   )
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.substring(7)
+    const supabase = getSupabaseClientWithAuth(token)
+
+    // Get the authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check cache first
+    const cacheKey = getProfileCacheKey(user.id)
+    const cachedProfile = getCachedResponse(cacheKey, 30000) // 30 second cache
+    if (cachedProfile) {
+      return createCacheableResponse({ profile: cachedProfile }, 30)
+    }
+
+    // Fetch from database
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching profile:', error)
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    // Cache the result
+    setCachedResponse(cacheKey, profile, 30000)
+
+    return createCacheableResponse({ profile }, 30)
+  } catch (error) {
+    console.error('Error in profile fetch:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {

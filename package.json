@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:fast": "next dev --turbopack --port 3001",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "optimize": "./dev-optimize.sh optimize",
+    "check": "./dev-optimize.sh check"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",

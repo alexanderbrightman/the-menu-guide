@@ -112,7 +112,7 @@ export function Dashboard() {
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
+              <Avatar className="h-24 w-24">
                 <AvatarImage src={profile.avatar_url || ''} />
                 <AvatarFallback>
                   {profile.display_name.charAt(0).toUpperCase()}
@@ -124,14 +124,6 @@ export function Dashboard() {
                 {profile.bio && (
                   <p className="text-gray-600 mt-2">{profile.bio}</p>
                 )}
-                <div className="flex items-center space-x-2 mt-2">
-                  <Badge variant={profile.subscription_status === 'pro' ? 'default' : 'secondary'}>
-                    {profile.subscription_status === 'pro' ? 'Pro Plan' : 'Free Plan'}
-                  </Badge>
-                  {profile.is_public && (
-                    <Badge variant="outline">Public</Badge>
-                  )}
-                </div>
               </div>
             </div>
           </CardHeader>

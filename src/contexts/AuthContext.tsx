@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { Profile } from '@/lib/supabase'
@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     if (!supabase) return null
     
     try {
@@ -42,16 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching profile:', error)
       return null
     }
-  }
+  }, [])
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user && supabase) {
       const profileData = await fetchProfile(user.id)
       setProfile(profileData)
     }
-  }
+  }, [user, fetchProfile])
 
-  const clearAuthData = async () => {
+  const clearAuthData = useCallback(async () => {
     try {
       if (supabase) {
         await supabase.auth.signOut()
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error clearing auth data:', error)
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (!supabase) {
@@ -151,9 +151,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [fetchProfile, clearAuthData, user?.id])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     if (!supabase || signingOut) return
     
     setSigningOut(true)
@@ -173,16 +173,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setSigningOut(false)
     }
-  }
+  }, [signingOut])
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     profile,
     loading,
     signOut,
     refreshProfile,
     signingOut
-  }
+  }), [user, profile, loading, signOut, refreshProfile, signingOut])
 
   return (
     <AuthContext.Provider value={value}>

@@ -68,7 +68,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-start justify-between py-4">
             <div className="flex items-center space-x-4">
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-16 w-16">
                 <AvatarImage src={profile.avatar_url || ''} />
                 <AvatarFallback>
                   {profile.display_name.charAt(0).toUpperCase()}
