@@ -53,7 +53,16 @@ export function SubscriptionDetailsCard() {
   const [error, setError] = useState('')
 
   const fetchSubscriptionDetails = async () => {
-    if (!user || !supabase) return
+    if (!user || !supabase) {
+      console.log('Cannot fetch subscription details: missing user or supabase client')
+      return
+    }
+
+    // Only fetch if user has premium subscription
+    if (profile?.subscription_status !== 'pro') {
+      console.log('Cannot fetch subscription details: user does not have pro subscription')
+      return
+    }
 
     setLoading(true)
     setError('')
@@ -89,10 +98,11 @@ export function SubscriptionDetailsCard() {
   }
 
   useEffect(() => {
-    if (profile?.subscription_status === 'pro') {
+    // Only fetch if user has premium access and is authenticated
+    if (profile?.subscription_status === 'pro' && user && supabase) {
       fetchSubscriptionDetails()
     }
-  }, [profile?.subscription_status, fetchSubscriptionDetails])
+  }, [profile?.subscription_status, user, fetchSubscriptionDetails])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
