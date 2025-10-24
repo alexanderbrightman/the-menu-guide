@@ -53,9 +53,16 @@ export async function POST(request: NextRequest) {
     // Pre-calculate URLs to avoid repeated string operations
     const host = request.headers.get('host') || 'localhost:3000'
     const protocol = request.headers.get('x-forwarded-proto') || 'http'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`
+    
+    // Use production URL for Stripe redirects, fallback to request host for local development
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://www.themenuguide.com'
+      : (process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`)
+    
     const successUrl = `${baseUrl}/dashboard?success=true&payment=completed`
     const cancelUrl = `${baseUrl}/dashboard?canceled=true`
+    
+    console.log('Stripe checkout URLs:', { baseUrl, successUrl, cancelUrl, nodeEnv: process.env.NODE_ENV })
 
     // Create Stripe checkout session with optimized configuration
     const session = await stripe.checkout.sessions.create({
