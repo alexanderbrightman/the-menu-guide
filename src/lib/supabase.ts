@@ -4,7 +4,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
 // Only create client if we have real credentials
-export const supabase = supabaseUrl.includes('placeholder') 
+export const supabase = (supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder'))
   ? null 
   : createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
