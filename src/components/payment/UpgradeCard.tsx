@@ -54,7 +54,13 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
         window.location.href = data.url
       } else {
         console.error('Error creating checkout session:', data.error)
-        alert('Unable to process payment. Please try again.')
+        
+        // Check if it's a configuration error
+        if (data.error === 'Payment system not configured') {
+          alert('Payment system is not configured for local development. Please test payments on the live site or add Stripe test keys to your .env.local file.')
+        } else {
+          alert('Unable to process payment. Please try again.')
+        }
       }
     } catch (error) {
       console.error('Error upgrading:', error)
