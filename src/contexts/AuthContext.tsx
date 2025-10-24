@@ -107,17 +107,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const getSession = async () => {
       if (!supabase) {
+        console.log('Supabase client not available')
         setLoading(false)
         return
       }
       
       try {
+        console.log('Getting session...')
         const { session, error } = await getSafeSession()
+        console.log('Session result:', { hasSession: !!session, error })
         
         if (error) {
           console.error('Session error:', error)
           // If it's a refresh token error, clear the session
           if (error.includes('refresh token') || error.includes('Session expired')) {
+            console.log('Clearing expired session')
             setUser(null)
             setProfile(null)
             await clearAuthData()
@@ -126,11 +130,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
         
-        setUser(session?.user ?? null)
-        
         if (session?.user) {
+          console.log('Valid session found, setting user:', session.user.email)
+          setUser(session.user)
+          
           const profileData = await fetchProfile(session.user.id)
+          console.log('Profile data:', profileData ? 'found' : 'not found')
           setProfile(profileData)
+        } else {
+          console.log('No session found, clearing user state')
+          setUser(null)
+          setProfile(null)
         }
       } catch (error) {
         console.error('Error getting session:', error)
@@ -200,21 +210,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSigningOut(true)
     try {
       console.log('Attempting to sign out...')
-      const { error } = await supabase.auth.signOut()
-      console.log('SignOut result:', { error })
       
-      if (error) {
-        console.error('Error signing out:', error)
-        // Still clear local state even if server signout fails
-        setUser(null)
-        setProfile(null)
-      } else {
-        console.log('SignOut successful, clearing local state')
-        setUser(null)
-        setProfile(null)
+      // Always clear local state first
+      setUser(null)
+      setProfile(null)
+      
+      // Try to sign out from Supabase, but don't fail if session is missing
+      try {
+        const { error } = await supabase.auth.signOut()
+        console.log('SignOut result:', { error })
+        
+        if (error && !error.message.includes('Auth session missing')) {
+          console.error('Error signing out:', error)
+        }
+      } catch (signOutError: any) {
+        // If it's a session missing error, that's actually fine - we're already signed out
+        if (!signOutError.message?.includes('Auth session missing')) {
+          console.error('Error signing out:', signOutError)
+        } else {
+          console.log('Session already missing, clearing local state only')
+        }
       }
+      
+      // Clear any stored auth data from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token')
+        // Clear all Supabase-related localStorage items
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-')) {
+            localStorage.removeItem(key)
+          }
+        })
+      }
+      
+      console.log('SignOut completed successfully')
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Error in signOut:', error)
       // Clear local state on any error
       setUser(null)
       setProfile(null)
