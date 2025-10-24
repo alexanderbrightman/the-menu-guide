@@ -49,11 +49,21 @@ export async function POST(req: NextRequest) {
       switch (event.type) {
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session
+          console.log('Checkout session completed:', {
+            mode: checkoutSession.mode,
+            subscription: checkoutSession.subscription,
+            customer: checkoutSession.customer,
+            metadata: checkoutSession.metadata,
+            customerEmail: checkoutSession.customer_details?.email
+          })
+          
           if (checkoutSession.mode === 'subscription' && checkoutSession.customer_details?.email) {
             const subscriptionId = checkoutSession.subscription as string
             const customerId = checkoutSession.customer as string
             const userId = checkoutSession.metadata?.userId as string
             const profileId = checkoutSession.metadata?.profileId as string
+
+            console.log('Processing subscription:', { subscriptionId, customerId, userId, profileId })
 
             await manageSubscriptionStatusChange(
               subscriptionId,
@@ -109,8 +119,21 @@ async function manageSubscriptionStatusChange(
   createStripeCustomer: boolean
 ) {
   try {
+    console.log('manageSubscriptionStatusChange called with:', {
+      subscriptionId,
+      customerId,
+      userId,
+      profileId,
+      createStripeCustomer
+    })
+
     // Retrieve the subscription details from Stripe
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    console.log('Retrieved subscription:', {
+      id: subscription.id,
+      status: subscription.status,
+      customer: subscription.customer
+    })
 
     // Find the profile in Supabase
     const { data: profile, error } = await supabaseAdmin
@@ -123,6 +146,8 @@ async function manageSubscriptionStatusChange(
       console.error('Profile not found for subscription:', error)
       return
     }
+
+    console.log('Found profile:', profile)
 
     // Determine subscription status based on Stripe subscription status
     let subscriptionStatus = 'free'
@@ -142,6 +167,8 @@ async function manageSubscriptionStatusChange(
         subscription_current_period_end: (subscription as any).current_period_end 
           ? new Date((subscription as any).current_period_end * 1000).toISOString() 
           : null,
+        // Set is_public to true when subscription becomes active
+        is_public: subscriptionStatus === 'pro' ? true : false,
       })
       .eq('id', profile.id)
 

@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${successUrl}?success=true`,
+      success_url: `${successUrl}/dashboard?success=true`,
       cancel_url: `${cancelUrl}/dashboard?canceled=true`,
       customer_email: user.email,
       metadata: {

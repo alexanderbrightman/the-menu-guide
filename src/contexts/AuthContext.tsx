@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  refreshSubscription: () => Promise<void>
   signingOut: boolean
 }
 
@@ -50,6 +51,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(profileData)
     }
   }, [user, fetchProfile])
+
+  const refreshSubscription = useCallback(async () => {
+    if (!user || !supabase) return
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+
+      const response = await fetch('/api/refresh-subscription', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        // Refresh the profile to get updated subscription status
+        await refreshProfile()
+      }
+    } catch (error) {
+      console.error('Error refreshing subscription:', error)
+    }
+  }, [user, refreshProfile])
 
   const clearAuthData = useCallback(async () => {
     try {
@@ -181,8 +206,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signOut,
     refreshProfile,
+    refreshSubscription,
     signingOut
-  }), [user, profile, loading, signOut, refreshProfile, signingOut])
+  }), [user, profile, loading, signOut, refreshProfile, refreshSubscription, signingOut])
 
   return (
     <AuthContext.Provider value={value}>

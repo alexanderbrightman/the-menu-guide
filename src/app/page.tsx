@@ -9,7 +9,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
 
 function HomeContent() {
-  const { user, loading, refreshProfile } = useAuth()
+  const { user, loading, refreshProfile, refreshSubscription } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -20,11 +20,13 @@ function HomeContent() {
     
     if (success === 'true') {
       alert('🎉 Payment successful! Your account has been upgraded to Premium!')
-      refreshProfile() // Refresh profile to get updated subscription status
-      // Redirect to dashboard after showing success message
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
+      // Refresh subscription status from Stripe and then refresh profile
+      refreshSubscription().then(() => {
+        // Redirect to dashboard after refreshing
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1000)
+      })
     } else if (canceled === 'true') {
       alert('❌ Payment was canceled. You can try again anytime.')
       // Redirect to dashboard after showing cancel message
@@ -32,7 +34,7 @@ function HomeContent() {
         router.push('/dashboard')
       }, 1000)
     }
-  }, [searchParams, router, refreshProfile])
+  }, [searchParams, router, refreshSubscription])
 
   // Check if Supabase is configured
   const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
