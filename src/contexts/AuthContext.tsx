@@ -190,14 +190,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile, clearAuthData, user?.id])
 
   const signOut = useCallback(async () => {
-    if (!supabase || signingOut) return
+    console.log('SignOut called, supabase:', !!supabase, 'signingOut:', signingOut)
+    
+    if (!supabase || signingOut) {
+      console.log('SignOut early return - supabase:', !!supabase, 'signingOut:', signingOut)
+      return
+    }
     
     setSigningOut(true)
     try {
+      console.log('Attempting to sign out...')
       const { error } = await supabase.auth.signOut()
+      console.log('SignOut result:', { error })
+      
       if (error) {
         console.error('Error signing out:', error)
         // Still clear local state even if server signout fails
+        setUser(null)
+        setProfile(null)
+      } else {
+        console.log('SignOut successful, clearing local state')
         setUser(null)
         setProfile(null)
       }
