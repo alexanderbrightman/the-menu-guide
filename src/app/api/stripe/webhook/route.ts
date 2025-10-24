@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
             console.log('Processing subscription:', { subscriptionId, customerId, userId, profileId })
 
             await manageSubscriptionStatusChange(
+              stripe,
               subscriptionId,
               customerId,
               userId,
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
 
           if (userIdFromSubscription && profileIdFromSubscription) {
             await manageSubscriptionStatusChange(
+              stripe,
               subscription.id,
               subscription.customer as string,
               userIdFromSubscription,
@@ -148,6 +150,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function manageSubscriptionStatusChange(
+  stripe: Stripe,
   subscriptionId: string,
   customerId: string,
   userId: string,
