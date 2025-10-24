@@ -19,6 +19,11 @@ const getSupabaseClientWithAuth = (token: string) => {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+    }
+
     // Get the authorization header
     const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -29,15 +34,15 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClientWithAuth(token)
 
     // Get the authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get the user's profile
+    // Get only essential profile data to reduce query time
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id')
       .eq('id', user.id)
       .single()
 
@@ -45,12 +50,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Get base URL with proper protocol
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const successUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
-    const cancelUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
+    // Pre-calculate URLs to avoid repeated string operations
+    const host = request.headers.get('host') || 'localhost:3000'
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`
+    const successUrl = `${baseUrl}/dashboard?success=true&payment=completed`
+    const cancelUrl = `${baseUrl}/dashboard?canceled=true`
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session with optimized configuration
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -70,13 +77,17 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${successUrl}/dashboard?success=true`,
-      cancel_url: `${cancelUrl}/dashboard?canceled=true`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       customer_email: user.email,
       metadata: {
         userId: user.id,
         profileId: profile.id,
       },
+      // Add performance optimizations
+      allow_promotion_codes: false,
+      billing_address_collection: 'auto',
+      payment_method_collection: 'always',
     })
 
     return NextResponse.json({ sessionId: session.id, url: session.url })

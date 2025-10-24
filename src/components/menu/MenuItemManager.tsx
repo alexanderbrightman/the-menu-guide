@@ -102,7 +102,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
   useEffect(() => {
     fetchData()
-  }, [user])
+  }, [user, fetchData])
 
   const resetForm = () => {
     setFormData({

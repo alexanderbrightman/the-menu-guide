@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import QRCode from 'qrcode'
 import { createClient } from '@supabase/supabase-js'
+import { validateApiPremiumAccess, PREMIUM_API_HEADERS, createPremiumErrorResponse } from '@/lib/premium-validation'
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/rate-limiting'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseClientWithAuth(token)
 
     // Get the authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -37,12 +39,39 @@ export async function GET(request: NextRequest) {
     // Get the user's profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('username')
+      .select('username, subscription_status, is_public')
       .eq('id', user.id)
       .single()
 
     if (profileError || !profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    // Validate premium access for QR code generation
+    const premiumValidation = validateApiPremiumAccess(profile, 'QR code generation')
+    if (!premiumValidation.isValid) {
+      return NextResponse.json(
+        createPremiumErrorResponse(premiumValidation.error!, premiumValidation.statusCode!),
+        { 
+          status: premiumValidation.statusCode!,
+          headers: PREMIUM_API_HEADERS
+        }
+      )
+    }
+
+    // Check rate limiting for QR code generation
+    const rateLimit = checkRateLimit(request, user.id, 'qr-code', 10, 60000) // 10 requests per minute
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        createPremiumErrorResponse('Rate limit exceeded. Please wait before generating another QR code.', 429),
+        { 
+          status: 429,
+          headers: {
+            ...PREMIUM_API_HEADERS,
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime)
+          }
+        }
+      )
     }
 
     // Generate the public profile URL
@@ -64,10 +93,11 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="menu-qr-code-${profile.username}.png"`,
-        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'Cache-Control': 'public, max-age=3600', // Override premium headers for QR code caching
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block'
+        'X-XSS-Protection': '1; mode=block',
+        ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime)
       }
     })
 

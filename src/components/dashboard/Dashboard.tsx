@@ -6,12 +6,14 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { LogOut, Settings, QrCode } from 'lucide-react'
+import { LogOut, QrCode } from 'lucide-react'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
+import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { CategoryManager } from '@/components/menu/CategoryManager'
 import { MenuItemManager } from '@/components/menu/MenuItemManager'
 import { UpgradeCard } from '@/components/payment/UpgradeCard'
+import { usePremiumFeature } from '@/hooks/usePremiumFeature'
+import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
@@ -19,8 +21,17 @@ export function Dashboard() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [qrCodeLoading, setQrCodeLoading] = useState(false)
 
+  // Premium feature validation
+  const qrCodeAccess = usePremiumFeature('QR code generation')
+
   const generateQRCode = async () => {
     if (!user || !supabase) return
+
+    // Check premium access before proceeding
+    if (!qrCodeAccess.canAccess) {
+      alert(qrCodeAccess.message)
+      return
+    }
 
     setQrCodeLoading(true)
     try {
@@ -43,21 +54,24 @@ export function Dashboard() {
         const url = URL.createObjectURL(blob)
         setQrCodeUrl(url)
       } else {
-        console.error('Error generating QR code')
+        const errorData = await response.json()
+        console.error('Error generating QR code:', errorData.error)
+        alert(errorData.error || 'Failed to generate QR code')
       }
     } catch (error) {
       console.error('Error generating QR code:', error)
+      alert('Failed to generate QR code. Please try again.')
     } finally {
       setQrCodeLoading(false)
     }
   }
 
-  // Auto-generate QR code when component mounts
+  // Auto-generate QR code when component mounts (only for premium users)
   useEffect(() => {
-    if (user && profile && !qrCodeUrl && !qrCodeLoading) {
+    if (user && profile && !qrCodeUrl && !qrCodeLoading && qrCodeAccess.canAccess) {
       generateQRCode()
     }
-  }, [user, profile])
+  }, [user, profile, qrCodeUrl, qrCodeLoading, qrCodeAccess.canAccess, generateQRCode])
 
   const downloadQRCode = () => {
     if (qrCodeUrl) {
@@ -88,21 +102,18 @@ export function Dashboard() {
               />
               <h1 className="text-xl font-semibold text-gray-900">The Menu Guide</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={() => setShowProfileEdit(true)}>
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={signOut}
-                disabled={signingOut}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                {signingOut ? 'Signing Out...' : 'Sign Out'}
-              </Button>
-            </div>
+        <div className="flex items-center space-x-4">
+          <SettingsDialog />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={signOut}
+            disabled={signingOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            {signingOut ? 'Signing Out...' : 'Sign Out'}
+          </Button>
+        </div>
           </div>
         </div>
       </header>
@@ -133,7 +144,6 @@ export function Dashboard() {
                 View Menu
               </Button>
               <Button variant="outline" onClick={() => setShowProfileEdit(true)}>
-                <Settings className="h-4 w-4 mr-2" />
                 Edit Profile
               </Button>
             </div>
@@ -200,7 +210,8 @@ export function Dashboard() {
         )}
 
         {/* Subscription Status */}
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
+          <SubscriptionExpiryWarning showCard={true} />
           <UpgradeCard />
         </div>
       </div>

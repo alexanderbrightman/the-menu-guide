@@ -26,6 +26,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Check if Stripe is configured
+  if (!stripe) {
+    return new NextResponse('Stripe not configured', { status: 503 })
+  }
+
   const body = await req.text()
   const sig = req.headers.get('stripe-signature') as string
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -79,16 +84,47 @@ export async function POST(req: NextRequest) {
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted':
           const subscription = event.data.object as Stripe.Subscription
-          const userIdFromSubscription = subscription.metadata?.userId as string
-          const profileIdFromSubscription = subscription.metadata?.profileId as string
+          console.log('Subscription event received:', {
+            id: subscription.id,
+            status: subscription.status,
+            customer: subscription.customer,
+            metadata: subscription.metadata
+          })
 
-          await manageSubscriptionStatusChange(
-            subscription.id,
-            subscription.customer as string,
-            userIdFromSubscription,
-            profileIdFromSubscription,
-            false
-          )
+          // Try to get metadata from subscription, or find profile by customer email
+          let userIdFromSubscription = subscription.metadata?.userId as string
+          let profileIdFromSubscription = subscription.metadata?.profileId as string
+
+          // If metadata is missing, try to find profile by customer email
+          if (!userIdFromSubscription || !profileIdFromSubscription) {
+            console.log('Missing metadata, attempting to find profile by customer email')
+            const customer = await stripe.customers.retrieve(subscription.customer as string)
+            if (customer && !customer.deleted && customer.email) {
+              const { data: profileByEmail } = await supabaseAdmin
+                .from('profiles')
+                .select('id')
+                .eq('username', customer.email) // Assuming email matches username
+                .single()
+              
+              if (profileByEmail) {
+                userIdFromSubscription = profileByEmail.id
+                profileIdFromSubscription = profileByEmail.id
+                console.log('Found profile by email:', profileByEmail)
+              }
+            }
+          }
+
+          if (userIdFromSubscription && profileIdFromSubscription) {
+            await manageSubscriptionStatusChange(
+              subscription.id,
+              subscription.customer as string,
+              userIdFromSubscription,
+              profileIdFromSubscription,
+              false
+            )
+          } else {
+            console.error('Could not determine user/profile for subscription:', subscription.id)
+          }
           break
 
         case 'invoice.payment_succeeded':
@@ -127,18 +163,25 @@ async function manageSubscriptionStatusChange(
       createStripeCustomer
     })
 
+    // Validate required parameters
+    if (!subscriptionId || !customerId || !userId || !profileId) {
+      console.error('Missing required parameters for subscription update')
+      return
+    }
+
     // Retrieve the subscription details from Stripe
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
     console.log('Retrieved subscription:', {
       id: subscription.id,
       status: subscription.status,
-      customer: subscription.customer
+      customer: subscription.customer,
+      current_period_end: (subscription as any).current_period_end
     })
 
     // Find the profile in Supabase
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
-      .select('id')
+      .select('id, username, subscription_status')
       .eq('id', profileId)
       .single()
 
@@ -151,33 +194,66 @@ async function manageSubscriptionStatusChange(
 
     // Determine subscription status based on Stripe subscription status
     let subscriptionStatus = 'free'
+    let isPublic = false
+    
     if (subscription.status === 'active') {
       subscriptionStatus = 'pro'
-    } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+      isPublic = true
+    } else if (subscription.status === 'canceled') {
+      // Check if subscription was canceled at period end or immediately
+      const currentPeriodEnd = (subscription as any).current_period_end
+      const now = Math.floor(Date.now() / 1000)
+      
+      if (subscription.cancel_at_period_end && currentPeriodEnd > now) {
+        // Subscription is canceled but still active until period end
+        subscriptionStatus = 'pro'
+        isPublic = true
+      } else {
+        // Subscription has actually ended
+        subscriptionStatus = 'canceled'
+        isPublic = false
+      }
+    } else if (subscription.status === 'unpaid' || subscription.status === 'past_due') {
       subscriptionStatus = 'canceled'
+      isPublic = false
     }
+
+    // Prepare update data
+    const updateData: any = {
+      subscription_status: subscriptionStatus,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      subscription_current_period_end: (subscription as any).current_period_end 
+        ? new Date((subscription as any).current_period_end * 1000).toISOString() 
+        : null,
+      subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
+      is_public: isPublic
+    }
+
+    // Add cancellation timestamp if subscription is canceled
+    if (subscription.status === 'canceled') {
+      updateData.subscription_canceled_at = subscription.canceled_at 
+        ? new Date(subscription.canceled_at * 1000).toISOString()
+        : new Date().toISOString()
+    }
+
+    console.log('Updating profile with data:', updateData)
 
     // Update profile with subscription details
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        subscription_status: subscriptionStatus,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscription.id,
-        subscription_current_period_end: (subscription as any).current_period_end 
-          ? new Date((subscription as any).current_period_end * 1000).toISOString() 
-          : null,
-        // Set is_public to true when subscription becomes active
-        is_public: subscriptionStatus === 'pro' ? true : false,
-      })
+      .update(updateData)
       .eq('id', profile.id)
 
     if (updateError) {
       console.error('Error updating subscription:', updateError)
+      throw updateError
     } else {
-      console.log(`Successfully updated profile ${profileId} to ${subscriptionStatus}`)
+      console.log(`Successfully updated profile ${profileId} (${profile.username}) to ${subscriptionStatus}`)
     }
   } catch (error) {
     console.error('Error in manageSubscriptionStatusChange:', error)
+    // Re-throw to ensure webhook returns error status
+    throw error
   }
 }

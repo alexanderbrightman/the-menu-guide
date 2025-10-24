@@ -46,14 +46,14 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   }
 
   // Fetch menu categories
-  const { data: categories, error: categoriesError } = await supabase
+  const { data: categories } = await supabase
     .from('menu_categories')
     .select('*')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: true })
 
   // Fetch menu items with tags
-  const { data: menuItems, error: menuItemsError } = await supabase
+  const { data: menuItems } = await supabase
     .from('menu_items')
     .select(`
       *,
@@ -66,7 +66,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .order('created_at', { ascending: true })
 
   // Fetch all available tags
-  const { data: tags, error: tagsError } = await supabase
+  const { data: tags } = await supabase
     .from('tags')
     .select('*')
     .order('name', { ascending: true })

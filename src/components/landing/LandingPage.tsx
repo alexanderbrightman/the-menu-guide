@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { X, ArrowRight, ChevronDown } from 'lucide-react'
@@ -39,19 +38,19 @@ export function LandingPage() {
             {/* Centered logo and title */}
             <div className="flex items-center justify-center w-full">
               <div className="flex items-center space-x-8">
-                {/* Logo - same height as title, 80% bigger */}
+                {/* Logo - same height as title, 60% larger */}
                 <div className="flex-shrink-0">
                   <img 
                     src="/logo_notext.png" 
                     alt="The Menu Guide Logo" 
-                    className="h-[10.8vw] md:h-[14.4vw] lg:h-[18vw] w-auto min-h-[7.2rem] min-w-[7.2rem] max-h-[21.6rem] max-w-[21.6rem] object-contain"
-                    style={{ height: 'clamp(7.2rem, 14.4vw, 21.6rem)' }}
+                    className="h-[17.28vw] md:h-[23.04vw] lg:h-[28.8vw] w-auto min-h-[11.52rem] min-w-[11.52rem] max-h-[34.56rem] max-w-[34.56rem] object-contain"
+                    style={{ height: 'clamp(11.52rem, 23.04vw, 34.56rem)' }}
                   />
                 </div>
                 
-                {/* Title - left aligned within the centered group */}
+                {/* Title - left aligned within the centered group, 60% larger */}
                 <div className="flex-shrink-0">
-                  <h1 className="text-[6vw] md:text-[8vw] lg:text-[10vw] font-light text-gray-800 leading-none tracking-tight" style={{ fontSize: 'clamp(4rem, 8vw, 12rem)' }}>
+                  <h1 className="text-[9.6vw] md:text-[12.8vw] lg:text-[16vw] font-light text-gray-800 leading-none tracking-tight" style={{ fontSize: 'clamp(6.4rem, 12.8vw, 19.2rem)' }}>
                     <div className="mb-2">The</div>
                     <div className="mb-2">Menu</div>
                     <div>Guide</div>

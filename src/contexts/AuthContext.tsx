@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { Profile } from '@/lib/supabase'
+import { getSafeSession, handleAuthError } from '@/lib/auth-utils'
 
 interface AuthContextType {
   user: User | null
@@ -23,10 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, _forceRefresh = false) => {
     if (!supabase) return null
     
     try {
+      // Use a simple query without cache busting for now
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -47,17 +49,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (user && supabase) {
-      const profileData = await fetchProfile(user.id)
+      const profileData = await fetchProfile(user.id, true) // Force refresh
       setProfile(profileData)
+      return profileData
     }
+    return null
   }, [user, fetchProfile])
 
   const refreshSubscription = useCallback(async () => {
     if (!user || !supabase) return
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return
+      const { session, error } = await getSafeSession()
+      if (error || !session?.access_token) {
+        if (error) {
+          handleAuthError(new Error(error), 'refreshSubscription')
+        }
+        return
+      }
 
       const response = await fetch('/api/refresh-subscription', {
         method: 'POST',
@@ -72,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await refreshProfile()
       }
     } catch (error) {
-      console.error('Error refreshing subscription:', error)
+      handleAuthError(error, 'refreshSubscription')
     }
   }, [user, refreshProfile])
 
@@ -103,12 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
+        const { session, error } = await getSafeSession()
         
         if (error) {
           console.error('Session error:', error)
           // If it's a refresh token error, clear the session
-          if (error.message.includes('refresh token')) {
+          if (error.includes('refresh token') || error.includes('Session expired')) {
             setUser(null)
             setProfile(null)
             await clearAuthData()
@@ -125,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error getting session:', error)
+        handleAuthError(error, 'getSession')
         // Clear session on any error
         setUser(null)
         setProfile(null)
@@ -163,8 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
         } catch (error) {
           console.error('Auth state change error:', error)
+          handleAuthError(error, 'onAuthStateChange')
           // If there's an auth error, clear the session
-          if (error instanceof Error && error.message.includes('refresh token')) {
+          if (error instanceof Error && (error.message.includes('refresh token') || error.message.includes('Session expired'))) {
             setUser(null)
             setProfile(null)
             // Clear any stored auth data

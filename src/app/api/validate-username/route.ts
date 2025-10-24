@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Helper to create a Supabase client with the user's token
-const getSupabaseClientWithAuth = (token: string) => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    }
-  )
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { username } = await request.json()

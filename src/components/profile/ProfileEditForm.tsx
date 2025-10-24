@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Upload, Save, X } from 'lucide-react'
 
@@ -22,8 +21,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const [formData, setFormData] = useState({
     display_name: profile?.display_name || '',
     bio: profile?.bio || '',
-    username: profile?.username || '',
-    is_public: profile?.is_public || false
+    username: profile?.username || ''
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -174,8 +172,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         .update({
           display_name: formData.display_name.trim(),
           bio: formData.bio.trim(),
-          username: formData.username.trim(),
-          is_public: formData.is_public
+          username: formData.username.trim()
         })
         .eq('id', profile.id)
 
@@ -369,22 +366,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
               placeholder="Tell customers about your restaurant..."
               rows={3}
             />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="is_public">Make Menu Public</Label>
-                <p className="text-sm text-gray-500">
-                  Allow customers to view your menu at /menu/{formData.username}
-                </p>
-              </div>
-              <Switch
-                id="is_public"
-                checked={formData.is_public}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_public: checked })}
-              />
-            </div>
           </div>
 
           {message && (

@@ -61,7 +61,7 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
 
   useEffect(() => {
     fetchCategories()
-  }, [user])
+  }, [user, fetchCategories])
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()

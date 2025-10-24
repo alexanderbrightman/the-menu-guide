@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseClientWithAuth(token)
 
     // Get the authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClientWithAuth(token)
 
     // Get the authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -116,6 +116,52 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ profile })
   } catch (error) {
     console.error('Error in profile creation:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.substring(7)
+    const supabase = getSupabaseClientWithAuth(token)
+
+    // Get the authenticated user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { is_public } = body
+
+    // Update profile visibility
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .update({ is_public })
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating profile:', error)
+      return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+    }
+
+    // Clear cache for this user
+    const cacheKey = getProfileCacheKey(user.id)
+    setCachedResponse(cacheKey, null, 0) // Clear cache
+    
+    console.log('Profile updated successfully:', { id: user.id, is_public })
+
+    return NextResponse.json({ profile })
+  } catch (error) {
+    console.error('Error in profile update:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

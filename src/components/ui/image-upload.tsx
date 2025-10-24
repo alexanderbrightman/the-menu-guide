@@ -22,7 +22,7 @@ export function ImageUpload({
   onImageSelect,
   onImageRemove,
   selectedFile,
-  preview,
+  preview: _preview,
   disabled = false,
   className = ''
 }: ImageUploadProps) {

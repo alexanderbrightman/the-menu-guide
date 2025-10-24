@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
+import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 
-// Helper to create a Supabase client with the user's token
-const getSupabaseClientWithAuth = (token: string) => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    }
-  )
-}
+// Admin Supabase client for subscription operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,16 +18,26 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7)
-    const supabase = getSupabaseClientWithAuth(token)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    )
 
     // Get the authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get the user's profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user's profile
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -45,53 +47,74 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
+    console.log('Current profile:', profile)
+
     // If user has a Stripe subscription ID, check its status
     if (profile.stripe_subscription_id) {
       try {
-        const subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id)
+        const subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id) as Stripe.Subscription
         
+        console.log('Retrieved subscription:', {
+          id: subscription.id,
+          status: subscription.status,
+          customer: subscription.customer
+        })
+
+        // Determine subscription status
         let subscriptionStatus = 'free'
         if (subscription.status === 'active') {
           subscriptionStatus = 'pro'
-        } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+        } else if (subscription.status === 'canceled' || subscription.status === 'unpaid' || subscription.status === 'past_due') {
           subscriptionStatus = 'canceled'
         }
 
         // Update profile with current subscription status
-        const { error: updateError } = await supabase
+        const updateData: any = {
+          subscription_status: subscriptionStatus,
+          stripe_customer_id: subscription.customer as string,
+          stripe_subscription_id: subscription.id,
+          subscription_current_period_end: (subscription as any).current_period_end 
+            ? new Date((subscription as any).current_period_end * 1000).toISOString() 
+            : null,
+        }
+
+        // Set is_public to true when subscription is active
+        if (subscriptionStatus === 'pro') {
+          updateData.is_public = true
+        }
+
+        const { error: updateError } = await supabaseAdmin
           .from('profiles')
-          .update({
-            subscription_status: subscriptionStatus,
-            is_public: subscriptionStatus === 'pro' ? true : false,
-            subscription_current_period_end: (subscription as any).current_period_end 
-              ? new Date((subscription as any).current_period_end * 1000).toISOString() 
-              : null,
-          })
-          .eq('id', user.id)
+          .update(updateData)
+          .eq('id', profile.id)
 
         if (updateError) {
           console.error('Error updating subscription:', updateError)
           return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 })
         }
 
+        console.log(`Successfully updated profile ${profile.id} to ${subscriptionStatus}`)
+
         return NextResponse.json({ 
           success: true, 
-          subscription_status: subscriptionStatus,
-          is_public: subscriptionStatus === 'pro' ? true : false
+          subscriptionStatus,
+          message: `Subscription status updated to ${subscriptionStatus}` 
         })
+
       } catch (stripeError) {
-        console.error('Stripe error:', stripeError)
-        return NextResponse.json({ error: 'Failed to check subscription status' }, { status: 500 })
+        console.error('Error retrieving subscription from Stripe:', stripeError)
+        return NextResponse.json({ error: 'Failed to retrieve subscription from Stripe' }, { status: 500 })
       }
+    } else {
+      return NextResponse.json({ 
+        success: true, 
+        subscriptionStatus: 'free',
+        message: 'No Stripe subscription found - user remains on free plan' 
+      })
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      subscription_status: profile.subscription_status,
-      is_public: profile.is_public
-    })
   } catch (error) {
-    console.error('Error refreshing subscription:', error)
+    console.error('Error in refresh subscription:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
