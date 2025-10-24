@@ -19,6 +19,11 @@ const getSupabaseClientWithAuth = (token: string) => {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+    }
+
     // Get the authorization header
     const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
