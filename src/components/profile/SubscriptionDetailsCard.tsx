@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { getSessionToken, handleAuthError } from '@/lib/auth-utils'
@@ -52,7 +52,7 @@ export function SubscriptionDetailsCard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const fetchSubscriptionDetails = async () => {
+  const fetchSubscriptionDetails = useCallback(async () => {
     if (!user || !supabase) {
       console.log('Cannot fetch subscription details: missing user or supabase client')
       return
@@ -95,7 +95,7 @@ export function SubscriptionDetailsCard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, profile?.subscription_status])
 
   useEffect(() => {
     // Only fetch if user has premium access and is authenticated
