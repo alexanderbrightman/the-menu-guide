@@ -165,8 +165,8 @@ async function handleSubscriptionChange(event: Stripe.Event) {
     metadata: subscription.metadata
   })
 
-  let userIdFromSubscription = subscription.metadata?.userId as string
-  let profileIdFromSubscription = subscription.metadata?.profileId as string
+  const userIdFromSubscription = subscription.metadata?.userId as string
+  const profileIdFromSubscription = subscription.metadata?.profileId as string
 
   // If metadata is missing, try to find profile by customer email
   if (!userIdFromSubscription || !profileIdFromSubscription) {
@@ -174,12 +174,6 @@ async function handleSubscriptionChange(event: Stripe.Event) {
     try {
       const customer = await stripe!.customers.retrieve(subscription.customer as string)
       if (customer && !customer.deleted && customer.email) {
-        // Try to find profile by matching email in auth.users
-        const { data: users } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .limit(1)
-
         // Alternative: search by username or look up in auth.users
         // For now, we'll log this and require metadata
         console.error('[Subscription] Cannot automatically find profile without metadata')
@@ -204,17 +198,20 @@ async function handleSubscriptionChange(event: Stripe.Event) {
 }
 
 async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
-  const invoice = event.data.object as Stripe.Invoice
+  const invoice = event.data.object as Stripe.Invoice & { subscription?: string | Stripe.Subscription }
+  const subscriptionId = typeof invoice.subscription === 'string' 
+    ? invoice.subscription 
+    : invoice.subscription?.id || null
+    
   console.log('[Invoice] Payment succeeded:', {
     invoiceId: invoice.id,
     customer: invoice.customer,
-    subscription: invoice.subscription,
+    subscription: subscriptionId,
     amount: invoice.amount_paid
   })
 
   // If this is for a subscription, ensure the subscription status is updated
-  if (invoice.subscription) {
-    const subscriptionId = invoice.subscription as string
+  if (subscriptionId) {
     
     // Retrieve the subscription to get its status
     const subscription = await stripe!.subscriptions.retrieve(subscriptionId)
@@ -270,7 +267,7 @@ async function manageSubscriptionStatusChange(
     }
 
     // Retrieve the subscription details from Stripe
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
     console.log('[ManageSubscription] Retrieved subscription:', {
       id: subscription.id,
       status: subscription.status,
