@@ -420,7 +420,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                       )}
                       
                       {item.price && (
-                        <div className="flex items-center gap-1 text-green-600 font-semibold">
+                        <div className="flex items-center gap-1 text-gray-900 font-semibold">
                           <DollarSign className="h-4 w-4" />
                           {item.price.toFixed(2)}
                         </div>

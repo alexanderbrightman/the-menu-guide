@@ -157,12 +157,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, 'has session:', !!session)
         try {
           // Handle different auth events
           if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
             setUser(session?.user ?? null)
             if (!session?.user) {
               setProfile(null)
+            } else if (session?.user) {
+              const profileData = await fetchProfile(session.user.id)
+              setProfile(profileData)
             }
           } else if (event === 'SIGNED_IN') {
             setUser(session?.user ?? null)
@@ -170,11 +174,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const profileData = await fetchProfile(session.user.id)
               setProfile(profileData)
             }
-          } else if (session?.user && session.user.id !== user?.id) {
-            // Only fetch profile if user actually changed
-            const profileData = await fetchProfile(session.user.id)
-            setProfile(profileData)
-            setUser(session.user)
+          } else if (event === 'USER_UPDATED') {
+            setUser(session?.user ?? null)
+            if (session?.user) {
+              const profileData = await fetchProfile(session.user.id)
+              setProfile(profileData)
+            }
           } else if (!session?.user) {
             setProfile(null)
             setUser(null)
@@ -197,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [fetchProfile, clearAuthData, user?.id])
+  }, [fetchProfile, clearAuthData])
 
   const signOut = useCallback(async () => {
     console.log('SignOut called, supabase:', !!supabase, 'signingOut:', signingOut)

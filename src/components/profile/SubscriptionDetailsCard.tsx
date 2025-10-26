@@ -86,7 +86,14 @@ export function SubscriptionDetailsCard() {
       if (response.ok) {
         setSubscriptionDetails(data.subscription)
       } else {
-        throw new Error(data.error || 'Failed to fetch subscription details')
+        // Don't show "Payment system not configured" to end users - it's a dev/configuration issue
+        const errorMessage = data.error || 'Failed to fetch subscription details'
+        if (errorMessage.includes('Payment system not configured')) {
+          console.error('Stripe is not configured. Please set up STRIPE_SECRET_KEY in your environment variables.')
+          setError('Subscription details are currently unavailable. Please contact support if this persists.')
+        } else {
+          setError(errorMessage)
+        }
       }
     } catch (error) {
       console.error('Error fetching subscription details:', error)

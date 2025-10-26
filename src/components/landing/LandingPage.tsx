@@ -37,7 +37,7 @@ export function LandingPage() {
           <div className="w-full max-w-7xl mx-auto">
             {/* Centered logo and title */}
             <div className="flex items-center justify-center w-full">
-              <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-4">
                 {/* Logo - same height as title, 60% larger */}
                 <div className="flex-shrink-0">
                   <img 

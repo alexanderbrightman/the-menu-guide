@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,7 @@ export function Dashboard() {
   // Premium feature validation
   const qrCodeAccess = usePremiumFeature('QR code generation')
 
-  const generateQRCode = async () => {
+  const generateQRCode = useCallback(async () => {
     if (!user || !supabase) return
 
     // Check premium access before proceeding
@@ -64,7 +64,7 @@ export function Dashboard() {
     } finally {
       setQrCodeLoading(false)
     }
-  }
+  }, [user, qrCodeAccess])
 
   // Auto-generate QR code when component mounts (only for premium users)
   useEffect(() => {
@@ -89,7 +89,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#DBD3CB' }}>
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="shadow-sm border-b" style={{ backgroundColor: '#F4F2EE' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,7 +100,7 @@ export function Dashboard() {
                 alt="The Menu Guide Logo" 
                 className="h-10 w-10 object-contain"
               />
-              <h1 className="text-xl font-semibold text-gray-900">The Menu Guide</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">The Menu Guide</h1>
             </div>
         <div className="flex items-center space-x-4">
           <SettingsDialog />
