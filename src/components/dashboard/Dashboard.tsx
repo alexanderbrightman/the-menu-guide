@@ -42,8 +42,8 @@ export function Dashboard() {
         return
       }
 
-      // Generate QR code
-      const response = await fetch('/api/qr-code', {
+      // Generate QR code with username to force regeneration
+      const response = await fetch(`/api/qr-code?username=${profile?.username || ''}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
@@ -52,6 +52,10 @@ export function Dashboard() {
       if (response.ok) {
         const blob = await response.blob()
         const url = URL.createObjectURL(blob)
+        // Revoke old blob URL if it exists to prevent memory leaks
+        if (qrCodeUrl) {
+          URL.revokeObjectURL(qrCodeUrl)
+        }
         setQrCodeUrl(url)
       } else {
         const errorData = await response.json()
@@ -64,14 +68,23 @@ export function Dashboard() {
     } finally {
       setQrCodeLoading(false)
     }
-  }, [user, qrCodeAccess])
+  }, [user, profile?.username, qrCodeAccess])
 
-  // Auto-generate QR code when component mounts (only for premium users)
+  // Cleanup blob URL on unmount
   useEffect(() => {
-    if (user && profile && !qrCodeUrl && !qrCodeLoading && qrCodeAccess.canAccess) {
+    return () => {
+      if (qrCodeUrl) {
+        URL.revokeObjectURL(qrCodeUrl)
+      }
+    }
+  }, [qrCodeUrl])
+
+  // Auto-generate QR code when component mounts or profile username changes (only for premium users)
+  useEffect(() => {
+    if (user && profile && qrCodeAccess.canAccess && profile.username) {
       generateQRCode()
     }
-  }, [user, profile, qrCodeUrl, qrCodeLoading, qrCodeAccess.canAccess, generateQRCode])
+  }, [user, profile?.username, qrCodeAccess.canAccess, generateQRCode])
 
   const downloadQRCode = () => {
     if (qrCodeUrl) {
