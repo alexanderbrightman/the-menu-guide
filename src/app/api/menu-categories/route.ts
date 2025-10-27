@@ -42,7 +42,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
     }
 
-    return NextResponse.json({ categories })
+    // Add cache control headers for better performance
+    return NextResponse.json(
+      { categories },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in categories GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

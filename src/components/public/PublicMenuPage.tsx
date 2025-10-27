@@ -239,6 +239,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                           src={item.image_url} 
                           alt={item.title}
                           className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                          loading="lazy"
+                          decoding="async"
+                          width={400}
+                          height={267}
                         />
                       </div>
                     )}

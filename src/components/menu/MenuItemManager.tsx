@@ -102,7 +102,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
   useEffect(() => {
     fetchData()
-  }, [user, fetchData])
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetForm = () => {
     setFormData({

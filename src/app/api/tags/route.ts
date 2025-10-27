@@ -43,7 +43,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ tags: [] })
     }
 
-    return NextResponse.json({ tags })
+    // Add cache control headers for better performance
+    return NextResponse.json(
+      { tags },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in tags GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -20,8 +20,16 @@ const nextConfig: NextConfig = {
         },
       },
     },
-    // Optimize bundle splitting
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-avatar', '@radix-ui/react-dialog'],
+    // Optimize bundle splitting - add more packages for better code splitting
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-select',
+      '@radix-ui/react-badge',
+      '@supabase/supabase-js',
+      'qrcode',
+    ],
   },
   // Compiler optimizations
   compiler: {
@@ -30,7 +38,20 @@ const nextConfig: NextConfig = {
   },
   // Image optimization
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ydlizmqgfowhhdpncayd.supabase.co',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
   },
   // Headers for better caching

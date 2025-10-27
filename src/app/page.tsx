@@ -31,15 +31,15 @@ function HomeContent() {
           refreshProfile().then((profileData) => {
             console.log('Refreshed profile after payment:', profileData)
             
-            // Redirect to dashboard after refreshing
+            // Clean up URL params and replace in history to avoid localhost redirect issues
             setTimeout(() => {
-              router.push('/dashboard')
+              router.replace('/')
             }, 1000)
           }).catch((error) => {
             console.error('Error refreshing profile after payment:', error)
             // Still redirect even if refresh fails
             setTimeout(() => {
-              router.push('/dashboard')
+              router.replace('/')
             }, 1000)
           })
         } else {
@@ -47,7 +47,7 @@ function HomeContent() {
           // Still try to refresh and redirect
           refreshProfile().then(() => {
             setTimeout(() => {
-              router.push('/dashboard')
+              router.replace('/')
             }, 1000)
           })
         }
@@ -56,15 +56,15 @@ function HomeContent() {
         // Still try to refresh and redirect
         refreshProfile().then(() => {
           setTimeout(() => {
-            router.push('/dashboard')
+            router.replace('/')
           }, 1000)
         })
       })
     } else if (canceled === 'true') {
       alert('❌ Payment was canceled. You can try again anytime.')
-      // Redirect to dashboard after showing cancel message
+      // Clean up URL params and redirect without adding to history
       setTimeout(() => {
-        router.push('/dashboard')
+        router.replace('/')
       }, 1000)
     }
   }, [searchParams, router, refreshProfile])

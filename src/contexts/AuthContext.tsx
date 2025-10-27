@@ -105,103 +105,100 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const getSession = async () => {
-      if (!supabase) {
-        console.log('Supabase client not available')
-        setLoading(false)
-        return
-      }
-      
+    let mounted = true
+    let subscription: { unsubscribe: () => void } | null = null
+
+    const initializeAuth = async () => {
       try {
-        console.log('Getting session...')
+        console.log('Initializing auth...')
         const { session, error } = await getSafeSession()
-        console.log('Session result:', { hasSession: !!session, error })
+        console.log('Initial session result:', { hasSession: !!session, error })
         
         if (error) {
           console.error('Session error:', error)
           // If it's a refresh token error, clear the session
           if (error.includes('refresh token') || error.includes('Session expired')) {
             console.log('Clearing expired session')
-            setUser(null)
-            setProfile(null)
-            await clearAuthData()
+            if (mounted) {
+              setUser(null)
+              setProfile(null)
+              await clearAuthData()
+            }
           }
-          setLoading(false)
           return
         }
         
-        if (session?.user) {
-          console.log('Valid session found, setting user:', session.user.email)
-          setUser(session.user)
-          
-          const profileData = await fetchProfile(session.user.id)
-          console.log('Profile data:', profileData ? 'found' : 'not found')
-          setProfile(profileData)
-        } else {
-          console.log('No session found, clearing user state')
-          setUser(null)
-          setProfile(null)
+        if (mounted) {
+          if (session?.user) {
+            console.log('Valid session found, setting user:', session.user.email)
+            setUser(session.user)
+            
+            const profileData = await fetchProfile(session.user.id)
+            console.log('Profile data:', profileData ? 'found' : 'not found')
+            setProfile(profileData)
+          } else {
+            console.log('No session found, clearing user state')
+            setUser(null)
+            setProfile(null)
+          }
         }
       } catch (error) {
         console.error('Error getting session:', error)
         handleAuthError(error, 'getSession')
         // Clear session on any error
-        setUser(null)
-        setProfile(null)
+        if (mounted) {
+          setUser(null)
+          setProfile(null)
+        }
       } finally {
-        setLoading(false)
-      }
-    }
-
-    getSession()
-
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, 'has session:', !!session)
-        try {
-          // Handle different auth events
-          if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-            setUser(session?.user ?? null)
-            if (!session?.user) {
-              setProfile(null)
-            } else if (session?.user) {
-              const profileData = await fetchProfile(session.user.id)
-              setProfile(profileData)
-            }
-          } else if (event === 'SIGNED_IN') {
-            setUser(session?.user ?? null)
-            if (session?.user) {
-              const profileData = await fetchProfile(session.user.id)
-              setProfile(profileData)
-            }
-          } else if (event === 'USER_UPDATED') {
-            setUser(session?.user ?? null)
-            if (session?.user) {
-              const profileData = await fetchProfile(session.user.id)
-              setProfile(profileData)
-            }
-          } else if (!session?.user) {
-            setProfile(null)
-            setUser(null)
-          }
-          
-          setLoading(false)
-        } catch (error) {
-          console.error('Auth state change error:', error)
-          handleAuthError(error, 'onAuthStateChange')
-          // If there's an auth error, clear the session
-          if (error instanceof Error && (error.message.includes('refresh token') || error.message.includes('Session expired'))) {
-            setUser(null)
-            setProfile(null)
-            // Clear any stored auth data
-            await clearAuthData()
-          }
+        if (mounted) {
           setLoading(false)
         }
       }
-    )
+      
+      // Only set up auth state listener after initial session is loaded
+      if (mounted) {
+        const { data } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('Auth state changed:', event, 'has session:', !!session)
+            
+            if (!mounted) return
+            
+            try {
+              if (event === 'SIGNED_OUT') {
+                setUser(null)
+                setProfile(null)
+              } else if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                setUser(session?.user ?? null)
+                if (session?.user) {
+                  const profileData = await fetchProfile(session.user.id)
+                  setProfile(profileData)
+                }
+              } else if (!session?.user) {
+                setProfile(null)
+                setUser(null)
+              }
+            } catch (error) {
+              console.error('Auth state change error:', error)
+              handleAuthError(error, 'onAuthStateChange')
+              if (error instanceof Error && (error.message.includes('refresh token') || error.message.includes('Session expired'))) {
+                setUser(null)
+                setProfile(null)
+                await clearAuthData()
+              }
+            }
+          }
+        )
+        subscription = data
+      }
+    }
 
-    return () => subscription.unsubscribe()
+    initializeAuth()
+
+    return () => {
+      mounted = false
+      subscription?.unsubscribe()
+    }
   }, [fetchProfile, clearAuthData])
 
   const signOut = useCallback(async () => {

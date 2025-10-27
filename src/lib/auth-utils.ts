@@ -75,9 +75,11 @@ export function handleAuthError(error: unknown, context: string = 'Unknown') {
     if (supabase) {
       supabase.auth.signOut()
     }
-    // Optionally redirect to login page
+    // Use router.replace instead of window.location to avoid adding to history stack
+    // This will be handled by the auth context which has access to Next.js router
     if (typeof window !== 'undefined') {
-      window.location.href = '/'
+      // Trigger a custom event that the auth context can listen to
+      window.dispatchEvent(new Event('auth:refresh-error'))
     }
   }
 }

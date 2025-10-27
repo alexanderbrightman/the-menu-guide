@@ -32,9 +32,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get query parameters for filtering
+    // Get query parameters for filtering and pagination
     const { searchParams } = new URL(request.url)
     const categoryId = searchParams.get('categoryId')
+    const limit = parseInt(searchParams.get('limit') || '100') // Default to 100 items
+    const offset = parseInt(searchParams.get('offset') || '0')
 
     let query = supabase
       .from('menu_items')
@@ -47,20 +49,29 @@ export async function GET(request: NextRequest) {
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     // Filter by category if specified
     if (categoryId) {
       query = query.eq('category_id', categoryId)
     }
 
-    const { data: items, error } = await query
+    const { data: items, error, count } = await query
 
     if (error) {
       console.error('Error fetching menu items:', error)
       return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500 })
     }
 
-    return NextResponse.json({ items })
+    // Add cache control headers for better performance
+    return NextResponse.json(
+      { items, total: count || items?.length || 0 },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in menu items GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
