@@ -69,8 +69,8 @@ export function LandingPage() {
       </div>
 
       {/* Information Section */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20 lg:scale-[0.9] lg:origin-center">
-        <div className="max-w-6xl mx-auto w-full px-12 sm:px-16 md:px-20 lg:px-24">
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20">
+        <div className="max-w-5xl mx-auto w-full">
           {/* Main heading */}
           <div className="text-center mb-6 sm:mb-10 md:mb-14">
             <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-light text-gray-800 mb-3 sm:mb-5">
@@ -105,21 +105,6 @@ export function LandingPage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
               <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Quick Setup</h3>
               <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Get your menu online in minutes, not hours. Upload photos and you're ready.</p>
-            </div>
-          </div>
-
-          {/* Benefits section */}
-          <div className="text-center mb-6 sm:mb-10 md:mb-14">
-            <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-gray-800 mb-3 sm:mb-5 md:mb-7">
-              Why Digital Menus Actually Work
-            </h3>
-            <div className="max-w-3xl mx-auto">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-600 leading-relaxed mb-3 sm:mb-5">
-                You know how customers sometimes take forever to decide what to order? A good digital menu fixes that. When people can see your dishes clearly, with photos and descriptions, they make choices faster.
-              </p>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-600 leading-relaxed">
-                That means happier customers and more tables turned during your busy hours. Digital menus aren't just trendy—they're practical.
-              </p>
             </div>
           </div>
 
