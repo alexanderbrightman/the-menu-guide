@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Only set up auth state listener after initial session is loaded
-      if (mounted) {
+      if (mounted && supabase) {
         const { data } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state changed:', event, 'has session:', !!session)
