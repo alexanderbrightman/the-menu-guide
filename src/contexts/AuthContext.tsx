@@ -158,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Only set up auth state listener after initial session is loaded
       if (mounted && supabase) {
-        const { data } = supabase.auth.onAuthStateChange(
+        const authSubscription = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state changed:', event, 'has session:', !!session)
             
@@ -189,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         )
-        subscription = data
+        subscription = authSubscription.data.subscription
       }
     }
 
@@ -197,7 +197,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false
-      subscription?.unsubscribe()
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
   }, [fetchProfile, clearAuthData])
 
