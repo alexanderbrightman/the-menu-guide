@@ -74,8 +74,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Generate the public profile URL
-    const publicProfileUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/menu/${profile.username}`
+    // Generate the public profile URL using the request origin
+    const host = request.headers.get('host') || 'localhost:3000'
+    const forwardedProto = request.headers.get('x-forwarded-proto')
+    const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
+    const publicProfileUrl = `${protocol}://${host}/menu/${profile.username}`
 
     // Generate QR code as PNG buffer
     const qrCodeBuffer = await QRCode.toBuffer(publicProfileUrl, {

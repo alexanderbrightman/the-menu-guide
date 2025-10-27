@@ -52,12 +52,9 @@ export async function POST(request: NextRequest) {
 
     // Pre-calculate URLs to avoid repeated string operations
     const host = request.headers.get('host') || 'localhost:3000'
-    const protocol = request.headers.get('x-forwarded-proto') || 'http'
-    
-    // Use production URL for Stripe redirects, fallback to request host for local development
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://www.themenuguide.com'
-      : (process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`)
+    const forwardedProto = request.headers.get('x-forwarded-proto')
+    const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
+    const baseUrl = `${protocol}://${host}`
     
     const successUrl = `${baseUrl}/dashboard?success=true&payment=completed`
     const cancelUrl = `${baseUrl}/dashboard?canceled=true`

@@ -69,67 +69,55 @@ export function LandingPage() {
       </div>
 
       {/* Information Section */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 sm:px-8 lg:px-12 py-20">
-        <div className="max-w-6xl mx-auto w-full">
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20 lg:scale-[0.9] lg:origin-center">
+        <div className="max-w-6xl mx-auto w-full px-12 sm:px-16 md:px-20 lg:px-24">
           {/* Main heading */}
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-gray-800 mb-6">
+          <div className="text-center mb-6 sm:mb-10 md:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-light text-gray-800 mb-3 sm:mb-5">
               What We're All About
             </h2>
-            <p className="text-xl md:text-2xl font-light text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-2xl lg:text-3xl font-light text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Hey there! We're here to make your restaurant's menu game stronger. Think of us as your digital menu sidekick.
             </p>
           </div>
 
           {/* Feature cards grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-2 gap-3 sm:gap-5 md:gap-8 mb-6 sm:mb-10 md:mb-14">
             {/* Card 1 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">QR Code Magic</h3>
-              <p className="text-gray-600 font-light leading-relaxed">One scan and customers see your full menu instantly. No more waiting for printed menus.</p>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Photo-Friendly</h3>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Show off your best dishes with crisp images that make customers hungry.</p>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">Photo-Friendly</h3>
-              <p className="text-gray-600 font-light leading-relaxed">Show off your best dishes with crisp images that make customers hungry.</p>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Dietary Filters</h3>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Let customers find gluten-free, vegan, or spicy options instantly.</p>
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">Dietary Filters</h3>
-              <p className="text-gray-600 font-light leading-relaxed">Let customers find gluten-free, vegan, or spicy options instantly.</p>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Easy Updates</h3>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Display specials without reprinting anything. Change prices instantly.</p>
             </div>
 
             {/* Card 4 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">Easy Updates</h3>
-              <p className="text-gray-600 font-light leading-relaxed">Display specials without reprinting anything. Change prices instantly.</p>
-            </div>
-
-            {/* Card 5 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">Mobile-First</h3>
-              <p className="text-gray-600 font-light leading-relaxed">Looks great on any phone or tablet. Your customers will love it.</p>
-            </div>
-
-            {/* Card 6 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">Quick Setup</h3>
-              <p className="text-gray-600 font-light leading-relaxed">Get your menu online in minutes, not hours. Upload photos and you're ready.</p>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Quick Setup</h3>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Get your menu online in minutes, not hours. Upload photos and you're ready.</p>
             </div>
           </div>
 
           {/* Benefits section */}
-          <div className="text-center mb-16">
-            <h3 className="text-3xl md:text-4xl font-light text-gray-800 mb-8">
+          <div className="text-center mb-6 sm:mb-10 md:mb-14">
+            <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-gray-800 mb-3 sm:mb-5 md:mb-7">
               Why Digital Menus Actually Work
             </h3>
-            <div className="max-w-4xl mx-auto">
-              <p className="text-lg md:text-xl font-light text-gray-600 leading-relaxed mb-6">
+            <div className="max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-600 leading-relaxed mb-3 sm:mb-5">
                 You know how customers sometimes take forever to decide what to order? A good digital menu fixes that. When people can see your dishes clearly, with photos and descriptions, they make choices faster.
               </p>
-              <p className="text-lg md:text-xl font-light text-gray-600 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-600 leading-relaxed">
                 That means happier customers and more tables turned during your busy hours. Digital menus aren't just trendy—they're practical.
               </p>
             </div>
@@ -139,11 +127,42 @@ export function LandingPage() {
           <div className="text-center">
             <Button 
               onClick={() => setShowAuthForm(true)}
-              className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-xl text-xl font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-12 py-6 border border-gray-200"
+              className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-xl text-base sm:text-lg md:text-xl lg:text-2xl font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-5 sm:px-7 md:px-12 py-3 sm:py-4 md:py-5 lg:py-6 border border-gray-200"
             >
               Start building your menu for free!
-              <ArrowRight className="ml-3 h-5 w-5" />
+              <ArrowRight className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* About Me Section - Bottom of Page */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20 lg:scale-[0.9] lg:origin-center">
+        <div className="max-w-5xl mx-auto w-full">
+          <div className="flex flex-row items-center gap-4 sm:gap-6 md:gap-8">
+            {/* Profile Photo - Separate from card */}
+            <div className="flex-shrink-0 self-center">
+              <img 
+                src="/about_me_prof.jpeg" 
+                alt="Alex Brightman" 
+                className="rounded-full w-[168px] h-[168px] sm:w-[240px] sm:h-[240px] md:w-[288px] md:h-[288px] lg:w-[336px] lg:h-[336px] object-cover shadow-lg"
+              />
+            </div>
+            
+            {/* About Me Text - In its own card */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-5 sm:p-7 md:p-12 shadow-sm border border-gray-200 flex-1">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-gray-800 mb-3 sm:mb-4 md:mb-6">
+                About Me
+              </h2>
+              <div className="space-y-2.5 sm:space-y-3 md:space-y-4 text-gray-700 font-light leading-relaxed text-xs sm:text-sm md:text-base lg:text-lg">
+                <p>
+                  I've been in the restaurant industry since I was 15 — host, line cook, waiter, FOH manager — I've done it all. While working tables and studying computer science, I noticed something: customers love to scroll through Instagram and reviews just to see what a dish looks like before they order.
+                </p>
+                <p>
+                  That's what inspired me to build The Menu Guide — a way for restaurants to show off their food while making ordering easier and faster.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

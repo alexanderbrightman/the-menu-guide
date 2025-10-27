@@ -58,8 +58,9 @@ export async function POST(request: NextRequest) {
 
     // Get base URL with proper protocol and port
     const host = request.headers.get('host') || 'localhost:3000'
-    const protocol = request.headers.get('x-forwarded-proto') || 'http'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`
+    const forwardedProto = request.headers.get('x-forwarded-proto')
+    const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
+    const baseUrl = `${protocol}://${host}`
 
     // Create Stripe customer portal session
     try {
