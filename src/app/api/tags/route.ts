@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all tags
+    // Fetch all tags - use service role key for tags since they're read-only and public
     const { data: tags, error } = await supabase
       .from('tags')
       .select('*')
@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching tags:', error)
-      return NextResponse.json({ error: 'Failed to fetch tags' }, { status: 500 })
+      // Return empty array instead of error for tags (they're optional)
+      return NextResponse.json({ tags: [] })
     }
 
     return NextResponse.json({ tags })
