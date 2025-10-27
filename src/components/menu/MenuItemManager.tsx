@@ -130,6 +130,8 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
     if (!formData.title.trim()) return
     if (!supabase) {
       setMessage('Error: Supabase client not available')
@@ -175,11 +177,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
       if (response.ok) {
         setItems([data.item, ...items])
-        resetForm()
-        setShowCreateDialog(false)
-        setMessage('Menu item created successfully!')
-        setTimeout(() => setMessage(''), 3000)
-        onDataChange?.()
+        // Delay to prevent race conditions
+        setTimeout(() => {
+          resetForm()
+          setShowCreateDialog(false)
+          setMessage('Menu item created successfully!')
+          setTimeout(() => setMessage(''), 3000)
+          onDataChange?.()
+        }, 100)
       } else {
         setMessage(`Error: ${data.error}`)
       }
@@ -191,6 +196,8 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
   const handleEditItem = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
     if (!editingItem || !formData.title.trim()) return
     if (!supabase) {
       setMessage('Error: Supabase client not available')
@@ -239,11 +246,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         setItems(items.map(item => 
           item.id === editingItem.id ? { ...item, ...data.item } : item
         ))
-        setEditingItem(null)
-        resetForm()
-        setMessage('Menu item updated successfully!')
-        setTimeout(() => setMessage(''), 3000)
-        onDataChange?.()
+        // Delay to prevent race conditions
+        setTimeout(() => {
+          setEditingItem(null)
+          resetForm()
+          setMessage('Menu item updated successfully!')
+          setTimeout(() => setMessage(''), 3000)
+          onDataChange?.()
+        }, 100)
       } else {
         setMessage(`Error: ${data.error}`)
       }
