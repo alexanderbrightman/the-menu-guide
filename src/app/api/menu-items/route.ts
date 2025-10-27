@@ -117,9 +117,13 @@ export async function POST(request: NextRequest) {
     const sanitizedPrice = price ? sanitizePrice(price) : null
     const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : ''
 
-    // Validate required fields
+    // Validate required fields early
     if (!sanitizedTitle) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
+
+    if (!sanitizedImageUrl) {
+      return NextResponse.json({ error: 'Image URL is required' }, { status: 400 })
     }
 
     // Create the menu item
@@ -131,7 +135,7 @@ export async function POST(request: NextRequest) {
         description: sanitizedDescription,
         price: sanitizedPrice,
         category_id: category_id || null,
-        image_url: sanitizedImageUrl || ''
+        image_url: sanitizedImageUrl
       })
       .select()
       .single()
@@ -141,7 +145,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create menu item' }, { status: 500 })
     }
 
-    // Add tags if provided
+    // Add tags if provided (in parallel for better performance)
     if (tag_ids && tag_ids.length > 0) {
       const tagInserts = tag_ids.map((tagId: number) => ({
         menu_item_id: item.id,
@@ -154,7 +158,7 @@ export async function POST(request: NextRequest) {
 
       if (tagError) {
         console.error('Error adding tags:', tagError)
-        // Don't fail the whole request if tags fail
+        // Don't fail the whole request if tags fail - item was already created
       }
     }
 

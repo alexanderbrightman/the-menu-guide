@@ -177,14 +177,11 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
       if (response.ok) {
         setItems([data.item, ...items])
-        // Delay to prevent race conditions
-        setTimeout(() => {
-          resetForm()
-          setShowCreateDialog(false)
-          setMessage('Menu item created successfully!')
-          setTimeout(() => setMessage(''), 3000)
-          onDataChange?.()
-        }, 100)
+        resetForm()
+        setShowCreateDialog(false)
+        setMessage('Menu item created successfully!')
+        setTimeout(() => setMessage(''), 3000)
+        onDataChange?.()
       } else {
         setMessage(`Error: ${data.error}`)
       }

@@ -7,6 +7,7 @@ export interface ImageOptimizationOptions {
   maxHeight?: number
   quality?: number
   maxFileSize?: number // in MB
+  format?: 'jpeg' | 'webp' // Image format
 }
 
 export interface OptimizedImage {
@@ -25,10 +26,11 @@ export async function optimizeImage(
   options: ImageOptimizationOptions = {}
 ): Promise<OptimizedImage> {
   const {
-    maxWidth = 1200,
-    maxHeight = 1200,
-    quality = 0.8,
-    maxFileSize = 5 // 5MB max
+    maxWidth = 800,
+    maxHeight = 800,
+    quality = 0.75,
+    maxFileSize = 7, // 7MB max
+    format = 'jpeg'
   } = options
 
   // Validate file type
@@ -40,6 +42,10 @@ export async function optimizeImage(
   if (file.size > maxFileSize * 1024 * 1024) {
     throw new Error(`Image must be smaller than ${maxFileSize}MB`)
   }
+
+  // Determine output format
+  const outputMimeType = format === 'webp' ? 'image/webp' : 'image/jpeg'
+  const outputFormat = format === 'webp' ? 'webp' : 'jpeg'
 
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas')
@@ -64,6 +70,10 @@ export async function optimizeImage(
         // Draw and compress image
         ctx?.drawImage(img, 0, 0, width, height)
         
+        // Create file name with correct extension
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name
+        const fileName = `${baseName}.${outputFormat}`
+
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -72,13 +82,13 @@ export async function optimizeImage(
             }
 
             // Create optimized file
-            const optimizedFile = new File([blob], file.name, {
-              type: 'image/jpeg', // Always convert to JPEG for better compression
+            const optimizedFile = new File([blob], fileName, {
+              type: outputMimeType,
               lastModified: Date.now()
             })
 
             // Create preview
-            const preview = canvas.toDataURL('image/jpeg', 0.7)
+            const preview = canvas.toDataURL(outputMimeType, 0.7)
 
             resolve({
               file: optimizedFile,
@@ -88,7 +98,7 @@ export async function optimizeImage(
               compressionRatio: Math.round((1 - optimizedFile.size / file.size) * 100)
             })
           },
-          'image/jpeg',
+          outputMimeType,
           quality
         )
       } catch (error) {
@@ -134,12 +144,12 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
     }
   }
 
-  // Check file size (5MB max for better performance)
-  const maxSize = 5 * 1024 * 1024
+  // Check file size (7MB max for modern cameras)
+  const maxSize = 7 * 1024 * 1024
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: 'Image must be smaller than 5MB'
+      error: 'Image must be smaller than 7MB'
     }
   }
 

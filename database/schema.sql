@@ -54,11 +54,9 @@ insert into tags (name) values
   ('vegetarian'),
   ('dairy-free'),
   ('nut-free'),
-  ('keto'),
-  ('halal'),
-  ('spicy'),
-  ('low-carb'),
-  ('organic')
+  ('shellfish-free'),
+  ('pescatarian'),
+  ('spicy')
 on conflict (name) do nothing;
 
 -- Enable Row Level Security

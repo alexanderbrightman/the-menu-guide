@@ -28,7 +28,8 @@ export function useImageUpload() {
   const uploadImage = useCallback(async (
     file: File,
     userId: string,
-    bucket: string = 'menu_items'
+    bucket: string = 'menu_items',
+    options?: { quality?: number; format?: 'jpeg' | 'webp' }
   ): Promise<UploadResult> => {
     setUploading(true)
     
@@ -53,10 +54,11 @@ export function useImageUpload() {
       })
 
       const optimizedImage = await optimizeImage(file, {
-        maxWidth: 1200,
-        maxHeight: 1200,
-        quality: 0.85,
-        maxFileSize: 5
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: options?.quality || 0.75,
+        maxFileSize: 7,
+        format: options?.format || 'webp'
       })
 
       // Stage 3: Upload

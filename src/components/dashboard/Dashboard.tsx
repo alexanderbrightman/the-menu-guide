@@ -81,10 +81,11 @@ export function Dashboard() {
 
   // Auto-generate QR code when component mounts or profile username changes (only for premium users)
   useEffect(() => {
-    if (user && profile && qrCodeAccess.canAccess && profile.username) {
+    if (user && profile && qrCodeAccess.canAccess && profile.username && !qrCodeUrl) {
       generateQRCode()
     }
-  }, [user, profile?.username, qrCodeAccess.canAccess, generateQRCode])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, profile?.username, qrCodeAccess.canAccess])
 
   const downloadQRCode = () => {
     if (qrCodeUrl) {
