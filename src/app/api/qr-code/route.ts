@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
+    console.log('QR Code for user:', user.id, 'Username:', profile.username)
+
     // Validate premium access for QR code generation
     const premiumValidation = validateApiPremiumAccess(profile, 'QR code generation')
     if (!premiumValidation.isValid) {
@@ -79,6 +81,8 @@ export async function GET(request: NextRequest) {
     const forwardedProto = request.headers.get('x-forwarded-proto')
     const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
     const publicProfileUrl = `${protocol}://${host}/menu/${profile.username}`
+    
+    console.log('Generated QR URL:', publicProfileUrl)
 
     // Generate QR code as PNG buffer
     const qrCodeBuffer = await QRCode.toBuffer(publicProfileUrl, {
