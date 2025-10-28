@@ -124,3 +124,30 @@
     font-family: var(--font-heading), sans-serif;
   }
 }
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Show thin scrollbar on mobile */
+  @media (max-width: 768px) {
+    .scrollbar-mobile {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+    .scrollbar-mobile::-webkit-scrollbar {
+      display: block;
+      height: 4px;
+    }
+    .scrollbar-mobile::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+    }
+  }
+}

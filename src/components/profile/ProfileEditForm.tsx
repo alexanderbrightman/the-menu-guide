@@ -226,38 +226,59 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     if (!file || !profile || !supabase) return
 
     try {
-      // Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${profile.id}.${fileExt}`
-      const filePath = `${profile.id}/${fileName}`
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true })
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError)
-        setMessage(`Upload error: ${uploadError.message}`)
+      setMessage('Uploading avatar...')
+      
+      // Add timeout to prevent hanging
+      const timeoutId = setTimeout(() => {
+        setMessage('Upload timed out. Please try again.')
         return
-      }
+      }, 30000) // 30 second timeout for larger files
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
+      try {
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${profile.id}.${fileExt}`
+        const filePath = `${profile.id}/${fileName}`
 
-      // Update profile with new avatar URL
-      const { error } = await supabase
-        .from('profiles')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', profile.id)
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file, { 
+            upsert: true,
+            cacheControl: '3600',
+            contentType: file.type
+          })
 
-      if (error) {
-        console.error('Profile update error:', error)
-        setMessage(`Error updating avatar: ${error.message}`)
-      } else {
-        await refreshProfile()
-        setMessage('Avatar updated successfully!')
+        if (uploadError) {
+          console.error('Upload error:', uploadError)
+          clearTimeout(timeoutId)
+          setMessage(`Upload error: ${uploadError.message}`)
+          return
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+
+        // Update profile with new avatar URL
+        const { error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: urlData.publicUrl })
+          .eq('id', profile.id)
+
+        if (error) {
+          console.error('Profile update error:', error)
+          clearTimeout(timeoutId)
+          setMessage(`Error updating avatar: ${error.message}`)
+        } else {
+          await refreshProfile()
+          clearTimeout(timeoutId)
+          setMessage('Avatar updated successfully!')
+        }
+      } catch (uploadError) {
+        clearTimeout(timeoutId)
+        console.error('Avatar upload error:', uploadError)
+        setMessage('Error uploading avatar')
       }
     } catch (error) {
       console.error('Avatar upload error:', error)

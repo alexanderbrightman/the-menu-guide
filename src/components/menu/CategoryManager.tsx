@@ -252,9 +252,6 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{category.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          Created {new Date(category.created_at).toLocaleDateString()}
-                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tag, Filter, ChevronDown, X } from 'lucide-react'
+import { Tag, ChevronDown, X, Filter } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -79,74 +79,80 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between py-4">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={profile.avatar_url || ''} />
-                <AvatarFallback>
+      {/* Large Header Photo */}
+      <header className="relative">
+        <div className="h-[20vh] w-full overflow-hidden bg-gray-100">
+          {profile.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              alt={profile.display_name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Avatar className="h-32 w-32">
+                <AvatarFallback className="text-6xl">
                   {profile.display_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">{profile.display_name}</h1>
-                <p className="text-sm text-gray-500">@{profile.username}</p>
-                {profile.bio && (
-                  <div className="mt-2">
-                    <div className="text-sm text-gray-700">
-                      {profile.bio.length > 100 && !isBioExpanded ? (
-                        <>
-                          {profile.bio.substring(0, 100)}...
-                          <button
-                            onClick={() => setIsBioExpanded(true)}
-                            className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
-                          >
-                            <ChevronDown className="h-3 w-3" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {profile.bio}
-                          {profile.bio.length > 100 && isBioExpanded && (
-                            <button
-                              onClick={() => setIsBioExpanded(false)}
-                              className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
-                            >
-                              <ChevronDown className="h-3 w-3 rotate-180" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Restaurant Name - Large Title Below Photo */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+          <h1 className="text-6xl font-bold text-gray-900 text-center">{profile.display_name}</h1>
+          
+          {profile.bio && (
+            <div className="mt-1 text-center">
+              <div className="text-sm text-gray-700 inline-block">
+                {profile.bio.length > 100 && !isBioExpanded ? (
+                  <>
+                    {profile.bio.substring(0, 100)}...
+                    <button
+                      onClick={() => setIsBioExpanded(true)}
+                      className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {profile.bio}
+                    {profile.bio.length > 100 && isBioExpanded && (
+                      <button
+                        onClick={() => setIsBioExpanded(false)}
+                        className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
+                      >
+                        <ChevronDown className="h-3 w-3 rotate-180" />
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Filters */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter Menu
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Category Filter */}
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3">Categories</h3>
-                <div className="flex flex-wrap gap-2">
+        <div className="mb-6">
+          <div className="space-y-1.5">
+            {/* Filter Menu Header */}
+            <div className="mb-1.5">
+              <h3 className="text-sm font-medium text-gray-600">Filter Menu</h3>
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <div className="overflow-x-auto scrollbar-hide scroll-smooth">
+                <div className="flex flex-nowrap gap-1.5 pb-1.5">
                   <Button
                     variant={selectedCategory === 'all' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setSelectedCategory('all')}
+                    className="flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
                   >
                     All Items
                   </Button>
@@ -156,49 +162,51 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       variant={selectedCategory === category.id ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedCategory(category.id)}
+                      className="flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
                     >
                       {category.name}
                     </Button>
                   ))}
                 </div>
               </div>
+            </div>
 
-              {/* Dietary Tags Filter */}
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3">Dietary Preferences</h3>
-                <div className="flex flex-wrap gap-2">
+            {/* Dietary Tags Filter */}
+            <div>
+              <div className="overflow-x-auto scrollbar-hide scroll-smooth">
+                <div className="flex flex-nowrap gap-1.5 pb-1.5">
                   {tags.map((tag) => (
                     <Button
                       key={tag.id}
                       variant={selectedTags.includes(tag.id) ? "default" : "outline"}
                       size="sm"
-                      className="cursor-pointer"
+                      className="cursor-pointer flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
                       onClick={() => toggleTag(tag.id)}
                     >
-                      <Tag className="h-3 w-3 mr-1" />
+                      <Tag className="h-[7.2px] w-[7.2px] mr-[2.55px]" />
                       {tag.name}
                     </Button>
                   ))}
                 </div>
               </div>
+            </div>
 
               {/* Clear Filters */}
               {hasActiveFilters && (
-                <div className="pt-4 border-t">
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                <div className="pt-1.5 border-t">
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="py-[3.4px] px-[6.8px] text-[9px]">
                     Clear All Filters
                   </Button>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Menu Items */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Menu</h2>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs text-gray-500">
               {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
               {hasActiveFilters && ' (filtered)'}
             </div>
@@ -247,10 +255,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       </div>
                     )}
                     <div className="p-4">
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold text-lg">{item.title}</h3>
                         {item.price && (
-                          <div className="text-gray-900 font-semibold">
+                          <div className="text-gray-900 font-semibold whitespace-nowrap ml-2">
                             ${item.price.toFixed(2)}
                           </div>
                         )}
