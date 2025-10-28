@@ -105,7 +105,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         </div>
         
         {/* Restaurant Name - Large Title Below Photo */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
           <h1 className="text-6xl font-bold text-gray-900 text-center">{profile.display_name}</h1>
           
           {profile.bio && (
@@ -157,7 +157,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                     variant={selectedCategory === 'all' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => startTransition(() => setSelectedCategory('all'))}
-                    className="flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
+                    className="flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
                     disabled={isPending}
                   >
                     All Items
@@ -168,7 +168,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       variant={selectedCategory === category.id ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => startTransition(() => setSelectedCategory(category.id))}
-                      className="flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
+                      className="flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
                       disabled={isPending}
                     >
                       {category.name}
@@ -187,11 +187,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       key={tag.id}
                       variant={selectedTags.includes(tag.id) ? "default" : "outline"}
                       size="sm"
-                      className="cursor-pointer flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
+                      className="cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
                       onClick={() => toggleTag(tag.id)}
                       disabled={isPending}
                     >
-                      <Tag className="h-[7.2px] w-[7.2px] mr-[2.55px]" />
+                      <Tag className="h-[5px] w-[5px] mr-[2.805px]" />
                       {tag.name}
                     </Button>
                   ))}
@@ -202,7 +202,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               {/* Clear Filters */}
               {hasActiveFilters && (
                 <div className="pt-1.5 border-t">
-                  <Button variant="outline" size="sm" onClick={clearFilters} className="py-[3.4px] px-[6.8px] text-[9px]" disabled={isPending}>
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="py-[3.74px] px-[7.48px] text-[9.9px]" disabled={isPending}>
                     Clear All Filters
                   </Button>
                 </div>

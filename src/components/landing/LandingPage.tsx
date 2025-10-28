@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { X, ArrowRight, ChevronDown } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { X, ArrowRight, ChevronDown, Tag, DollarSign } from 'lucide-react'
 
 export function LandingPage() {
   const [showAuthForm, setShowAuthForm] = useState(false)
@@ -77,76 +79,199 @@ export function LandingPage() {
               What We're All About
             </h2>
             <p className="text-base sm:text-lg md:text-2xl lg:text-3xl font-light text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Hey there! We're here to make your restaurant's menu game stronger. Think of us as your digital menu sidekick.
+              Hey there! We're here to make your restaurant's menu game stronger.
             </p>
           </div>
 
-          {/* Feature cards grid */}
-          <div className="grid md:grid-cols-2 gap-3 sm:gap-5 md:gap-8 mb-6 sm:mb-10 md:mb-14">
-            {/* Card 1 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Photo-Friendly</h3>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Show off your best dishes with crisp images that make customers hungry.</p>
-            </div>
+          {/* Context paragraph */}
+          <div className="mb-6 sm:mb-8 md:mb-12">
+            <p className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Here's what your menu could look like — beautiful photos, clear descriptions, and dietary info that helps customers make informed choices.
+            </p>
+          </div>
 
-            {/* Card 2 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Dietary Filters</h3>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Let customers find gluten-free, vegan, or spicy options instantly.</p>
-            </div>
+          {/* Example menu cards grid */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-10 md:mb-14">
+            {/* Duck Card */}
+            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
+              <CardContent className="p-0">
+                <div className="aspect-[3/2] overflow-hidden">
+                  <img 
+                    src="/duck_homepg.png" 
+                    alt="Hudson Duck with White Asparagus"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-lg">Hudson Duck with White Asparagus</h3>
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
+                      <DollarSign className="h-4 w-4" />
+                      32
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Hudson vally duck breast, with french white asparagus, wild rice, orange jus
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      nut-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      gluten-free
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Card 3 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Easy Updates</h3>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Display specials without reprinting anything. Change prices instantly.</p>
-            </div>
+            {/* Lobster Card */}
+            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
+              <CardContent className="p-0">
+                <div className="aspect-[3/2] overflow-hidden">
+                  <img 
+                    src="/lobster_homepg.png" 
+                    alt="Lobster Thermidor"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-lg">Lobster Thermidor</h3>
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
+                      <DollarSign className="h-4 w-4" />
+                      34
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Maine lobster with broiled gruyere cheese and turned potatoes
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      nut-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      gluten-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      pescatarian
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Card 4 */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-5 md:p-8 shadow-sm border border-gray-200">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-gray-800 mb-2 sm:mb-3 md:mb-4">Quick Setup</h3>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 font-light leading-relaxed">Get your menu online in minutes, not hours. Upload photos and you're ready.</p>
-            </div>
+            {/* Scallops Card */}
+            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
+              <CardContent className="p-0">
+                <div className="aspect-[3/2] overflow-hidden">
+                  <img 
+                    src="/scallop_homepg.png" 
+                    alt="Scallops with Apple Fennel Salad"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-lg">Scallops with Apple Fennel Salad</h3>
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
+                      <DollarSign className="h-4 w-4" />
+                      29
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Seared scallops, vadauvan spice gravy, apple and fennel salad, charred leeks
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      nut-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      gluten-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      pescatarian
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stew Card */}
+            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
+              <CardContent className="p-0">
+                <div className="aspect-[3/2] overflow-hidden">
+                  <img 
+                    src="/stew_homepg.png" 
+                    alt="Pot au Feu"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-lg">Pot au Feu</h3>
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
+                      <DollarSign className="h-4 w-4" />
+                      28
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Beef shank stew with fresh market vegetables
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      nut-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      gluten-free
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Tag className="h-3 w-3 mr-1" />
+                      dairy-free
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Call to action */}
-          <div className="text-center">
+          <div className="text-center space-y-4">
             <Button 
               onClick={() => setShowAuthForm(true)}
               className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-xl text-base sm:text-lg md:text-xl lg:text-2xl font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-5 sm:px-7 md:px-12 py-3 sm:py-4 md:py-5 lg:py-6 border border-gray-200"
             >
               Start building your menu for free!
-              <ArrowRight className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* About Me Section - Bottom of Page */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20 lg:scale-[0.9] lg:origin-center">
-        <div className="max-w-5xl mx-auto w-full">
-          <div className="flex flex-row items-center gap-4 sm:gap-6 md:gap-8">
-            {/* Profile Photo - Separate from card */}
-            <div className="flex-shrink-0 self-center">
-              <img 
-                src="/about_me_prof.jpeg" 
-                alt="Alex Brightman" 
-                className="rounded-full w-[168px] h-[168px] sm:w-[240px] sm:h-[240px] md:w-[288px] md:h-[288px] lg:w-[336px] lg:h-[336px] object-cover shadow-lg"
-              />
-            </div>
             
-            {/* About Me Text - In its own card */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-5 sm:p-7 md:p-12 shadow-sm border border-gray-200 flex-1">
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-gray-800 mb-3 sm:mb-4 md:mb-6">
-                About Me
-              </h2>
-              <div className="space-y-2.5 sm:space-y-3 md:space-y-4 text-gray-700 font-light leading-relaxed text-xs sm:text-sm md:text-base lg:text-lg">
-                <p>
-                  I've been in the restaurant industry since I was 15 — host, line cook, waiter, FOH manager — I've done it all. While working tables and studying computer science, I noticed something: customers love to scroll through Instagram and reviews just to see what a dish looks like before they order.
-                </p>
-                <p>
-                  That's what inspired me to build The Menu Guide — a way for restaurants to show off their food while making ordering easier and faster.
-                </p>
-              </div>
+            {/* Contact the Builder */}
+            <div>
+              <a 
+                href="https://www.instagram.com/alexanderbrightman/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-base sm:text-lg md:text-xl text-gray-600 hover:text-gray-800 transition-colors inline-flex items-center gap-2 underline decoration-1 underline-offset-2 hover:decoration-2"
+              >
+                Contact the Builder
+              </a>
             </div>
           </div>
         </div>
