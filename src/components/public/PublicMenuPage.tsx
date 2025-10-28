@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +27,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   // Filter menu items based on selected tags and category
   const filteredItems = useMemo(() => {
@@ -49,16 +50,20 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   }, [menuItems, selectedCategory, selectedTags])
 
   const toggleTag = (tagId: number) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    )
+    startTransition(() => {
+      setSelectedTags(prev => 
+        prev.includes(tagId) 
+          ? prev.filter(id => id !== tagId)
+          : [...prev, tagId]
+      )
+    })
   }
 
   const clearFilters = () => {
-    setSelectedTags([])
-    setSelectedCategory('all')
+    startTransition(() => {
+      setSelectedTags([])
+      setSelectedCategory('all')
+    })
   }
 
   const hasActiveFilters = selectedTags.length > 0 || selectedCategory !== 'all'
@@ -151,8 +156,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   <Button
                     variant={selectedCategory === 'all' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSelectedCategory('all')}
+                    onClick={() => startTransition(() => setSelectedCategory('all'))}
                     className="flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
+                    disabled={isPending}
                   >
                     All Items
                   </Button>
@@ -161,8 +167,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       key={category.id}
                       variant={selectedCategory === category.id ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setSelectedCategory(category.id)}
+                      onClick={() => startTransition(() => setSelectedCategory(category.id))}
                       className="flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
+                      disabled={isPending}
                     >
                       {category.name}
                     </Button>
@@ -182,6 +189,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       size="sm"
                       className="cursor-pointer flex-shrink-0 py-[3.4px] px-[6.8px] text-[9px]"
                       onClick={() => toggleTag(tag.id)}
+                      disabled={isPending}
                     >
                       <Tag className="h-[7.2px] w-[7.2px] mr-[2.55px]" />
                       {tag.name}
@@ -194,7 +202,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               {/* Clear Filters */}
               {hasActiveFilters && (
                 <div className="pt-1.5 border-t">
-                  <Button variant="outline" size="sm" onClick={clearFilters} className="py-[3.4px] px-[6.8px] text-[9px]">
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="py-[3.4px] px-[6.8px] text-[9px]" disabled={isPending}>
                     Clear All Filters
                   </Button>
                 </div>

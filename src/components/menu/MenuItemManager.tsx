@@ -513,14 +513,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 preview={imagePreview}
                 disabled={uploading}
               />
-              <div className="text-sm text-gray-500">
-                Or enter an image URL:
-              </div>
-              <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                placeholder="https://example.com/image.jpg"
-              />
             </div>
             
             <div className="space-y-2">
@@ -570,7 +562,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       </Dialog>
 
       {/* Edit Item Dialog */}
-      <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null) }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Menu Item</DialogTitle>
@@ -622,14 +614,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 selectedFile={imageFile}
                 preview={imagePreview}
                 disabled={uploading}
-              />
-              <div className="text-sm text-gray-500">
-                Or enter an image URL:
-              </div>
-              <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                placeholder="https://example.com/image.jpg"
               />
             </div>
             

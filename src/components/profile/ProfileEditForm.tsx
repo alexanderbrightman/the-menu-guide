@@ -26,8 +26,12 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [retryCount, setRetryCount] = useState(0)
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
-  const [usernameMessage, setUsernameMessage] = useState('')
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
+    profile?.username ? 'available' : 'idle'
+  )
+  const [usernameMessage, setUsernameMessage] = useState(
+    profile?.username ? '✓ This is your current username' : ''
+  )
 
   // Debounced username validation
   const validateUsername = useCallback(async (username: string) => {
@@ -102,6 +106,22 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     }
   }, [profile?.username])
 
+  // Update form data when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        display_name: profile.display_name || '',
+        bio: profile.bio || '',
+        username: profile.username || ''
+      })
+      // Immediately validate if username is the same
+      if (profile.username) {
+        setUsernameStatus('available')
+        setUsernameMessage('✓ This is your current username')
+      }
+    }
+  }, [profile])
+
   // Debounce username validation
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -113,6 +133,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submitted, usernameStatus:', usernameStatus, 'loading:', loading)
     setLoading(true)
     setMessage('')
 
@@ -286,8 +307,15 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     }
   }
 
+  const handleDialogOpenChange = (open: boolean) => {
+    // Only close if explicitly closed (not during submission)
+    if (!open && !loading) {
+      onClose()
+    }
+  }
+
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
@@ -406,6 +434,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             <Button 
               type="submit" 
               disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
+              onClick={() => console.log('Button clicked, disabled:', loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid')}
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
