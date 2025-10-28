@@ -85,7 +85,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   return (
     <div className="min-h-screen bg-white">
       {/* Large Header Photo */}
-      <header className="relative">
+      <header className="relative max-w-screen-2xl mx-auto w-full">
         <div className="h-[20vh] w-full overflow-hidden bg-gray-100">
           {profile.avatar_url ? (
             <img 

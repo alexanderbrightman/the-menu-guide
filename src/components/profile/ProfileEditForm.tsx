@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Upload, Save, X } from 'lucide-react'
+import { useImageUpload } from '@/hooks/useImageUpload'
 
 interface ProfileEditFormProps {
   onClose: () => void
@@ -18,6 +19,7 @@ interface ProfileEditFormProps {
 
 export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const { profile, refreshProfile } = useAuth()
+  const { uploadImage, uploading } = useImageUpload()
   const [formData, setFormData] = useState({
     display_name: profile?.display_name || '',
     bio: profile?.bio || '',
@@ -249,61 +251,28 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     try {
       setMessage('Uploading avatar...')
       
-      // Add timeout to prevent hanging
-      const timeoutId = setTimeout(() => {
-        setMessage('Upload timed out. Please try again.')
-        return
-      }, 30000) // 30 second timeout for larger files
+      // Use optimized image upload hook
+      const result = await uploadImage(file, profile.id, 'avatars', {
+        quality: 0.8,
+        format: 'webp'
+      })
 
-      try {
-        // Upload to Supabase Storage
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${profile.id}.${fileExt}`
-        const filePath = `${profile.id}/${fileName}`
+      // Update profile with new avatar URL
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: result.url })
+        .eq('id', profile.id)
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, file, { 
-            upsert: true,
-            cacheControl: '3600',
-            contentType: file.type
-          })
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError)
-          clearTimeout(timeoutId)
-          setMessage(`Upload error: ${uploadError.message}`)
-          return
-        }
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath)
-
-        // Update profile with new avatar URL
-        const { error } = await supabase
-          .from('profiles')
-          .update({ avatar_url: urlData.publicUrl })
-          .eq('id', profile.id)
-
-        if (error) {
-          console.error('Profile update error:', error)
-          clearTimeout(timeoutId)
-          setMessage(`Error updating avatar: ${error.message}`)
-        } else {
-          await refreshProfile()
-          clearTimeout(timeoutId)
-          setMessage('Avatar updated successfully!')
-        }
-      } catch (uploadError) {
-        clearTimeout(timeoutId)
-        console.error('Avatar upload error:', uploadError)
-        setMessage('Error uploading avatar')
+      if (error) {
+        console.error('Profile update error:', error)
+        setMessage(`Error updating avatar: ${error.message}`)
+      } else {
+        await refreshProfile()
+        setMessage('Avatar updated successfully!')
       }
     } catch (error) {
       console.error('Avatar upload error:', error)
-      setMessage('Error uploading avatar')
+      setMessage('Error uploading avatar. Please try again.')
     }
   }
 
@@ -345,6 +314,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                 type="file"
                 accept="image/*"
                 onChange={handleAvatarUpload}
+                disabled={uploading}
                 className="hidden"
               />
             </div>
