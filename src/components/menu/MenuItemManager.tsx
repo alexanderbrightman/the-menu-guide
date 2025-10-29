@@ -49,7 +49,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const [imagePreview, setImagePreview] = useState<string>('')
   
   // Use optimized image upload hook
-  const { uploading, uploadImage } = useImageUpload()
+  const { uploading, uploadImage, resetProgress } = useImageUpload()
 
   const fetchData = async () => {
     if (!user) return
@@ -104,6 +104,14 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     fetchData()
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reset form and upload state when dialog closes
+  useEffect(() => {
+    if (!showCreateDialog) {
+      resetForm()
+      resetProgress()
+    }
+  }, [showCreateDialog, resetProgress])
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -155,6 +163,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         } catch (error) {
           console.error('Image upload failed:', error)
           setMessage('Error uploading image. Please try again.')
+          resetProgress()
           return
         }
       }
@@ -178,16 +187,19 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       if (response.ok) {
         setItems([data.item, ...items])
         resetForm()
+        resetProgress()
         setShowCreateDialog(false)
         setMessage('Menu item created successfully!')
         setTimeout(() => setMessage(''), 3000)
         onDataChange?.()
       } else {
         setMessage(`Error: ${data.error}`)
+        resetProgress()
       }
     } catch (error) {
       console.error('Error creating menu item:', error)
       setMessage('Error creating menu item')
+      resetProgress()
     }
   }
 
@@ -218,6 +230,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         } catch (error) {
           console.error('Image upload failed:', error)
           setMessage('Error uploading image. Please try again.')
+          resetProgress()
           return
         }
       }

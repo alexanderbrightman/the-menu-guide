@@ -63,6 +63,14 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
     fetchCategories()
   }, [user, fetchCategories])
 
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!showCreateDialog && !editingCategory) {
+      setCategoryName('')
+      setMessage('')
+    }
+  }, [showCreateDialog, editingCategory])
+
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!categoryName.trim()) return
