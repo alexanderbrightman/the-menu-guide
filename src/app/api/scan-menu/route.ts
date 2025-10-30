@@ -103,7 +103,7 @@ Rules:
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout
     const parseResponse = await openai.chat.completions.create({
-      model: 'gpt-5-nano',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'user',
