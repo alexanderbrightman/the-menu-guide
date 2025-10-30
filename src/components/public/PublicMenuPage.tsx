@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useTransition } from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -83,7 +82,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   }, [selectedItem])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F2EE' }}>
       {/* Large Header Photo */}
       <header className="relative max-w-screen-2xl mx-auto w-full">
         <div className="h-[20vh] w-full overflow-hidden bg-gray-100">
@@ -221,82 +220,72 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           </div>
 
           {filteredItems.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <Filter className="h-12 w-12 mx-auto" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-                <p className="text-gray-500 mb-4">
-                  {hasActiveFilters 
-                    ? 'Try adjusting your filters to see more items.'
-                    : 'This menu is empty.'
-                  }
-                </p>
-                {hasActiveFilters && (
-                  <Button variant="outline" onClick={clearFilters}>
-                    Clear Filters
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+            <div className="text-center py-12 border-t border-gray-200">
+              <div className="text-gray-400 mb-4">
+                <Filter className="h-12 w-12 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
+              <p className="text-gray-500 mb-4">
+                {hasActiveFilters 
+                  ? 'Try adjusting your filters to see more items.'
+                  : 'This menu is empty.'
+                }
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {filteredItems.map((item) => (
-                <Card 
+                <div 
                   key={item.id} 
-                  className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0 cursor-pointer hover:scale-105 transform"
+                  className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
                   onClick={() => setSelectedItem(item)}
                 >
-                  <CardContent className="p-0">
-                    {item.image_url && (
-                      <div className="aspect-[3/2] overflow-hidden">
-                        <img 
-                          src={item.image_url} 
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                          loading="lazy"
-                          decoding="async"
-                          width={400}
-                          height={267}
-                        />
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{item.title}</h3>
-                        {item.price && (
-                          <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
-                            ${item.price.toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {item.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-                      
-                      {item.menu_categories && (
-                        <Badge variant="secondary" className="mb-2">
-                          {item.menu_categories.name}
-                        </Badge>
-                      )}
-                      
-                      {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {item.menu_item_tags.map((itemTag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              <Tag className="h-3 w-3 mr-1" />
-                              {itemTag.tags.name}
-                            </Badge>
-                          ))}
+                  {item.image_url && (
+                    <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                      <img 
+                        src={item.image_url} 
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                        loading="lazy"
+                        decoding="async"
+                        width={400}
+                        height={267}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-lg">{item.title}</h3>
+                      {item.price && (
+                        <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+                          ${item.price.toFixed(2)}
                         </div>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                    
+                    {item.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
+                    
+                    {item.menu_item_tags && item.menu_item_tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {item.menu_item_tags.map((itemTag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            <Tag className="h-3 w-3 mr-1" />
+                            {itemTag.tags.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}
