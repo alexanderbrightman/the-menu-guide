@@ -107,8 +107,8 @@ export function LandingPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-lg">Hudson Duck with White Asparagus</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
-                      <DollarSign className="h-4 w-4" />
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
+                      <span className="mr-1">$</span>
                       32
                     </div>
                   </div>
@@ -144,8 +144,8 @@ export function LandingPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-lg">Lobster Thermidor</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
-                      <DollarSign className="h-4 w-4" />
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
+                      <span className="mr-1">$</span>
                       34
                     </div>
                   </div>
@@ -185,8 +185,8 @@ export function LandingPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-lg">Scallops with Apple Fennel Salad</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
-                      <DollarSign className="h-4 w-4" />
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
+                      <span className="mr-1">$</span>
                       29
                     </div>
                   </div>
@@ -226,8 +226,8 @@ export function LandingPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-lg">Pot au Feu</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center">
-                      <DollarSign className="h-4 w-4" />
+                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
+                      <span className="mr-1">$</span>
                       28
                     </div>
                   </div>
@@ -254,10 +254,10 @@ export function LandingPage() {
           </div>
 
           {/* Call to action */}
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3">
             <Button 
               onClick={() => setShowAuthForm(true)}
-              className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-xl text-base sm:text-lg md:text-xl lg:text-2xl font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-5 sm:px-7 md:px-12 py-3 sm:py-4 md:py-5 lg:py-6 border border-gray-200"
+              className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-lg text-sm sm:text-base md:text-lg font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-3.5 border border-gray-200"
             >
               Start building your menu for free!
             </Button>
@@ -268,7 +268,7 @@ export function LandingPage() {
                 href="https://www.instagram.com/alexanderbrightman/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-base sm:text-lg md:text-xl text-gray-600 hover:text-gray-800 transition-colors inline-flex items-center gap-2 underline decoration-1 underline-offset-2 hover:decoration-2"
+                className="text-sm sm:text-base md:text-lg text-gray-600 hover:text-gray-800 transition-colors inline-flex items-center gap-1 underline decoration-1 underline-offset-2"
               >
                 Contact the Builder
               </a>

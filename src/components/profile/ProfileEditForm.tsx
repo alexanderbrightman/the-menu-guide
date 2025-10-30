@@ -306,7 +306,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
               <Label htmlFor="avatar-upload" className="cursor-pointer">
                 <div className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800">
                   <Upload className="h-4 w-4" />
-                  <span>Change Avatar</span>
+                  <span>Change Menu Header</span>
                 </div>
               </Label>
               <input

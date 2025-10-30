@@ -11,12 +11,14 @@ import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { CategoryManager } from '@/components/menu/CategoryManager'
 import { MenuItemManager } from '@/components/menu/MenuItemManager'
+import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
 import { UpgradeCard } from '@/components/payment/UpgradeCard'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
+  const premiumAccess = usePremiumFeature('menu scanning')
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [qrCodeLoading, setQrCodeLoading] = useState(false)
@@ -160,6 +162,17 @@ export function Dashboard() {
               <Button variant="outline" onClick={() => setShowProfileEdit(true)}>
                 Edit Profile
               </Button>
+              {user && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const event = new CustomEvent('open-scan-menu')
+                    window.dispatchEvent(event)
+                  }}
+                >
+                  Scan Menu
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -227,6 +240,11 @@ export function Dashboard() {
         <div className="mt-8 space-y-4">
           <SubscriptionExpiryWarning showCard={true} />
           <UpgradeCard />
+          {/* Hidden instance of ScanMenuModal to handle opening via event */}
+          {user && (
+            <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => {}}
+            />
+          )}
         </div>
       </div>
 

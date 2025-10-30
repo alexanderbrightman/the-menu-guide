@@ -373,6 +373,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                   <ChevronUp className="h-4 w-4 transition-transform duration-300 group-hover:animate-bounce" />
                 )}
               </Button>
+              {/* Scan Menu button moved to Dashboard next to Edit Profile */}
               <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
