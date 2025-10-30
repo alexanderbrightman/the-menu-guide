@@ -266,7 +266,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold text-lg">{item.title}</h3>
                         {item.price && (
-                          <div className="text-gray-900 font-semibold whitespace-nowrap ml-2">
+                          <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
                             ${item.price.toFixed(2)}
                           </div>
                         )}
@@ -353,7 +353,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 <div className="flex items-start justify-between mb-4">
                   <h2 className="text-3xl font-bold text-gray-900">{selectedItem.title}</h2>
                   {selectedItem.price && (
-                    <div className="text-2xl font-semibold text-gray-900">
+                    <div className="text-base font-semibold text-gray-900">
                       ${selectedItem.price.toFixed(2)}
                     </div>
                   )}
