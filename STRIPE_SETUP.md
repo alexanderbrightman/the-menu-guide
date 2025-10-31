@@ -77,7 +77,7 @@ Then use the ngrok URL for your webhook endpoint.
 ## 🎉 **You're All Set!**
 
 Once configured, your users can:
-- ✅ Upgrade to Pro plan ($18/month)
+- ✅ Upgrade to Pro plan ($25/month)
 - ✅ Make their menus public
 - ✅ Generate QR codes
 - ✅ Access all premium features

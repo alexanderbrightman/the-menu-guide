@@ -99,7 +99,7 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
             Premium Member
           </Badge>
           <span className="text-sm text-green-600">
-            $18/month
+            $25/month
           </span>
         </div>
         
@@ -161,7 +161,7 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
         
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold text-orange-800">$18</div>
+            <div className="text-2xl font-bold text-orange-800">$25</div>
             <div className="text-sm text-orange-600">per month</div>
           </div>
           <Button 

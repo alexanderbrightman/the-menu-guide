@@ -12,5 +12,5 @@ export const STRIPE_CONFIG = {
   priceId: process.env.STRIPE_PRICE_ID || 'price_1234567890', // You'll need to create this in Stripe
   currency: 'usd',
   interval: 'month',
-  amount: 1800, // $18.00 in cents
+  amount: 2500, // $25.00 in cents
 }

@@ -72,7 +72,7 @@ src/
 - **Menu Management**: Create categories and add menu items with photos
 - **Dietary Tagging**: Tag items with dietary restrictions (gluten-free, vegan, etc.)
 - **QR Code Generation**: Generate QR codes for public menu access
-- **Subscription Management**: Stripe integration for $18/month Pro plan
+- **Subscription Management**: Stripe integration for $25/month Pro plan
 - **Public Menus**: Customers can view published menus with dietary filtering
 
 ## 🔒 Security
@@ -85,7 +85,7 @@ src/
 ## 💳 Subscription Model
 
 - **Free Plan**: Upload and organize menu items privately
-- **Pro Plan ($18/month)**: Publish menu publicly and generate QR codes
+- **Pro Plan ($25/month)**: Publish menu publicly and generate QR codes
 - Stripe webhooks automatically update subscription status
 
 ## 🎨 Design Inspiration
