@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,8 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag, ChevronDown, ChevronUp, Upload, X } from 'lucide-react'
 import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
 
@@ -47,6 +46,10 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
+  
+  // File input refs
+  const createFileInputRef = useRef<HTMLInputElement>(null)
+  const editFileInputRef = useRef<HTMLInputElement>(null)
   
   // Use optimized image upload hook
   const { uploading, uploadImage, resetProgress } = useImageUpload()
@@ -112,6 +115,13 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     }
   }, [showCreateDialog, resetProgress])
 
+  // Reset upload state when edit dialog closes
+  useEffect(() => {
+    if (!editingItem) {
+      resetProgress()
+    }
+  }, [editingItem, resetProgress])
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -134,6 +144,18 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const handleImageRemove = () => {
     setImageFile(null)
     setImagePreview('')
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const previewUrl = event.target?.result as string
+        handleImageSelect(file, previewUrl)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleCreateItem = async (e: React.FormEvent) => {
@@ -520,13 +542,39 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             
             <div className="space-y-2">
               <Label>Image</Label>
-              <ImageUpload
-                onImageSelect={handleImageSelect}
-                onImageRemove={handleImageRemove}
-                selectedFile={imageFile}
-                preview={imagePreview}
+              <input
+                ref={createFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileInputChange}
+                className="hidden"
                 disabled={uploading}
               />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => createFileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose Image
+                </Button>
+                {imageFile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleImageRemove}
+                    disabled={uploading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {imageFile && (
+                <p className="text-sm text-gray-600">{imageFile.name}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -622,13 +670,39 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             
             <div className="space-y-2">
               <Label>Image</Label>
-              <ImageUpload
-                onImageSelect={handleImageSelect}
-                onImageRemove={handleImageRemove}
-                selectedFile={imageFile}
-                preview={imagePreview}
+              <input
+                ref={editFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileInputChange}
+                className="hidden"
                 disabled={uploading}
               />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => editFileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose Image
+                </Button>
+                {imageFile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleImageRemove}
+                    disabled={uploading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {imageFile && (
+                <p className="text-sm text-gray-600">{imageFile.name}</p>
+              )}
             </div>
             
             <div className="space-y-2">
