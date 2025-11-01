@@ -81,25 +81,6 @@ export function Dashboard() {
     }
   }, [qrCodeUrl])
 
-  // Refresh session when component mounts to ensure user has valid session
-  useEffect(() => {
-    const refreshSession = async () => {
-      if (user && supabase) {
-        try {
-          const { data: { session }, error } = await supabase.auth.refreshSession()
-          if (error) {
-            console.error('Error refreshing session:', error)
-          } else if (session) {
-            console.log('Session refreshed successfully')
-          }
-        } catch (error) {
-          console.error('Error refreshing session:', error)
-        }
-      }
-    }
-    refreshSession()
-  }, [user])
-
   // Auto-generate QR code when component mounts or profile username changes (only for premium users)
   useEffect(() => {
     if (user && profile && qrCodeAccess.canAccess && profile.username && !qrCodeUrl) {
