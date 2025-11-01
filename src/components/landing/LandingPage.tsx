@@ -339,7 +339,7 @@ export function LandingPage() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="rounded-xl shadow-xl border border-gray-200 max-w-sm w-full max-h-[85vh] overflow-hidden bg-white">
             <div className="p-6 pb-4">
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-medium text-slate-900">Welcome to The Menu Guide</h2>
                   <p className="text-sm text-slate-600 mt-1">Sign in to your account or create a new one</p>
