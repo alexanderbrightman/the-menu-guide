@@ -100,22 +100,24 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     <div className="min-h-screen" style={{ backgroundColor: '#F4F2EE' }}>
       {/* Large Header Photo */}
       <header className="relative max-w-screen-2xl mx-auto w-full">
-        <div className="h-[20vh] w-full overflow-hidden bg-gray-100">
-          {profile.avatar_url ? (
-            <img 
-              src={profile.avatar_url} 
-              alt={profile.display_name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Avatar className="h-32 w-32">
-                <AvatarFallback className="text-6xl">
-                  {profile.display_name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          )}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="h-[20vh] w-full overflow-hidden rounded-lg bg-gray-100">
+            {profile.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt={profile.display_name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Avatar className="h-32 w-32">
+                  <AvatarFallback className="text-6xl">
+                    {profile.display_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Restaurant Name - Large Title Below Photo */}

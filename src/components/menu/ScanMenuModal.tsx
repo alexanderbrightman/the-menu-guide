@@ -165,15 +165,37 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
               <ScanLine className="h-5 w-5" />
               Scan Your Menu
             </DialogTitle>
-            <DialogDescription>
-              Upload a photo or PDF of your menu and we'll extract the items automatically
-            </DialogDescription>
           </DialogHeader>
+          <div className="text-sm text-gray-600 space-y-2 mb-4">
+            <p className="font-medium">Upload a clear, well-lit image of your menu for best results.</p>
+            <ul className="space-y-1 text-sm ml-5">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>High-quality images process faster and more accurately</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Menu items will be automatically added to your profile</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Remember to add photos, allergen tags, and verify all details</span>
+              </li>
+            </ul>
+          </div>
 
+          <Input
+            id="menu-file-input"
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          
           <div className="space-y-4">
             {!loading && !message && (
               <>
-                {filePreview ? (
+                {filePreview && (
                   <div className="space-y-3">
                     <div className="relative">
                       <img
@@ -195,25 +217,6 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
                       {selectedFile?.name} ({((selectedFile?.size || 0) / 1024 / 1024).toFixed(2)} MB)
                     </p>
                   </div>
-                ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                    <label htmlFor="menu-file-input" className="cursor-pointer">
-                      <p className="text-sm font-medium text-gray-700 mb-1">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Images (JPEG, PNG, WebP) or PDF • Max 10MB
-                      </p>
-                    </label>
-                    <Input
-                      id="menu-file-input"
-                      type="file"
-                      accept="image/*,application/pdf"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </div>
                 )}
                 
                 <div className="flex justify-end gap-2">
@@ -225,8 +228,8 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
                     Cancel
                   </Button>
                   <Button
-                    onClick={handleUpload}
-                    disabled={!selectedFile || loading}
+                    onClick={selectedFile ? handleUpload : () => document.getElementById('menu-file-input')?.click()}
+                    disabled={loading}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Upload className="h-4 w-4 mr-2" />
