@@ -329,16 +329,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       {selectedItem && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-          style={{
-            top: 'calc(-1 * env(safe-area-inset-top))',
-            bottom: 'calc(-1 * env(safe-area-inset-bottom))',
-            left: 'calc(-1 * env(safe-area-inset-left))',
-            right: 'calc(-1 * env(safe-area-inset-right))',
-            paddingTop: 'calc(1rem + env(safe-area-inset-top))',
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
-            paddingLeft: 'calc(1rem + env(safe-area-inset-left))',
-            paddingRight: 'calc(1rem + env(safe-area-inset-right))',
-          }}
           onClick={() => setSelectedItem(null)}
         >
           <div 
