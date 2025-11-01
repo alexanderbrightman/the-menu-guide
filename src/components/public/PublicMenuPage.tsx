@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tag, ChevronDown, X, Filter } from 'lucide-react'
+import { ChevronDown, X, Filter } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -19,6 +19,21 @@ interface PublicMenuPageProps {
   categories: MenuCategory[]
   menuItems: MenuItemWithTags[]
   tags: TagType[]
+}
+
+// Helper function to get border color for allergen tags
+const getAllergenBorderColor = (tagName: string): string => {
+  const colorMap: Record<string, string> = {
+    'dairy-free': '#B5C1D9',
+    'gluten-free': '#D48963',
+    'nut-free': '#5C5086',
+    'pescatarian': '#F698A7',
+    'shellfish-free': '#317987',
+    'spicy': '#F04F68',
+    'vegan': '#5F3196',
+    'vegetarian': '#3B91A2'
+  }
+  return colorMap[tagName.toLowerCase()] || ''
 }
 
 export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicMenuPageProps) {
@@ -186,11 +201,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       key={tag.id}
                       variant={selectedTags.includes(tag.id) ? "default" : "outline"}
                       size="sm"
-                      className="cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
+                      className="cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px]"
                       onClick={() => toggleTag(tag.id)}
                       disabled={isPending}
+                      style={{
+                        borderColor: getAllergenBorderColor(tag.name)
+                      }}
                     >
-                      <Tag className="h-[5px] w-[5px] mr-[2.805px]" />
                       {tag.name}
                     </Button>
                   ))}
@@ -277,8 +294,14 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                     {item.menu_item_tags && item.menu_item_tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {item.menu_item_tags.map((itemTag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            <Tag className="h-3 w-3 mr-1" />
+                          <Badge 
+                            key={index} 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{
+                              borderColor: getAllergenBorderColor(itemTag.tags.name)
+                            }}
+                          >
                             {itemTag.tags.name}
                           </Badge>
                         ))}
@@ -306,6 +329,16 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       {selectedItem && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          style={{
+            top: 'calc(-1 * env(safe-area-inset-top))',
+            bottom: 'calc(-1 * env(safe-area-inset-bottom))',
+            left: 'calc(-1 * env(safe-area-inset-left))',
+            right: 'calc(-1 * env(safe-area-inset-right))',
+            paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+            paddingLeft: 'calc(1rem + env(safe-area-inset-left))',
+            paddingRight: 'calc(1rem + env(safe-area-inset-right))',
+          }}
           onClick={() => setSelectedItem(null)}
         >
           <div 
@@ -368,8 +401,14 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">Dietary Information</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedItem.menu_item_tags.map((itemTag, index) => (
-                        <Badge key={index} variant="outline" className="text-sm">
-                          <Tag className="h-3 w-3 mr-1" />
+                        <Badge 
+                          key={index} 
+                          variant="outline" 
+                          className="text-sm"
+                          style={{
+                            borderColor: getAllergenBorderColor(itemTag.tags.name)
+                          }}
+                        >
                           {itemTag.tags.name}
                         </Badge>
                       ))}

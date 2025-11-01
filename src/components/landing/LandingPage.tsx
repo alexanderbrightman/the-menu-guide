@@ -4,9 +4,23 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown, Tag, DollarSign } from 'lucide-react'
+import { X, ArrowRight, ChevronDown, DollarSign } from 'lucide-react'
+
+// Helper function to get border color for allergen tags
+const getAllergenBorderColor = (tagName: string): string => {
+  const colorMap: Record<string, string> = {
+    'dairy-free': '#B5C1D9',
+    'gluten-free': '#D48963',
+    'nut-free': '#5C5086',
+    'pescatarian': '#F698A7',
+    'shellfish-free': '#317987',
+    'spicy': '#F04F68',
+    'vegan': '#5F3196',
+    'vegetarian': '#3B91A2'
+  }
+  return colorMap[tagName.toLowerCase()] || ''
+}
 
 export function LandingPage() {
   const [showAuthForm, setShowAuthForm] = useState(false)
@@ -93,164 +107,207 @@ export function LandingPage() {
           {/* Example menu cards grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-10 md:mb-14">
             {/* Duck Card */}
-            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
-              <CardContent className="p-0">
-                <div className="aspect-[3/2] overflow-hidden">
-                  <img 
-                    src="/duck_homepg.png" 
-                    alt="Hudson Duck with White Asparagus"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-lg">Hudson Duck with White Asparagus</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
-                      <span className="mr-1">$</span>
-                      32
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Hudson vally duck breast, with french white asparagus, wild rice, orange jus
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      nut-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      gluten-free
-                    </Badge>
+            <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
+              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <img 
+                  src="/duck_homepg.png" 
+                  alt="Hudson Duck with White Asparagus"
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">Hudson Duck with White Asparagus</h3>
+                  <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+                    $32
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  Hudson vally duck breast, with french white asparagus, wild rice, orange jus
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('nut-free')
+                    }}
+                  >
+                    nut-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('gluten-free')
+                    }}
+                  >
+                    gluten-free
+                  </Badge>
+                </div>
+              </div>
+            </div>
 
             {/* Lobster Card */}
-            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
-              <CardContent className="p-0">
-                <div className="aspect-[3/2] overflow-hidden">
-                  <img 
-                    src="/lobster_homepg.png" 
-                    alt="Lobster Thermidor"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-lg">Lobster Thermidor</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
-                      <span className="mr-1">$</span>
-                      34
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Maine lobster with broiled gruyere cheese and turned potatoes
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      nut-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      gluten-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      pescatarian
-                    </Badge>
+            <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
+              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <img 
+                  src="/lobster_homepg.png" 
+                  alt="Lobster Thermidor"
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">Lobster Thermidor</h3>
+                  <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+                    $34
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  Maine lobster with broiled gruyere cheese and turned potatoes
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('nut-free')
+                    }}
+                  >
+                    nut-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('gluten-free')
+                    }}
+                  >
+                    gluten-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('pescatarian')
+                    }}
+                  >
+                    pescatarian
+                  </Badge>
+                </div>
+              </div>
+            </div>
 
             {/* Scallops Card */}
-            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
-              <CardContent className="p-0">
-                <div className="aspect-[3/2] overflow-hidden">
-                  <img 
-                    src="/scallop_homepg.png" 
-                    alt="Scallops with Apple Fennel Salad"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-lg">Scallops with Apple Fennel Salad</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
-                      <span className="mr-1">$</span>
-                      29
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Seared scallops, vadauvan spice gravy, apple and fennel salad, charred leeks
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      nut-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      gluten-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      pescatarian
-                    </Badge>
+            <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
+              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <img 
+                  src="/scallop_homepg.png" 
+                  alt="Scallops with Apple Fennel Salad"
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">Scallops with Apple Fennel Salad</h3>
+                  <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+                    $29
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  Seared scallops, vadauvan spice gravy, apple and fennel salad, charred leeks
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('nut-free')
+                    }}
+                  >
+                    nut-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('gluten-free')
+                    }}
+                  >
+                    gluten-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('pescatarian')
+                    }}
+                  >
+                    pescatarian
+                  </Badge>
+                </div>
+              </div>
+            </div>
 
             {/* Stew Card */}
-            <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden p-0">
-              <CardContent className="p-0">
-                <div className="aspect-[3/2] overflow-hidden">
-                  <img 
-                    src="/stew_homepg.png" 
-                    alt="Pot au Feu"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-lg">Pot au Feu</h3>
-                    <div className="text-gray-900 font-semibold whitespace-nowrap ml-2 flex items-center text-sm md:text-base">
-                      <span className="mr-1">$</span>
-                      28
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Beef shank stew with fresh market vegetables
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      nut-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      gluten-free
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      dairy-free
-                    </Badge>
+            <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
+              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <img 
+                  src="/stew_homepg.png" 
+                  alt="Pot au Feu"
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">Pot au Feu</h3>
+                  <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+                    $28
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  Beef shank stew with fresh market vegetables
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('nut-free')
+                    }}
+                  >
+                    nut-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('gluten-free')
+                    }}
+                  >
+                    gluten-free
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{
+                      borderColor: getAllergenBorderColor('dairy-free')
+                    }}
+                  >
+                    dairy-free
+                  </Badge>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Call to action */}
