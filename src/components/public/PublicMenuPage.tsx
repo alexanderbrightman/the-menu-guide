@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useTransition } from 'react'
+import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,63 @@ const getAllergenBorderColor = (tagName: string): string => {
   return colorMap[tagName.toLowerCase()] || ''
 }
 
+// Memoized menu item card component to prevent unnecessary re-renders
+const MenuItemCard = memo(({ item, onSelect }: { item: MenuItemWithTags; onSelect: (item: MenuItemWithTags) => void }) => (
+  <div 
+    className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
+    onClick={() => onSelect(item)}
+  >
+    {item.image_url && (
+      <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
+        <img 
+          src={item.image_url} 
+          alt={item.title}
+          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+          loading="lazy"
+          decoding="async"
+          width={400}
+          height={267}
+        />
+      </div>
+    )}
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-lg">{item.title}</h3>
+        {item.price && (
+          <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+            ${item.price.toFixed(2)}
+          </div>
+        )}
+      </div>
+      
+      {item.description && (
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {item.description}
+        </p>
+      )}
+      
+      {item.menu_item_tags && item.menu_item_tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {item.menu_item_tags.map((itemTag, index) => (
+            <Badge 
+              key={index} 
+              variant="outline" 
+              className="text-xs"
+              style={{
+                borderColor: getAllergenBorderColor(itemTag.tags.name)
+              }}
+            >
+              {itemTag.tags.name}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+))
+
+MenuItemCard.displayName = 'MenuItemCard'
+
 export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicMenuPageProps) {
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -43,42 +100,89 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  // Filter menu items based on selected tags and category
+  // Pre-compute tag ID sets for each menu item (memoized for performance)
+  const itemTagIdSets = useMemo(() => {
+    const tagSets = new Map<number, Set<number>>()
+    menuItems.forEach(item => {
+      const tagIds = new Set(
+        item.menu_item_tags?.map(t => t.tags.id) || []
+      )
+      tagSets.set(item.id, tagIds)
+    })
+    return tagSets
+  }, [menuItems])
+
+  // Use deferred values for smoother transitions
+  const deferredSelectedTags = useDeferredValue(selectedTags)
+  const deferredSelectedCategory = useDeferredValue(selectedCategory)
+  
+  // Convert selectedTags array to Set for O(1) lookups
+  const selectedTagsSet = useMemo(
+    () => new Set(deferredSelectedTags),
+    [deferredSelectedTags]
+  )
+
+  // Optimized filtering with Set-based lookups
   const filteredItems = useMemo(() => {
     let filtered = menuItems
 
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(item => item.category_id === selectedCategory)
+    // Filter by category first (faster to filter early)
+    if (deferredSelectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category_id === deferredSelectedCategory)
     }
 
-    // Filter by tags (if tags are selected, show items that have ALL of those tags)
-    if (selectedTags.length > 0) {
+    // Filter by tags using Set for O(1) lookups instead of O(n) array includes
+    if (selectedTagsSet.size > 0) {
       filtered = filtered.filter(item => {
-        const itemTagIds = item.menu_item_tags?.map(t => t.tags.id) || []
-        return selectedTags.every(tagId => itemTagIds.includes(tagId))
+        const itemTagSet = itemTagIdSets.get(item.id)
+        if (!itemTagSet || itemTagSet.size === 0) return false
+        // Check if item has ALL selected tags using Set operations
+        for (const tagId of selectedTagsSet) {
+          if (!itemTagSet.has(tagId)) {
+            return false
+          }
+        }
+        return true
       })
     }
 
     return filtered
-  }, [menuItems, selectedCategory, selectedTags])
+  }, [menuItems, deferredSelectedCategory, selectedTagsSet, itemTagIdSets])
 
-  const toggleTag = (tagId: number) => {
+  const toggleTag = useCallback((tagId: number) => {
     startTransition(() => {
-      setSelectedTags(prev => 
-        prev.includes(tagId) 
-          ? prev.filter(id => id !== tagId)
-          : [...prev, tagId]
-      )
+      setSelectedTags(prev => {
+        // Use Set for faster lookup, then convert back to array
+        const prevSet = new Set(prev)
+        if (prevSet.has(tagId)) {
+          prevSet.delete(tagId)
+        } else {
+          prevSet.add(tagId)
+        }
+        return Array.from(prevSet)
+      })
     })
-  }
+  }, [])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     startTransition(() => {
       setSelectedTags([])
       setSelectedCategory('all')
     })
-  }
+  }, [])
+
+  const handleCategoryChange = useCallback((categoryId: string) => {
+    startTransition(() => {
+      setSelectedCategory(categoryId)
+    })
+  }, [])
+
+  const handleItemSelect = useCallback((item: MenuItemWithTags) => {
+    setSelectedItem(item)
+  }, [])
+
+  // Memoize selectedTagsSet for tag button checks
+  const selectedTagsSetForButtons = useMemo(() => new Set(selectedTags), [selectedTags])
 
   const hasActiveFilters = selectedTags.length > 0 || selectedCategory !== 'all'
 
@@ -172,7 +276,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   <Button
                     variant={selectedCategory === 'all' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => startTransition(() => setSelectedCategory('all'))}
+                    onClick={() => handleCategoryChange('all')}
                     className="flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
                     disabled={isPending}
                   >
@@ -183,7 +287,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       key={category.id}
                       variant={selectedCategory === category.id ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => startTransition(() => setSelectedCategory(category.id))}
+                      onClick={() => handleCategoryChange(category.id)}
                       className="flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
                       disabled={isPending}
                     >
@@ -201,7 +305,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   {tags.map((tag) => (
                     <Button
                       key={tag.id}
-                      variant={selectedTags.includes(tag.id) ? "default" : "outline"}
+                      variant={selectedTagsSetForButtons.has(tag.id) ? "default" : "outline"}
                       size="sm"
                       className="cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px]"
                       onClick={() => toggleTag(tag.id)}
@@ -259,58 +363,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {filteredItems.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
-                  onClick={() => setSelectedItem(item)}
-                >
-                  {item.image_url && (
-                    <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
-                      <img 
-                        src={item.image_url} 
-                        alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                        loading="lazy"
-                        decoding="async"
-                        width={400}
-                        height={267}
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-lg">{item.title}</h3>
-                      {item.price && (
-                        <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
-                          ${item.price.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {item.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {item.description}
-                      </p>
-                    )}
-                    
-                    {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {item.menu_item_tags.map((itemTag, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="outline" 
-                            className="text-xs"
-                            style={{
-                              borderColor: getAllergenBorderColor(itemTag.tags.name)
-                            }}
-                          >
-                            {itemTag.tags.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <MenuItemCard 
+                  key={item.id}
+                  item={item}
+                  onSelect={handleItemSelect}
+                />
               ))}
             </div>
           )}

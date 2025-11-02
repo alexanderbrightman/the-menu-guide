@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         *,
         menu_categories(name),
         menu_item_tags(
-          tags(name)
+          tags(id, name)
         )
       `)
       .eq('user_id', user.id)

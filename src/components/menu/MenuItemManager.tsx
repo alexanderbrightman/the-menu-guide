@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,21 @@ interface MenuItemWithTags extends MenuItem {
 
 interface MenuItemManagerProps {
   onDataChange?: () => void
+}
+
+// Helper function to get border color for allergen tags
+const getAllergenBorderColor = (tagName: string): string => {
+  const colorMap: Record<string, string> = {
+    'dairy-free': '#B5C1D9',
+    'gluten-free': '#D48963',
+    'nut-free': '#5C5086',
+    'pescatarian': '#F698A7',
+    'shellfish-free': '#317987',
+    'spicy': '#F04F68',
+    'vegan': '#5F3196',
+    'vegetarian': '#3B91A2'
+  }
+  return colorMap[tagName.toLowerCase()] || ''
 }
 
 export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
@@ -340,17 +355,29 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       image_url: item.image_url || ''
     })
     setSelectedCategory(item.category_id || 'none')
-    setSelectedTags(item.menu_item_tags?.map(t => t.tags.id) || [])
+    // Safely extract tag IDs, ensuring tags array exists and has the expected structure
+    const tagIds = item.menu_item_tags
+      ?.filter(t => t?.tags?.id) // Filter out any undefined entries
+      .map(t => t.tags.id) || []
+    setSelectedTags(tagIds)
     setImageFile(null)
     setImagePreview(item.image_url || '')
   }
 
+  // Memoized Set for O(1) tag lookups
+  const selectedTagsSet = useMemo(() => new Set(selectedTags), [selectedTags])
+
   const toggleTag = (tagId: number) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    )
+    setSelectedTags(prev => {
+      // Use Set for faster lookup, then convert back to array
+      const prevSet = new Set(prev)
+      if (prevSet.has(tagId)) {
+        prevSet.delete(tagId)
+      } else {
+        prevSet.add(tagId)
+      }
+      return Array.from(prevSet)
+    })
   }
 
   if (loading) {
@@ -595,14 +622,24 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             </div>
             
             <div className="space-y-2">
-              <Label>Dietary Tags</Label>
+              <div className="flex items-center justify-between">
+                <Label>Dietary Tags</Label>
+                {selectedTags.length > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {selectedTags.length} selected
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
                   <Badge
                     key={tag.id}
-                    variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                    className="cursor-pointer"
+                    variant={selectedTagsSet.has(tag.id) ? "default" : "outline"}
+                    className="cursor-pointer transition-colors"
                     onClick={() => toggleTag(tag.id)}
+                    style={{
+                      borderColor: selectedTagsSet.has(tag.id) ? undefined : getAllergenBorderColor(tag.name)
+                    }}
                   >
                     <Tag className="h-3 w-3 mr-1" />
                     {tag.name}
@@ -723,14 +760,24 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
             </div>
             
             <div className="space-y-2">
-              <Label>Dietary Tags</Label>
+              <div className="flex items-center justify-between">
+                <Label>Dietary Tags</Label>
+                {selectedTags.length > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {selectedTags.length} selected
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
                   <Badge
                     key={tag.id}
-                    variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                    className="cursor-pointer"
+                    variant={selectedTagsSet.has(tag.id) ? "default" : "outline"}
+                    className="cursor-pointer transition-colors"
                     onClick={() => toggleTag(tag.id)}
+                    style={{
+                      borderColor: selectedTagsSet.has(tag.id) ? undefined : getAllergenBorderColor(tag.name)
+                    }}
                   >
                     <Tag className="h-3 w-3 mr-1" />
                     {tag.name}
