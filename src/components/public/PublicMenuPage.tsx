@@ -102,7 +102,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
   // Pre-compute tag ID sets for each menu item (memoized for performance)
   const itemTagIdSets = useMemo(() => {
-    const tagSets = new Map<number, Set<number>>()
+    const tagSets = new Map<string, Set<number>>()
     menuItems.forEach(item => {
       const tagIds = new Set(
         item.menu_item_tags?.map(t => t.tags.id) || []
