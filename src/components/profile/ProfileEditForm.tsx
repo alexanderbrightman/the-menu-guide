@@ -251,6 +251,35 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     try {
       setMessage('Uploading avatar...')
       
+      // Delete old avatar from storage if it exists
+      if (profile.avatar_url) {
+        try {
+          // Extract file path from Supabase storage URL
+          const urlParts = profile.avatar_url.split('/')
+          const bucketIndex = urlParts.findIndex((part: string) => part === 'avatars')
+          
+          if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+            // Get path after bucket name (e.g., "userId/filename.webp")
+            const oldAvatarPath = urlParts.slice(bucketIndex + 1).join('/')
+            
+            // Delete old avatar from storage
+            const { error: deleteError } = await supabase.storage
+              .from('avatars')
+              .remove([oldAvatarPath])
+            
+            if (deleteError) {
+              console.warn('Error deleting old avatar from storage:', deleteError)
+              // Continue anyway - new upload can proceed
+            } else {
+              console.log('Old avatar deleted from storage')
+            }
+          }
+        } catch (deleteError) {
+          console.warn('Error deleting old avatar:', deleteError)
+          // Continue anyway - new upload can proceed
+        }
+      }
+
       // Use optimized image upload hook
       const result = await uploadImage(file, profile.id, 'avatars', {
         quality: 0.8,

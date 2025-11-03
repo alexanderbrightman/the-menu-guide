@@ -202,6 +202,43 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { id, title, description, price, category_id, image_url, tag_ids } = body
 
+    // Get current menu item to check for old image
+    const { data: currentItem } = await supabase
+      .from('menu_items')
+      .select('image_url')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
+
+    // Delete old image from storage if image_url is changing and old image exists
+    if (currentItem?.image_url && currentItem.image_url !== image_url && image_url) {
+      try {
+        // Extract file path from Supabase storage URL
+        const urlParts = currentItem.image_url.split('/')
+        const bucketIndex = urlParts.findIndex((part: string) => part === 'menu_items')
+        
+        if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+          // Get path after bucket name (e.g., "userId/filename.webp")
+          const oldImagePath = urlParts.slice(bucketIndex + 1).join('/')
+          
+          // Delete old image from storage
+          const { error: storageError } = await supabase.storage
+            .from('menu_items')
+            .remove([oldImagePath])
+          
+          if (storageError) {
+            console.warn('Error deleting old image from storage:', storageError)
+            // Continue anyway - new image can be uploaded
+          } else {
+            console.log('Old image deleted from storage')
+          }
+        }
+      } catch (storageError) {
+        console.warn('Error deleting old image:', storageError)
+        // Continue anyway - new image can be uploaded
+      }
+    }
+
     // Update the menu item
     const { data: item, error } = await supabase
       .from('menu_items')
@@ -289,6 +326,48 @@ export async function DELETE(request: NextRequest) {
 
     if (!itemId) {
       return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+    }
+
+    // First, get the menu item to extract image URL for storage cleanup
+    const { data: menuItem, error: fetchError } = await supabase
+      .from('menu_items')
+      .select('image_url')
+      .eq('id', itemId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !menuItem) {
+      return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
+    }
+
+    // Delete the image from storage if it exists
+    if (menuItem.image_url) {
+      try {
+        // Extract file path from Supabase storage URL
+        // URL format: https://project.supabase.co/storage/v1/object/public/bucket_name/path/to/file
+        const urlParts = menuItem.image_url.split('/')
+        const bucketIndex = urlParts.findIndex((part: string) => part === 'menu_items')
+        
+        if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+          // Get path after bucket name (e.g., "userId/filename.webp")
+          const filePath = urlParts.slice(bucketIndex + 1).join('/')
+          
+          // Delete from storage
+          const { error: storageError } = await supabase.storage
+            .from('menu_items')
+            .remove([filePath])
+          
+          if (storageError) {
+            console.warn('Error deleting image from storage:', storageError)
+            // Continue with database deletion even if storage deletion fails
+          } else {
+            console.log('Image deleted from storage:', filePath)
+          }
+        }
+      } catch (storageError) {
+        console.warn('Error deleting image from storage:', storageError)
+        // Continue with database deletion even if storage deletion fails
+      }
     }
 
     // Delete associated tags first

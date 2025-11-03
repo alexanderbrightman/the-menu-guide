@@ -107,10 +107,19 @@ export async function DELETE(request: NextRequest) {
       
       // Delete avatar
       if (profileData?.avatar_url) {
-        const avatarPath = profileData.avatar_url.split('/').pop()
-        if (avatarPath) {
-          await supabaseAdmin.storage.from('avatars').remove([avatarPath])
-          console.log('Avatar deleted from storage')
+        try {
+          // Extract file path from Supabase storage URL
+          const urlParts = profileData.avatar_url.split('/')
+          const bucketIndex = urlParts.findIndex((part: string) => part === 'avatars')
+          
+          if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+            // Get path after bucket name (e.g., "userId/filename.webp")
+            const avatarPath = urlParts.slice(bucketIndex + 1).join('/')
+            await supabaseAdmin.storage.from('avatars').remove([avatarPath])
+            console.log('Avatar deleted from storage')
+          }
+        } catch (avatarError) {
+          console.warn('Error deleting avatar from storage:', avatarError)
         }
       }
 
@@ -119,11 +128,22 @@ export async function DELETE(request: NextRequest) {
         const imagePaths = menuItems
           .map(item => item.image_url)
           .filter(url => url)
-          .map(url => url.split('/').pop())
-          .filter(path => path)
+          .map(url => {
+            // Extract file path from Supabase storage URL
+            // URL format: https://project.supabase.co/storage/v1/object/public/bucket_name/path/to/file
+            const urlParts = url.split('/')
+            const bucketIndex = urlParts.findIndex((part: string) => part === 'menu_items')
+            
+            if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+              // Get path after bucket name (e.g., "userId/filename.webp")
+              return urlParts.slice(bucketIndex + 1).join('/')
+            }
+            return null
+          })
+          .filter((path): path is string => path !== null)
         
         if (imagePaths.length > 0) {
-          await supabaseAdmin.storage.from('menu-images').remove(imagePaths)
+          await supabaseAdmin.storage.from('menu_items').remove(imagePaths)
           console.log(`${imagePaths.length} menu images deleted from storage`)
         }
       }
