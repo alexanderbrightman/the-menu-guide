@@ -316,7 +316,7 @@ export function LandingPage() {
               onClick={() => setShowAuthForm(true)}
               className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-lg text-sm sm:text-base md:text-lg font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-3.5 border border-gray-200"
             >
-              Start building your menu for free!
+              Start building your menu!
             </Button>
             
             {/* Contact the Builder */}
