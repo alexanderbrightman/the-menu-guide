@@ -147,7 +147,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
                     {subscriptionStatus.status === 'expired' && <XCircle className="h-4 w-4 text-red-600" />}
                     <span className="font-medium">{subscriptionStatus.message}</span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">$25/month</p>
+                  <p className="text-sm text-gray-600 mt-1">$15/month</p>
                 </div>
                 <div className="text-right">
                   {profile?.subscription_current_period_end && (
