@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 // Only create Stripe client if we have a real secret key
 export const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('placeholder')
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-09-30.clover',
+      apiVersion: '2024-06-20',
       typescript: true,
     })
   : null
