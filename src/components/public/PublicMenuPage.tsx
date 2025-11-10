@@ -126,12 +126,14 @@ const MenuItemCard = memo(({
   priceClass,
   descriptionClass,
   isDarkBackground,
+  headingFontFamily,
 }: {
   item: MenuItemWithTags
   onSelect: (item: MenuItemWithTags) => void
   priceClass: string
   descriptionClass: string
   isDarkBackground: boolean
+  headingFontFamily: string
 }) => (
   <div 
     className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
@@ -150,7 +152,7 @@ const MenuItemCard = memo(({
     )}
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-lg">{item.title}</h3>
+        <h3 className="font-semibold text-lg" style={{ fontFamily: headingFontFamily }}>{item.title}</h3>
         {item.price && (
           <div className={`font-semibold text-xs whitespace-nowrap ml-2 ${priceClass}`}>
             ${item.price.toFixed(2)}
@@ -195,6 +197,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
   const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
   const isDarkBackground = contrastColor === '#ffffff'
+  const menuFontFamily = useMemo(
+    () => FONT_FAMILY_MAP[menuFont] ?? menuFont,
+    [menuFont]
+  )
 
   const primaryTextClass = isDarkBackground ? 'text-white' : 'text-gray-900'
   const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-gray-600'
@@ -209,8 +215,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const themeStyle = useMemo(() => ({
     backgroundColor: menuBackgroundColor,
     color: contrastColor,
-    fontFamily: FONT_FAMILY_MAP[menuFont] ?? menuFont,
-  }), [menuBackgroundColor, contrastColor, menuFont])
+    fontFamily: menuFontFamily,
+  }), [menuBackgroundColor, contrastColor, menuFontFamily])
 
   const baseCategoryButtonClass =
     'flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px] transition-colors'
@@ -356,7 +362,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         
         {/* Restaurant Name - Large Title Below Photo */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-          <h1 className={`text-6xl font-bold text-center ${primaryTextClass}`}>{profile.display_name}</h1>
+          <h1
+            className={`text-6xl font-bold text-center ${primaryTextClass}`}
+            style={{ fontFamily: menuFontFamily }}
+          >
+            {profile.display_name}
+          </h1>
           
           {profile.bio && (
             <div className="mt-1 text-center">
@@ -479,7 +490,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         {/* Menu Items */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className={`text-2xl font-bold ${primaryTextClass}`}>Menu</h2>
+            <h2
+              className={`text-2xl font-bold ${primaryTextClass}`}
+              style={{ fontFamily: menuFontFamily }}
+            >
+              Menu
+            </h2>
             <div className={`text-xs ${mutedTextClass}`}>
               {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
               {hasActiveFilters && ' (filtered)'}
@@ -522,6 +538,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   priceClass={primaryTextClass}
                   descriptionClass={secondaryTextClass}
                   isDarkBackground={isDarkBackground}
+                  headingFontFamily={menuFontFamily}
                 />
               ))}
             </div>
@@ -580,7 +597,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               <div className="p-6 md:p-8">
                 {/* Title and Price */}
                 <div className="flex items-start justify-between mb-4">
-                  <h2 className="text-3xl font-bold text-gray-900">{selectedItem.title}</h2>
+                  <h2
+                    className="text-3xl font-bold text-gray-900"
+                    style={{ fontFamily: menuFontFamily }}
+                  >
+                    {selectedItem.title}
+                  </h2>
                   {selectedItem.price && (
                     <div className="text-base font-semibold text-gray-900">
                       ${selectedItem.price.toFixed(2)}
