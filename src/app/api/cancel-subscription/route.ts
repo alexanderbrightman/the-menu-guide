@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
       // Don't fail the request since Stripe was updated successfully
     }
 
-    const periodEndSeconds = subscription.current_period_end ?? null
+    const firstItem = subscription.items?.data?.[0]
+    const periodEndSeconds = firstItem?.current_period_end ?? null
 
     return NextResponse.json({ 
       success: true,
