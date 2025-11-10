@@ -68,11 +68,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Cancel the subscription at the end of the current period
-    const updateResponse: Stripe.Response<Stripe.Subscription> = await stripe.subscriptions.update(
+    const subscription = await stripe.subscriptions.update(
       profile.stripe_subscription_id,
       { cancel_at_period_end: true }
-    )
-    const subscription = updateResponse.data
+    ) as Stripe.Subscription
 
     // Update the database to reflect the cancellation
     // Keep subscription_status as 'pro' until the actual end date
