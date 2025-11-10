@@ -83,12 +83,14 @@ export async function POST(request: NextRequest) {
       // Don't fail the request since Stripe was updated successfully
     }
 
+    const periodEndSeconds = subscription.items?.data?.[0]?.current_period_end ?? null
+
     return NextResponse.json({ 
       success: true,
       message: 'Your subscription has been reactivated and will continue billing monthly.',
       subscription_id: subscription.id,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      current_period_end: subscription.current_period_end
+      current_period_end: periodEndSeconds ? new Date(periodEndSeconds * 1000).toISOString() : null
     })
 
   } catch (error: unknown) {

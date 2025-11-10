@@ -153,11 +153,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (activeSubscription) {
+      const firstItem = activeSubscription.items?.data?.[0]
+      const periodEndSeconds = firstItem?.current_period_end
+
       if (customerId) {
         updateData.stripe_customer_id = customerId
       }
       updateData.stripe_subscription_id = activeSubscription.id
-      updateData.subscription_current_period_end = new Date(activeSubscription.current_period_end * 1000).toISOString()
+      if (periodEndSeconds) {
+        updateData.subscription_current_period_end = new Date(periodEndSeconds * 1000).toISOString()
+      }
       console.log('Updating with subscription details:', {
         customerId,
         subscriptionId: activeSubscription.id,

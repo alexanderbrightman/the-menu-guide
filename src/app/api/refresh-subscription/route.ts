@@ -75,10 +75,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Update profile with current subscription status
+        const firstItem = subscription.items?.data?.[0]
+        const periodEndSeconds = firstItem?.current_period_end ?? null
+
         const updateData: Partial<Profile> = {
           subscription_status: subscriptionStatus,
           stripe_subscription_id: subscription.id,
-          subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          subscription_current_period_end: periodEndSeconds ? new Date(periodEndSeconds * 1000).toISOString() : null,
         }
 
         if (typeof subscription.customer === 'string') {

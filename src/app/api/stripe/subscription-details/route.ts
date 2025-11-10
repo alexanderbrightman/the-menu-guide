@@ -105,12 +105,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate dates first
-    const currentPeriodStart = subscription.current_period_start
-      ? new Date(subscription.current_period_start * 1000).toISOString()
+    const firstItem = subscription.items?.data?.[0]
+    const periodStartSeconds = firstItem?.current_period_start ?? null
+    const periodEndSeconds = firstItem?.current_period_end ?? null
+
+    const currentPeriodStart = periodStartSeconds
+      ? new Date(periodStartSeconds * 1000).toISOString()
       : new Date(profile.created_at).toISOString()
     
-    const currentPeriodEnd = subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000).toISOString()
+    const currentPeriodEnd = periodEndSeconds
+      ? new Date(periodEndSeconds * 1000).toISOString()
       : profile.subscription_current_period_end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     
     const daysUntilRenewal = Math.max(0, Math.ceil((new Date(currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
@@ -124,9 +128,9 @@ export async function GET(request: NextRequest) {
       current_period_end: currentPeriodEnd,
       
       // Pricing information
-      amount: subscription.items.data[0]?.price?.unit_amount || 0,
-      currency: subscription.items.data[0]?.price?.currency || 'usd',
-      interval: subscription.items.data[0]?.price?.recurring?.interval || 'month',
+      amount: firstItem?.price?.unit_amount || 0,
+      currency: firstItem?.price?.currency || 'usd',
+      interval: firstItem?.price?.recurring?.interval || 'month',
       
       // Cancellation information
       cancel_at_period_end: subscription.cancel_at_period_end,
