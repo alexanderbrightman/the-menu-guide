@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       message: 'Your subscription has been canceled and will end at the end of your current billing period.',
       subscription_id: subscription.id,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      current_period_end: subscription.current_period_end
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
     })
 
   } catch (error: unknown) {
