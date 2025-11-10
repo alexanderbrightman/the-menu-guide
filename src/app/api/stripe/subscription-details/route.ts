@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       customer = await stripe.customers.retrieve(profile.stripe_customer_id)
     } catch (stripeError: unknown) {
       const stripeErr = (stripeError && typeof stripeError === 'object')
-        ? stripeError as Stripe.StripeError
+        ? stripeError as Stripe.StripeRawError
         : undefined
 
       console.error('Error retrieving from Stripe:', stripeError)
