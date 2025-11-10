@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ url: session.url })
     } catch (stripeError: unknown) {
       const stripeErr = (stripeError && typeof stripeError === 'object')
-        ? stripeError as Stripe.StripeError
+        ? stripeError as Stripe.StripeRawError
         : undefined
 
       console.error('Stripe customer portal error:', stripeError)
