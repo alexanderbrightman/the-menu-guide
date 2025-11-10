@@ -80,12 +80,11 @@ export async function POST(request: NextRequest) {
 
         const updateData: Partial<Profile> = {
           stripe_subscription_id: subscription.id,
+          subscription_status: subscriptionStatus,
+          subscription_current_period_end: periodEndSeconds
+            ? new Date(periodEndSeconds * 1000).toISOString()
+            : undefined,
         }
-        updateData.subscription_current_period_end = periodEndSeconds
-          ? new Date(periodEndSeconds * 1000).toISOString()
-          : undefined
-
-        updateData.subscription_status = subscriptionStatus
 
         if (typeof subscription.customer === 'string') {
           updateData.stripe_customer_id = subscription.customer

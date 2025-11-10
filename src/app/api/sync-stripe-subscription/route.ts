@@ -71,13 +71,16 @@ export async function POST(request: NextRequest) {
         console.log('Found active subscription:', subscription.id)
 
         // Update the user's profile with the real Stripe data
+        const firstItem = subscription.items?.data?.[0]
+        const periodEndSeconds = firstItem?.current_period_end ?? null
+
         const updateData: Partial<Profile> = {
           stripe_customer_id: customer.id,
           stripe_subscription_id: subscription.id,
           subscription_status: 'pro',
           is_public: true,
-          subscription_current_period_end: subscription.current_period_end
-            ? new Date(subscription.current_period_end * 1000).toISOString()
+          subscription_current_period_end: periodEndSeconds
+            ? new Date(periodEndSeconds * 1000).toISOString()
             : undefined
         }
 

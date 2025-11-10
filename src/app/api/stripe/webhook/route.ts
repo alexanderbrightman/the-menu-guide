@@ -293,7 +293,7 @@ async function manageSubscriptionStatusChange(
     console.log('[ManageSubscription] Found profile:', profile)
 
     // Determine subscription status based on Stripe subscription status
-    let subscriptionStatus = 'free'
+    let subscriptionStatus: Profile['subscription_status'] = 'free'
     let isPublic = false
     
     if (subscription.status === 'active') {
@@ -319,18 +319,18 @@ async function manageSubscriptionStatusChange(
     }
 
     // Prepare update data
+    const periodEndSeconds = subscription.items?.data?.[0]?.current_period_end
+
     const updateData: Partial<Profile> = {
+      subscription_status: subscriptionStatus,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
       subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
-      is_public: isPublic
+      is_public: isPublic,
+      subscription_current_period_end: periodEndSeconds
+        ? new Date(periodEndSeconds * 1000).toISOString()
+        : undefined
     }
-    updateData.subscription_status = subscriptionStatus
-
-    const periodEndSeconds = subscription.items?.data?.[0]?.current_period_end
-    updateData.subscription_current_period_end = periodEndSeconds
-      ? new Date(periodEndSeconds * 1000).toISOString()
-      : undefined
 
     // Add cancellation timestamp if subscription is canceled
     if (subscription.status === 'canceled' && subscription.canceled_at) {
