@@ -36,6 +36,12 @@ export function Dashboard() {
       return
     }
 
+    if (!supabase) {
+      console.error('Supabase client is not configured')
+      alert('Unable to generate QR code right now. Please try again later.')
+      return
+    }
+
     try {
       // Get the current session token
       const { data: { session } } = await supabase.auth.getSession()
