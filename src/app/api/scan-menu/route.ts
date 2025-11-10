@@ -168,13 +168,14 @@ Rules:
     )
 
     if (categoryNames.length > 0) {
-      const { data: existing } = await supabase
+      const existingResponse = await supabase
         .from('menu_categories')
         .select('id,name')
         .eq('user_id', user.id)
         .in('name', categoryNames)
 
-      (existing as CategoryRecord[] | null)?.forEach((category) => categoryMap.set(category.name, category.id))
+      const existing = existingResponse.data as CategoryRecord[] | null
+      existing?.forEach((category) => categoryMap.set(category.name, category.id))
 
       const missing = categoryNames.filter((n) => !categoryMap.has(n))
       if (missing.length > 0) {
