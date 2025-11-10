@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         })
 
         // Determine subscription status
-        let subscriptionStatus = 'free'
+        let subscriptionStatus: Profile['subscription_status'] = 'free'
         if (subscription.status === 'active') {
           subscriptionStatus = 'pro'
         } else if (subscription.status === 'canceled' || subscription.status === 'unpaid' || subscription.status === 'past_due') {
@@ -79,10 +79,13 @@ export async function POST(request: NextRequest) {
         const periodEndSeconds = firstItem?.current_period_end ?? null
 
         const updateData: Partial<Profile> = {
-          subscription_status: subscriptionStatus,
           stripe_subscription_id: subscription.id,
-          subscription_current_period_end: periodEndSeconds ? new Date(periodEndSeconds * 1000).toISOString() : null,
         }
+        updateData.subscription_current_period_end = periodEndSeconds
+          ? new Date(periodEndSeconds * 1000).toISOString()
+          : undefined
+
+        updateData.subscription_status = subscriptionStatus
 
         if (typeof subscription.customer === 'string') {
           updateData.stripe_customer_id = subscription.customer
