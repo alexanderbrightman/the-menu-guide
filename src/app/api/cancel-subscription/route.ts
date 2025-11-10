@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import type Stripe from 'stripe'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -62,10 +63,16 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
+    if (!stripe) {
+      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+    }
+
     // Cancel the subscription at the end of the current period
-    const subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {
-      cancel_at_period_end: true
-    })
+    const updateResponse: Stripe.Response<Stripe.Subscription> = await stripe.subscriptions.update(
+      profile.stripe_subscription_id,
+      { cancel_at_period_end: true }
+    )
+    const subscription = updateResponse.data
 
     // Update the database to reflect the cancellation
     // Keep subscription_status as 'pro' until the actual end date
