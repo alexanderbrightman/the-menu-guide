@@ -269,12 +269,12 @@ async function manageSubscriptionStatusChange(
     }
 
     // Retrieve the subscription details from Stripe
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription
     console.log('[ManageSubscription] Retrieved subscription:', {
       id: subscription.id,
       status: subscription.status,
       customer: subscription.customer,
-      current_period_end: subscription.current_period_end,
+      current_period_end: subscription.items?.data?.[0]?.current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end
     })
 
@@ -301,7 +301,7 @@ async function manageSubscriptionStatusChange(
       isPublic = true
     } else if (subscription.status === 'canceled') {
       // Check if subscription was canceled at period end or immediately
-      const currentPeriodEnd = subscription.current_period_end
+      const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end
       const now = Math.floor(Date.now() / 1000)
       
       if (subscription.cancel_at_period_end && currentPeriodEnd > now) {
