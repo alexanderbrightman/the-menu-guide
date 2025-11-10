@@ -227,12 +227,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error && !error.message.includes('Auth session missing')) {
           console.error('Error signing out:', error)
         }
-      } catch (signOutError: any) {
+      } catch (signOutError: unknown) {
         // If it's a session missing error, that's actually fine - we're already signed out
-        if (!signOutError.message?.includes('Auth session missing')) {
-          console.error('Error signing out:', signOutError)
+        if (signOutError instanceof Error) {
+          if (!signOutError.message.includes('Auth session missing')) {
+            console.error('Error signing out:', signOutError)
+          } else {
+            console.log('Session already missing, clearing local state only')
+          }
         } else {
-          console.log('Session already missing, clearing local state only')
+          console.error('Unknown error signing out:', signOutError)
         }
       }
       

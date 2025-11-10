@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Upload, Save, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Upload, RefreshCw } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
+import Image from 'next/image'
 
 interface ProfileEditFormProps {
   onClose: () => void
@@ -20,20 +20,67 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const { profile, refreshProfile } = useAuth()
   const { uploadImage, uploading } = useImageUpload()
+
+  const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
+  const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
+  const FONT_OPTIONS = [
+    { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans' },
+    { label: 'Fjalla One', value: 'Fjalla One' },
+    { label: 'Georgia', value: 'Georgia' },
+    { label: 'Times New Roman', value: 'Times New Roman' },
+    { label: 'Arial', value: 'Arial' },
+    { label: 'Courier New', value: 'Courier New' }
+  ]
+
+  const FONT_FAMILY_MAP: Record<string, string> = {
+    'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
+    'Fjalla One': '"Fjalla One", sans-serif',
+    'Georgia': 'Georgia, serif',
+    'Times New Roman': '"Times New Roman", serif',
+    'Arial': 'Arial, sans-serif',
+    'Courier New': '"Courier New", monospace',
+  }
+
+  const getContrastColor = useCallback((hexColor: string) => {
+    if (!hexColor) return '#1f2937'
+    const cleanHex = hexColor.replace('#', '')
+    const normalizedHex = cleanHex.length === 3
+      ? cleanHex.split('').map(char => char + char).join('')
+      : cleanHex
+
+    if (normalizedHex.length !== 6) return '#1f2937'
+
+    const r = parseInt(normalizedHex.substring(0, 2), 16)
+    const g = parseInt(normalizedHex.substring(2, 4), 16)
+    const b = parseInt(normalizedHex.substring(4, 6), 16)
+
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.6 ? '#1f2937' : '#ffffff'
+  }, [])
+
   const [formData, setFormData] = useState({
     display_name: profile?.display_name || '',
     bio: profile?.bio || '',
-    username: profile?.username || ''
+    username: profile?.username || '',
+    menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
+    menu_background_color: profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [retryCount, setRetryCount] = useState(0)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
     profile?.username ? 'available' : 'idle'
   )
   const [usernameMessage, setUsernameMessage] = useState(
     profile?.username ? '✓ This is your current username' : ''
   )
+
+  const handleResetTheme = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      menu_font: DEFAULT_MENU_FONT,
+      menu_background_color: DEFAULT_MENU_BACKGROUND_COLOR
+    }))
+  }, [DEFAULT_MENU_FONT, DEFAULT_MENU_BACKGROUND_COLOR])
 
   // Debounced username validation
   const validateUsername = useCallback(async (username: string) => {
@@ -114,7 +161,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
       setFormData({
         display_name: profile.display_name || '',
         bio: profile.bio || '',
-        username: profile.username || ''
+        username: profile.username || '',
+        menu_font: profile.menu_font || DEFAULT_MENU_FONT,
+        menu_background_color: profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
       })
       // Immediately validate if username is the same
       if (profile.username) {
@@ -195,7 +244,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         .update({
           display_name: formData.display_name.trim(),
           bio: formData.bio.trim(),
-          username: formData.username.trim()
+          username: formData.username.trim(),
+          menu_font: formData.menu_font,
+          menu_background_color: formData.menu_background_color
         })
         .eq('id', profile.id)
 
@@ -314,98 +365,159 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
   return (
     <Dialog open={true} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>
-            Update your restaurant information and profile details.
-          </DialogDescription>
+      <DialogContent className="sm:max-w-lg p-6">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="text-xl font-semibold text-center">Edit Profile</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avatar Upload */}
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback>
-                {profile?.display_name?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <Label htmlFor="avatar-upload" className="cursor-pointer">
-                <div className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800">
-                  <Upload className="h-4 w-4" />
-                  <span>Change Menu Header</span>
-                </div>
-              </Label>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                disabled={uploading}
-                className="hidden"
-              />
-            </div>
-          </div>
 
-          {/* Form Fields */}
-          <div className="space-y-2">
-            <Label htmlFor="display_name">Restaurant Name</Label>
-            <Input
-              id="display_name"
-              value={formData.display_name}
-              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-              required
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Header Photo */}
+          <div className="relative overflow-hidden rounded-xl border bg-gray-100">
+            {profile?.avatar_url ? (
+              <Image
+                src={profile.avatar_url}
+                alt="Menu header photo"
+                width={900}
+                height={360}
+                className="h-40 w-full object-cover sm:h-48"
+                priority
+              />
+            ) : (
+              <div className="flex h-40 w-full items-center justify-center text-sm text-gray-500 sm:h-48">
+                No header photo yet
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Label
+                htmlFor="avatar-upload"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow transition hover:bg-white"
+              >
+                <Upload className="h-4 w-4" />
+                Change menu header photo
+              </Label>
+            </div>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              disabled={uploading}
+              className="hidden"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <div className="relative">
+          {/* Name + Username */}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="display_name">Restaurant name</Label>
               <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className={`pr-10 ${
-                  usernameStatus === 'taken' || usernameStatus === 'invalid' 
-                    ? 'border-red-500 focus:border-red-500' 
-                    : usernameStatus === 'available' 
-                    ? 'border-green-500 focus:border-green-500' 
-                    : ''
-                }`}
+                id="display_name"
+                value={formData.display_name}
+                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                 required
               />
-              {usernameStatus === 'checking' && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                </div>
-              )}
-              {usernameStatus === 'available' && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="text-green-600">✓</div>
-                </div>
-              )}
-              {usernameStatus === 'taken' && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="text-red-600">✗</div>
-                </div>
-              )}
             </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  className={`pr-10 ${
+                    usernameStatus === 'taken' || usernameStatus === 'invalid'
+                      ? 'border-red-500 focus:border-red-500'
+                      : usernameStatus === 'available'
+                      ? 'border-green-500 focus:border-green-500'
+                      : ''
+                  }`}
+                  required
+                />
+                {usernameStatus === 'checking' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+                {usernameStatus === 'available' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✓</div>
+                )}
+                {usernameStatus === 'taken' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">✗</div>
+                )}
+              </div>
+            </div>
+
             {usernameMessage && (
-              <p className={`text-sm ${
-                usernameStatus === 'available' 
-                  ? 'text-green-600' 
-                  : usernameStatus === 'taken' || usernameStatus === 'invalid'
-                  ? 'text-red-600'
-                  : 'text-gray-600'
-              }`}>
+              <p
+                className={`text-sm ${
+                  usernameStatus === 'available'
+                    ? 'text-green-600'
+                    : usernameStatus === 'taken' || usernameStatus === 'invalid'
+                    ? 'text-red-600'
+                    : 'text-gray-600'
+                }`}
+              >
                 {usernameMessage}
               </p>
             )}
           </div>
 
-          <div className="space-y-2">
+          {/* Preview */}
+          <div
+            className="rounded-xl border px-4 py-4 text-sm shadow-sm transition-colors"
+            style={{
+              backgroundColor: formData.menu_background_color,
+              color: getContrastColor(formData.menu_background_color),
+              fontFamily: FONT_FAMILY_MAP[formData.menu_font] ?? formData.menu_font,
+            }}
+          >
+            <p className="text-sm font-semibold tracking-wide">The Menu Guide Preview</p>
+          </div>
+
+          {/* Theme controls */}
+          <div className="space-y-2.5">
+            <div className="flex flex-row flex-wrap items-start gap-3">
+              <div className="flex flex-col gap-2 min-w-[150px] max-w-[200px] flex-none">
+                <Label className="text-sm font-medium">Menu font</Label>
+                <Select
+                  value={formData.menu_font}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, menu_font: value }))}
+                >
+                  <SelectTrigger className="w-full sm:w-auto">
+                    <SelectValue placeholder="Select a font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-2 flex-none">
+                <Label className="text-sm font-medium">Menu background color</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="color"
+                    value={formData.menu_background_color}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, menu_background_color: event.target.value }))
+                    }
+                    className="h-10 w-16 cursor-pointer rounded-md border bg-white p-1 shadow-sm"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={handleResetTheme}>
+                    <RefreshCw className="mr-1 h-4 w-4" /> Reset
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-1.5">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
               id="bio"
@@ -417,16 +529,18 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           </div>
 
           {message && (
-            <div className={`p-3 text-sm rounded-md ${
-              message.includes('Error') || message.includes('error') 
-                ? 'text-red-600 bg-red-50' 
-                : 'text-green-600 bg-green-50'
-            }`}>
+            <div
+              className={`rounded-md p-3 text-sm ${
+                message.includes('Error') || message.includes('error')
+                  ? 'bg-red-50 text-red-600'
+                  : 'bg-green-50 text-green-600'
+              }`}
+            >
               {message}
             </div>
           )}
 
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>

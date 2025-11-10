@@ -24,6 +24,8 @@ export function SettingsDialog() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteItemsLoading, setDeleteItemsLoading] = useState(false)
+  const [dangerMessage, setDangerMessage] = useState('')
 
   // Check premium access using the enhanced validation
   const premiumValidation = validatePremiumAccess(profile, 'menu visibility')
@@ -33,9 +35,9 @@ export function SettingsDialog() {
   useEffect(() => {
     if (profile) {
       console.log('Profile changed, updating isPublic to:', profile.is_public)
-      setIsPublic(profile.is_public || false)
+      setIsPublic(profile.is_public ?? false)
     }
-  }, [profile?.is_public]) // Only depend on the specific field we care about
+  }, [profile])
 
   const handleTogglePublic = async (checked: boolean) => {
     if (!user || !supabase) return
@@ -95,7 +97,7 @@ export function SettingsDialog() {
     if (!user || !supabase) return
 
     setDeleting(true)
-    setMessage('')
+    setDangerMessage('')
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -114,7 +116,7 @@ export function SettingsDialog() {
       const data = await response.json()
 
       if (response.ok) {
-        setMessage('Account deleted successfully. You will be redirected to the home page.')
+        setDangerMessage('Account deleted successfully. You will be redirected to the home page.')
         setShowDeleteConfirm(false)
         setDeleteConfirmText('')
         
@@ -128,9 +130,44 @@ export function SettingsDialog() {
       }
     } catch (error) {
       console.error('Error deleting account:', error)
-      setMessage(error instanceof Error ? error.message : 'An error occurred while deleting your account')
+      setDangerMessage(error instanceof Error ? error.message : 'An error occurred while deleting your account')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleDeleteAllMenuItems = async () => {
+    if (!user || !supabase) return
+
+    setDeleteItemsLoading(true)
+    setDangerMessage('')
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch('/api/menu-items?all=true', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        const deletedCount = data.deletedCount ?? data.count ?? 'All'
+        setDangerMessage(`Deleted ${deletedCount} menu item${deletedCount === 1 ? '' : 's'}.`)
+      } else {
+        throw new Error(data.error || 'Failed to delete menu items')
+      }
+    } catch (error) {
+      console.error('Error deleting menu items:', error)
+      setDangerMessage(error instanceof Error ? error.message : 'An error occurred while deleting menu items')
+    } finally {
+      setDeleteItemsLoading(false)
     }
   }
 
@@ -223,6 +260,51 @@ export function SettingsDialog() {
             )}
 
             {/* Delete Account Section */}
+            <Card className="shadow-sm border-orange-200 bg-orange-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base text-orange-800 flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete All Menu Items
+                </CardTitle>
+                <CardDescription className="text-sm text-orange-700">
+                  Remove every menu item, category association, and stored menu image.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Alert className="border-orange-300 bg-orange-100">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800 text-sm">
+                    <strong>Warning:</strong> This cannot be undone. Diners will no longer see any items on your public menu.
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2 text-xs text-orange-700 ml-4">
+                  <p className="font-medium uppercase tracking-wide text-orange-800">This will remove:</p>
+                  <ul className="space-y-1">
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3 w-3" />
+                      All menu items and their descriptions
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3 w-3" />
+                      Menu item images stored in database
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3 w-3" />
+                      Dietary tags attached to menu items
+                    </li>
+                  </ul>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-100"
+                  onClick={handleDeleteAllMenuItems}
+                  disabled={deleteItemsLoading || deleting}
+                >
+                  {deleteItemsLoading ? 'Deleting menu items...' : 'Delete All Menu Items'}
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card className="shadow-sm border-red-200 bg-red-50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base text-red-800 flex items-center gap-2">
@@ -230,43 +312,37 @@ export function SettingsDialog() {
                   Delete Account
                 </CardTitle>
                 <CardDescription className="text-sm text-red-700">
-                  Permanently delete your account and all associated data
+                  Permanently delete your account and all remaining data.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Alert className="border-red-300 bg-red-100">
                   <AlertTriangle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="text-red-800 text-sm">
-                    <strong>Warning:</strong> This action cannot be undone. All your data will be permanently deleted.
+                    <strong>Warning:</strong> Once deleted you can’t recover this account, your subscription, or any saved content.
                   </AlertDescription>
                 </Alert>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium text-red-800 text-sm">What will be deleted:</h4>
-                  <ul className="text-xs text-red-700 space-y-1 ml-4">
+                <div className="space-y-2 text-xs text-red-700 ml-4">
+                  <p className="font-medium uppercase tracking-wide text-red-800">This will remove:</p>
+                  <ul className="space-y-1">
                     <li className="flex items-center gap-2">
                       <Check className="h-3 w-3" />
                       Your profile and personal information
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-3 w-3" />
-                      All menu items and categories
+                      All menu items, categories, and uploaded files
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-3 w-3" />
-                      Your Stripe subscription (if active)
+                      Stripe subscription (if active)
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-3 w-3" />
-                      All uploaded images and files
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="h-3 w-3" />
-                      Your account login credentials
+                      Your account login and access
                     </li>
                   </ul>
                 </div>
-
                 <Button 
                   variant="destructive" 
                   className="w-full text-sm"
@@ -278,6 +354,16 @@ export function SettingsDialog() {
                 </Button>
               </CardContent>
             </Card>
+
+            {dangerMessage && (
+              <div className={`rounded-md p-3 text-sm ${
+                dangerMessage.toLowerCase().includes('error')
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-orange-100 text-orange-700'
+              }`}>
+                {dangerMessage}
+              </div>
+            )}
           </div>
         </div>
 
@@ -322,13 +408,13 @@ export function SettingsDialog() {
               />
             </div>
 
-            {message && (
+            {dangerMessage && (
               <div className={`p-3 text-sm rounded-md ${
-                message.includes('success') 
+                dangerMessage.includes('success') 
                   ? 'text-green-600 bg-green-50' 
                   : 'text-red-600 bg-red-50'
               }`}>
-                {message}
+                {dangerMessage}
               </div>
             )}
 

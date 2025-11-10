@@ -4,10 +4,20 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
 
+type SessionInfo =
+  | { session: unknown; error: unknown }
+  | { error: string }
+  | null
+
+type ApiTestResult =
+  | { status?: number; data?: unknown; error?: unknown }
+  | { error: string }
+  | null
+
 export default function DebugAuthPage() {
   const { user, profile, loading } = useAuth()
-  const [sessionInfo, setSessionInfo] = useState<any>(null)
-  const [apiTest, setApiTest] = useState<any>(null)
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo>(null)
+  const [apiTest, setApiTest] = useState<ApiTestResult>(null)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -20,7 +30,8 @@ export default function DebugAuthPage() {
         const { data: { session }, error } = await supabase.auth.getSession()
         setSessionInfo({ session, error })
       } catch (err) {
-        setSessionInfo({ error: err })
+        const message = err instanceof Error ? err.message : String(err)
+        setSessionInfo({ error: message })
       }
     }
 
@@ -49,7 +60,8 @@ export default function DebugAuthPage() {
       const data = await response.json()
       setApiTest({ status: response.status, data })
     } catch (err) {
-      setApiTest({ error: err })
+      const message = err instanceof Error ? err.message : String(err)
+      setApiTest({ error: message })
     }
   }
 

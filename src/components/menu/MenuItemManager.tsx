@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,8 +61,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     image_url: ''
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
-  
   // File input refs
   const createFileInputRef = useRef<HTMLInputElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
@@ -147,29 +146,27 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
     setSelectedCategory('none')
     setSelectedTags([])
     setImageFile(null)
-    setImagePreview('')
     setMessage('')
   }
 
-  const handleImageSelect = (file: File, preview: string) => {
+  const handleImageSelect = (file: File) => {
     setImageFile(file)
-    setImagePreview(preview)
   }
 
   const handleImageRemove = () => {
     setImageFile(null)
-    setImagePreview('')
+    if (createFileInputRef.current) {
+      createFileInputRef.current.value = ''
+    }
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = ''
+    }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const previewUrl = event.target?.result as string
-        handleImageSelect(file, previewUrl)
-      }
-      reader.readAsDataURL(file)
+      handleImageSelect(file)
     }
   }
 
@@ -361,7 +358,6 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       .map(t => t.tags.id) || []
     setSelectedTags(tagIds)
     setImageFile(null)
-    setImagePreview(item.image_url || '')
   }
 
   // Memoized Set for O(1) tag lookups
@@ -454,11 +450,13 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden p-0">
                   <CardContent className="p-0">
                     {item.image_url && (
-                      <div className="aspect-[3/2] overflow-hidden">
-                        <img
+                      <div className="relative aspect-[3/2] overflow-hidden">
+                        <Image
                           src={item.image_url}
                           alt={item.title}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="(min-width: 1024px) 20vw, (min-width: 768px) 30vw, 90vw"
                         />
                       </div>
                     )}

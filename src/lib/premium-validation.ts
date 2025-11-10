@@ -182,11 +182,8 @@ export function checkPremiumFeature(profile: Profile | Partial<Profile> | null, 
  * @param maxRequests - Maximum requests per minute (default: 60)
  * @returns Rate limit validation result
  */
-export function checkRateLimit(userId: string, endpoint: string, maxRequests: number = 60): PremiumValidationResult {
+export function checkRateLimit(_userId: string, _endpoint: string, _maxRequests: number = 60): PremiumValidationResult {
   // Simple in-memory rate limiting (in production, use Redis or similar)
-  const now = Date.now()
-  const windowMs = 60 * 1000 // 1 minute window
-  
   // This would be implemented with a proper rate limiting service
   // For now, we'll return valid to avoid blocking legitimate users
   return { isValid: true }

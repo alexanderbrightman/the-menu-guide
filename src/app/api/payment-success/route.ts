@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
+import type Stripe from 'stripe'
+import type { Profile } from '@/lib/supabase'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -62,8 +64,8 @@ export async function POST(request: NextRequest) {
     console.log('Current profile:', profile)
 
     // Strategy 1: Check if user already has a customer ID and active subscription
-    let activeSubscription = null
-    let customerId = null
+    let activeSubscription: Stripe.Subscription | null = null
+    let customerId: string | null = null
 
     if (profile.stripe_customer_id) {
       try {
@@ -145,15 +147,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Update profile with subscription details
-    const updateData: any = {
+    const updateData: Partial<Profile> = {
       subscription_status: 'pro',
       is_public: true,
     }
 
     if (activeSubscription) {
-      updateData.stripe_customer_id = customerId
+      if (customerId) {
+        updateData.stripe_customer_id = customerId
+      }
       updateData.stripe_subscription_id = activeSubscription.id
-      updateData.subscription_current_period_end = new Date((activeSubscription as any).current_period_end * 1000).toISOString()
+      updateData.subscription_current_period_end = new Date(activeSubscription.current_period_end * 1000).toISOString()
       console.log('Updating with subscription details:', {
         customerId,
         subscriptionId: activeSubscription.id,

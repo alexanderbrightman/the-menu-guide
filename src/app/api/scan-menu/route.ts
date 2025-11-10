@@ -25,6 +25,19 @@ const getSupabaseClientWithAuth = (token: string) => {
   )
 }
 
+interface ParsedMenuItem {
+  title: string
+  description?: string | null
+  price?: number | null
+  category?: string | null
+}
+
+interface ParsedMenu {
+  items: ParsedMenuItem[]
+}
+
+type CategoryRecord = { id: string; name: string }
+
 export async function POST(request: NextRequest) {
   try {
     // Authentication
@@ -119,10 +132,10 @@ Rules:
     clearTimeout(timeout)
 
     const parsed = parseResponse.choices[0]?.message?.content || '{}'
-    let menuData
+    let menuData: ParsedMenu
     try {
       const cleaned = parsed.replace(/```json\n?|```/g, '').trim()
-      menuData = JSON.parse(cleaned)
+      menuData = JSON.parse(cleaned) as ParsedMenu
     } catch {
       return NextResponse.json(
         { error: 'Failed to parse structured data. Try again with a clearer image.' },
@@ -146,11 +159,13 @@ Rules:
     let itemsInserted = 0
     let categoriesCreated = 0
     const categoryMap = new Map<string, string>()
-    const categoryNames = Array.from(new Set(
-      menuData.items
-        .map((i: any) => i.category?.toString()?.trim())
-        .filter((c: string | undefined) => !!c)
-    )) as string[]
+    const categoryNames = Array.from(
+      new Set(
+        menuData.items
+          .map((item) => item.category?.toString().trim())
+          .filter((category): category is string => Boolean(category))
+      )
+    )
 
     if (categoryNames.length > 0) {
       const { data: existing } = await supabase
@@ -159,7 +174,7 @@ Rules:
         .eq('user_id', user.id)
         .in('name', categoryNames)
 
-      existing?.forEach((c: any) => categoryMap.set(c.name, c.id))
+      (existing as CategoryRecord[] | null)?.forEach((category) => categoryMap.set(category.name, category.id))
 
       const missing = categoryNames.filter((n) => !categoryMap.has(n))
       if (missing.length > 0) {
@@ -167,15 +182,16 @@ Rules:
           .from('menu_categories')
           .insert(missing.map((name) => ({ user_id: user.id, name })))
           .select('id,name')
-        inserted?.forEach((c: any) => categoryMap.set(c.name, c.id))
-        categoriesCreated += inserted?.length || 0
+        const insertedCategories = inserted as CategoryRecord[] | null
+        insertedCategories?.forEach((category) => categoryMap.set(category.name, category.id))
+        categoriesCreated += insertedCategories?.length || 0
       }
     }
 
     const placeholderImageUrl =
       'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
 
-    const itemsToInsert = menuData.items.map((item: any) => {
+    const itemsToInsert = menuData.items.map((item) => {
       const title = sanitizeTextInput(item.title || '')
       const description = item.description ? sanitizeTextInput(item.description) : null
       const price = item.price !== null && item.price !== undefined ? sanitizePrice(item.price) : null
@@ -189,7 +205,7 @@ Rules:
         category_id,
         image_url: placeholderImageUrl,
       }
-    }).filter((i: any) => i.title)
+    }).filter((menuItem) => menuItem.title.length > 0)
 
     if (itemsToInsert.length > 0) {
       const { error } = await supabase.from('menu_items').insert(itemsToInsert)
@@ -201,22 +217,30 @@ Rules:
       categoriesCreated,
       message: `Imported ${itemsInserted} item${itemsInserted !== 1 ? 's' : ''} successfully.`
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in scan-menu POST:', error)
-    if (error.response?.status === 401) {
+    const responseStatus = typeof error === 'object' && error !== null && 'response' in error
+      ? (error as { response?: { status?: number } }).response?.status
+      : undefined
+    const errorCode = typeof error === 'object' && error !== null && 'code' in error
+      ? (error as { code?: string }).code
+      : undefined
+    const errorMessage = error instanceof Error ? error.message : 'Failed to scan menu. Try again later.'
+
+    if (responseStatus === 401) {
       return NextResponse.json(
         { error: 'Invalid OpenAI API key.' },
         { status: 500 }
       )
     }
-    if (error.code === 'insufficient_quota') {
+    if (errorCode === 'insufficient_quota') {
       return NextResponse.json(
         { error: 'OpenAI API quota exceeded. Check billing.' },
         { status: 500 }
       )
     }
     return NextResponse.json(
-      { error: error.message || 'Failed to scan menu. Try again later.' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

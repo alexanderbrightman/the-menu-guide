@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { QrCode, Copy, ExternalLink, Smartphone } from 'lucide-react'
 import { Profile } from '@/lib/supabase'
 import QRCodeLib from 'qrcode'
+import Image from 'next/image'
 
 interface QRCodeDialogProps {
   profile: Profile
@@ -76,10 +77,14 @@ export function QRCodeDialog({ profile, isOpen, onClose }: QRCodeDialogProps) {
             <CardContent className="text-center px-6 pb-6">
               <div className="bg-white p-6 rounded-lg border-2 border-gray-200 w-fit mx-auto">
                 {qrCodeDataUrl ? (
-                  <img 
+                  <Image 
                     src={qrCodeDataUrl} 
                     alt="QR Code" 
-                    className="w-56 h-56"
+                    width={224}
+                    height={224}
+                    className="h-56 w-56"
+                    unoptimized
+                    priority
                   />
                 ) : (
                   <div className="w-56 h-56 bg-gray-100 flex items-center justify-center rounded">

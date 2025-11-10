@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Settings, CreditCard, AlertTriangle, CheckCircle, XCircle, Calendar } from 'lucide-react'
@@ -107,7 +107,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
 
     if (isExpired) {
       return { status: 'expired', message: `Expired on ${formatDate(profile.subscription_current_period_end)}` }
-    } else if ((profile as any).subscription_cancel_at_period_end) {
+    } else if (profile.subscription_cancel_at_period_end) {
       return { status: 'canceling', message: `Canceling on ${formatDate(profile.subscription_current_period_end)}` }
     } else {
       return { status: 'active', message: `Active until ${formatDate(profile.subscription_current_period_end)}` }

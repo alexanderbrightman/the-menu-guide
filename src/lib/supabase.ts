@@ -24,9 +24,13 @@ export interface Profile {
   qr_code_url?: string
   is_public: boolean
   subscription_status: 'free' | 'pro' | 'canceled'
+  menu_font?: string
+  menu_background_color?: string
   stripe_customer_id?: string
   stripe_subscription_id?: string
   subscription_current_period_end?: string
+  subscription_cancel_at_period_end?: boolean
+  subscription_canceled_at?: string
   view_count?: number
   created_at: string
 }

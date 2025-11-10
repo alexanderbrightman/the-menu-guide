@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import type Stripe from 'stripe'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -64,17 +65,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch subscription details from Stripe
-    let subscription
-    let customer
+    let subscription: Stripe.Subscription
+    let customer: Stripe.Customer | Stripe.DeletedCustomer
     
     try {
       subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id)
       customer = await stripe.customers.retrieve(profile.stripe_customer_id)
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
+      const stripeErr = (stripeError && typeof stripeError === 'object')
+        ? stripeError as Stripe.StripeError
+        : undefined
+
       console.error('Error retrieving from Stripe:', stripeError)
       
       // If subscription doesn't exist in Stripe, return appropriate error
-      if (stripeError.code === 'resource_missing') {
+      if (stripeErr?.code === 'resource_missing') {
         return NextResponse.json({ 
           error: 'Subscription not found in Stripe. This may indicate a payment processing issue. Please contact support.' 
         }, { status: 404 })
@@ -100,12 +105,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate dates first
-    const currentPeriodStart = (subscription as any).current_period_start 
-      ? new Date((subscription as any).current_period_start * 1000).toISOString()
+    const currentPeriodStart = subscription.current_period_start
+      ? new Date(subscription.current_period_start * 1000).toISOString()
       : new Date(profile.created_at).toISOString()
     
-    const currentPeriodEnd = (subscription as any).current_period_end 
-      ? new Date((subscription as any).current_period_end * 1000).toISOString()
+    const currentPeriodEnd = subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000).toISOString()
       : profile.subscription_current_period_end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     
     const daysUntilRenewal = Math.max(0, Math.ceil((new Date(currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
@@ -128,8 +133,8 @@ export async function GET(request: NextRequest) {
       canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
       
       // Customer information
-      customer_email: (customer as any).email || '',
-      customer_name: (customer as any).name || null,
+      customer_email: ('deleted' in customer && customer.deleted) ? '' : customer.email ?? '',
+      customer_name: ('deleted' in customer && customer.deleted) ? null : customer.name ?? null,
       
       // Next billing information
       next_billing_date: upcomingInvoice ? new Date(upcomingInvoice.period_end * 1000).toISOString() : null,

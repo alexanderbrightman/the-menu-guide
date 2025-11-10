@@ -322,10 +322,69 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const deleteAll = searchParams.get('all') === 'true'
     const itemId = searchParams.get('id')
 
-    if (!itemId) {
+    if (!deleteAll && !itemId) {
       return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+    }
+
+    if (deleteAll) {
+      const { data: items, error: fetchItemsError } = await supabase
+        .from('menu_items')
+        .select('id, image_url')
+        .eq('user_id', user.id)
+
+      if (fetchItemsError) {
+        console.error('Error fetching menu items for bulk delete:', fetchItemsError)
+        return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500 })
+      }
+
+      if (!items || items.length === 0) {
+        return NextResponse.json({ success: true, deletedCount: 0 })
+      }
+
+      const itemIds = items.map((item) => item.id)
+
+      const imagePaths = items
+        .map((item) => {
+          if (!item.image_url) return null
+          const urlParts = item.image_url.split('/')
+          const bucketIndex = urlParts.findIndex((part: string) => part === 'menu_items')
+          if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+            return urlParts.slice(bucketIndex + 1).join('/')
+          }
+          return null
+        })
+        .filter((path): path is string => Boolean(path))
+
+      if (imagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('menu_items')
+          .remove(imagePaths)
+
+        if (storageError) {
+          console.warn('Error deleting images during bulk delete:', storageError)
+        }
+      }
+
+      await supabase
+        .from('menu_item_tags')
+        .delete()
+        .in('menu_item_id', itemIds)
+
+      const { error: deleteError } = await supabase
+        .from('menu_items')
+        .delete()
+        .in('id', itemIds)
+        .eq('user_id', user.id)
+
+      if (deleteError) {
+        console.error('Error deleting menu items in bulk:', deleteError)
+        return NextResponse.json({ error: 'Failed to delete menu items' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, deletedCount: itemIds.length })
     }
 
     // First, get the menu item to extract image URL for storage cleanup

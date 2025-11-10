@@ -119,7 +119,7 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
       if (!supabase) {
         throw new Error('Supabase client not configured')
       }
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -136,6 +136,7 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
         setMessage('Check your email for the confirmation link!')
       }
     } catch (error) {
+      console.error('Sign up error:', error)
       setMessage('An error occurred during sign up')
     } finally {
       setLoading(false)
@@ -162,6 +163,7 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
         onSuccess?.()
       }
     } catch (error) {
+      console.error('Sign in error:', error)
       setMessage('An error occurred during sign in')
     } finally {
       setLoading(false)

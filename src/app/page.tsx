@@ -5,13 +5,45 @@ import { Dashboard } from '@/components/dashboard/Dashboard'
 import { SetupGuide } from '@/components/setup/SetupGuide'
 import { LandingPage } from '@/components/landing/LandingPage'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, Suspense } from 'react'
+import { useEffect, Suspense, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 function HomeContent() {
   const { user, loading, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
+
+  // Function to immediately update subscription status after payment
+  const updateSubscriptionStatus = useCallback(async () => {
+    if (!user || !supabase) return null
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return null
+
+      // Call our dedicated payment success API
+      const response = await fetch('/api/payment-success', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Failed to update subscription status:', data.error)
+        return null
+      }
+
+      console.log('Payment success API response:', data)
+      return data
+    } catch (error) {
+      console.error('Error updating subscription status:', error)
+      return null
+    }
+  }, [user])
 
   // Handle payment success/cancel messages
   useEffect(() => {
@@ -67,39 +99,7 @@ function HomeContent() {
         router.replace('/')
       }, 1000)
     }
-  }, [searchParams, router, refreshProfile])
-
-  // Function to immediately update subscription status after payment
-  const updateSubscriptionStatus = async () => {
-    if (!user || !supabase) return null
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return null
-
-      // Call our dedicated payment success API
-      const response = await fetch('/api/payment-success', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        console.error('Failed to update subscription status:', data.error)
-        return null
-      }
-
-      console.log('Payment success API response:', data)
-      return data
-    } catch (error) {
-      console.error('Error updating subscription status:', error)
-      return null
-    }
-  }
+  }, [searchParams, router, refreshProfile, updateSubscriptionStatus])
 
   // Check if Supabase is configured
   const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 

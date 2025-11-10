@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import type Stripe from 'stripe'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reactivate the subscription by removing the cancel_at_period_end flag
-    const subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {
+    const subscription: Stripe.Subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {
       cancel_at_period_end: false
     })
 
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       message: 'Your subscription has been reactivated and will continue billing monthly.',
       subscription_id: subscription.id,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      current_period_end: (subscription as any).current_period_end
+      current_period_end: subscription.current_period_end
     })
 
   } catch (error: unknown) {

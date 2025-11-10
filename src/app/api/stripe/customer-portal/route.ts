@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import type Stripe from 'stripe'
 
 // Helper to create a Supabase client with the user's token
 const getSupabaseClientWithAuth = (token: string) => {
@@ -70,30 +71,34 @@ export async function POST(request: NextRequest) {
       })
 
       return NextResponse.json({ url: session.url })
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
+      const stripeErr = (stripeError && typeof stripeError === 'object')
+        ? stripeError as Stripe.StripeError
+        : undefined
+
       console.error('Stripe customer portal error:', stripeError)
       console.error('Error details:', {
-        code: stripeError.code,
-        message: stripeError.message,
-        type: stripeError.type,
+        code: stripeErr?.code,
+        message: stripeErr?.message,
+        type: stripeErr?.type,
         customer_id: profile.stripe_customer_id
       })
       
       // Handle specific Stripe errors
-      if (stripeError.code === 'resource_missing') {
+      if (stripeErr?.code === 'resource_missing') {
         return NextResponse.json({ 
           error: 'Customer not found in Stripe. Please contact support for assistance.' 
         }, { status: 404 })
       }
       
-      if (stripeError.code === 'billing_portal_configuration_inactive') {
+      if (stripeErr?.code === 'billing_portal_configuration_inactive') {
         return NextResponse.json({ 
           error: 'Stripe customer portal is not configured. Please contact support to enable subscription management.' 
         }, { status: 400 })
       }
       
       return NextResponse.json({ 
-        error: `Unable to access Stripe customer portal: ${stripeError.message}` 
+        error: `Unable to access Stripe customer portal: ${stripeErr?.message ?? 'Unknown error'}` 
       }, { status: 500 })
     }
   } catch (error) {

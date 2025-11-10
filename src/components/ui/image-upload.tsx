@@ -3,6 +3,7 @@
  */
 
 import React, { useState, useRef } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Upload, X, CheckCircle, AlertCircle, Image as ImageIcon } from 'lucide-react'
@@ -169,10 +170,13 @@ export function ImageUpload({
             <div className="flex-shrink-0">
               <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                 {thumbnail ? (
-                  <img
+                  <Image
                     src={thumbnail}
                     alt="Preview"
-                    className="w-full h-full object-cover"
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                    unoptimized
                   />
                 ) : (
                   <ImageIcon className="h-8 w-8 text-gray-400" />

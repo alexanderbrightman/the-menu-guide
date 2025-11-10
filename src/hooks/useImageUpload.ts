@@ -75,7 +75,7 @@ export function useImageUpload() {
       const fileName = generateUniqueFilename(file.name, userId)
       
       // Upload with progress tracking
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(bucket)
         .upload(fileName, optimizedImage.file, {
           cacheControl: '3600',

@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, FolderOpen } from 'lucide-react'
 import { MenuCategory, supabase } from '@/lib/supabase'
 
@@ -24,7 +23,7 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
   const [categoryName, setCategoryName] = useState('')
   const [message, setMessage] = useState('')
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     if (!user) return
     if (!supabase) {
       setMessage('Error: Supabase client not available')
@@ -57,7 +56,7 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchCategories()

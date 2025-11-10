@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown, DollarSign } from 'lucide-react'
+import { X, ArrowRight, ChevronDown } from 'lucide-react'
 
 // Helper function to get border color for allergen tags
 const getAllergenBorderColor = (tagName: string): string => {
@@ -55,12 +55,17 @@ export function LandingPage() {
             <div className="flex items-center justify-center w-full">
               <div className="flex items-center space-x-4">
                 {/* Logo - same height as title, 60% larger */}
-                <div className="flex-shrink-0">
-                  <img 
+                <div
+                  className="flex-shrink-0 relative w-auto h-[17.28vw] md:h-[23.04vw] lg:h-[28.8vw] min-h-[11.52rem] min-w-[11.52rem] max-h-[34.56rem] max-w-[34.56rem]"
+                  style={{ height: 'clamp(11.52rem, 23.04vw, 34.56rem)' }}
+                >
+                  <Image 
                     src="/logo_notext.png" 
                     alt="The Menu Guide Logo" 
-                    className="h-[17.28vw] md:h-[23.04vw] lg:h-[28.8vw] w-auto min-h-[11.52rem] min-w-[11.52rem] max-h-[34.56rem] max-w-[34.56rem] object-contain"
-                    style={{ height: 'clamp(11.52rem, 23.04vw, 34.56rem)' }}
+                    fill
+                    className="object-contain"
+                    sizes="(min-width: 1024px) 30vw, 60vw"
+                    priority
                   />
                 </div>
                 
@@ -108,13 +113,13 @@ export function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-10 md:mb-14">
             {/* Duck Card */}
             <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
-              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
-                <img 
+              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <Image 
                   src="/duck_homepg.png" 
                   alt="Hudson Duck with White Asparagus"
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                  loading="lazy"
-                  decoding="async"
+                  fill
+                  className="object-cover transition-transform duration-300 hover:scale-110"
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
               <div>
@@ -152,13 +157,13 @@ export function LandingPage() {
 
             {/* Lobster Card */}
             <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
-              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
-                <img 
+              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <Image 
                   src="/lobster_homepg.png" 
                   alt="Lobster Thermidor"
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                  loading="lazy"
-                  decoding="async"
+                  fill
+                  className="object-cover transition-transform duration-300 hover:scale-110"
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
               <div>
@@ -205,13 +210,13 @@ export function LandingPage() {
 
             {/* Scallops Card */}
             <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
-              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
-                <img 
+              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <Image 
                   src="/scallop_homepg.png" 
                   alt="Scallops with Apple Fennel Salad"
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                  loading="lazy"
-                  decoding="async"
+                  fill
+                  className="object-cover transition-transform duration-300 hover:scale-110"
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
               <div>
@@ -258,13 +263,13 @@ export function LandingPage() {
 
             {/* Stew Card */}
             <div className="cursor-pointer hover:scale-105 transform transition-transform duration-300">
-              <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
-                <img 
+              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                <Image 
                   src="/stew_homepg.png" 
                   alt="Pot au Feu"
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                  loading="lazy"
-                  decoding="async"
+                  fill
+                  className="object-cover transition-transform duration-300 hover:scale-110"
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
               <div>

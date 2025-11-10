@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogOut, QrCode } from 'lucide-react'
+import Image from 'next/image'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { CategoryManager } from '@/components/menu/CategoryManager'
@@ -18,16 +19,16 @@ import { SubscriptionExpiryWarning } from '@/components/subscription/Subscriptio
 
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
-  const premiumAccess = usePremiumFeature('menu scanning')
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
-  const [qrCodeLoading, setQrCodeLoading] = useState(false)
 
   // Premium feature validation
   const qrCodeAccess = usePremiumFeature('QR code generation')
 
+  const profileUsername = profile?.username || ''
+
   const generateQRCode = useCallback(async () => {
-    if (!user || !supabase) return
+    if (!user) return
 
     // Check premium access before proceeding
     if (!qrCodeAccess.canAccess) {
@@ -35,7 +36,6 @@ export function Dashboard() {
       return
     }
 
-    setQrCodeLoading(true)
     try {
       // Get the current session token
       const { data: { session } } = await supabase.auth.getSession()
@@ -45,7 +45,7 @@ export function Dashboard() {
       }
 
       // Generate QR code with username to force regeneration
-      const response = await fetch(`/api/qr-code?username=${profile?.username || ''}`, {
+      const response = await fetch(`/api/qr-code?username=${profileUsername}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
@@ -67,10 +67,8 @@ export function Dashboard() {
     } catch (error) {
       console.error('Error generating QR code:', error)
       alert('Failed to generate QR code. Please try again.')
-    } finally {
-      setQrCodeLoading(false)
     }
-  }, [user, profile?.username, qrCodeAccess])
+  }, [user, profileUsername, qrCodeAccess, qrCodeUrl])
 
   // Cleanup blob URL on unmount
   useEffect(() => {
@@ -83,11 +81,10 @@ export function Dashboard() {
 
   // Auto-generate QR code when component mounts or profile username changes (only for premium users)
   useEffect(() => {
-    if (user && profile && qrCodeAccess.canAccess && profile.username && !qrCodeUrl) {
+    if (user && profile && qrCodeAccess.canAccess && profileUsername && !qrCodeUrl) {
       generateQRCode()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, profile?.username, qrCodeAccess.canAccess])
+  }, [user, profile, profileUsername, qrCodeAccess.canAccess, qrCodeUrl, generateQRCode])
 
   const downloadQRCode = () => {
     if (qrCodeUrl) {
@@ -111,10 +108,13 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <img 
+              <Image 
                 src="/logo_notext.png" 
                 alt="The Menu Guide Logo" 
+                width={40}
+                height={40}
                 className="h-10 w-10 object-contain"
+                priority
               />
               <h1 className="text-2xl font-semibold text-gray-900">The Menu Guide</h1>
             </div>
@@ -154,8 +154,8 @@ export function Dashboard() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex space-x-4">
+          <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-3">
               <Button onClick={() => window.open(`/menu/${profile.username}`, '_blank')}>
                 View Menu
               </Button>
@@ -205,10 +205,14 @@ export function Dashboard() {
             <CardContent>
               <div className="flex flex-col items-center space-y-4">
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <img 
+                  <Image 
                     src={qrCodeUrl} 
                     alt="Menu QR Code" 
-                    className="w-64 h-64 object-contain"
+                    width={256}
+                    height={256}
+                    className="h-64 w-64 object-contain"
+                    unoptimized
+                    priority
                   />
                 </div>
                 <div className="flex space-x-4">

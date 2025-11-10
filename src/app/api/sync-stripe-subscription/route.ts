@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import type { Profile } from '@/lib/supabase'
 
 // Admin Supabase client for subscription operations
 const supabaseAdmin = createClient(
@@ -70,17 +71,19 @@ export async function POST(request: NextRequest) {
         console.log('Found active subscription:', subscription.id)
 
         // Update the user's profile with the real Stripe data
+        const updateData: Partial<Profile> = {
+          stripe_customer_id: customer.id,
+          stripe_subscription_id: subscription.id,
+          subscription_status: 'pro',
+          is_public: true,
+          subscription_current_period_end: subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000).toISOString()
+            : undefined
+        }
+
         const { error: updateError } = await supabaseAdmin
           .from('profiles')
-          .update({
-            stripe_customer_id: customer.id,
-            stripe_subscription_id: subscription.id,
-            subscription_status: 'pro',
-            is_public: true,
-            subscription_current_period_end: (subscription as any).current_period_end 
-              ? new Date((subscription as any).current_period_end * 1000).toISOString() 
-              : null
-          })
+          .update(updateData)
           .eq('id', user.id)
 
         if (updateError) {

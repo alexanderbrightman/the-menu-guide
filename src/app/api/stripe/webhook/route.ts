@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
+import type { Profile } from '@/lib/supabase'
 
 // Admin Supabase client for webhook operations
 const supabaseAdmin = createClient(
@@ -56,9 +57,10 @@ export async function POST(req: NextRequest) {
       throw new Error('Stripe signature or webhook secret missing.')
     }
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
-  } catch (err: any) {
-    console.error(`[Webhook] Signature verification failed: ${err.message}`)
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    console.error(`[Webhook] Signature verification failed: ${message}`)
+    return new NextResponse(`Webhook Error: ${message}`, { status: 400 })
   }
 
   // Check idempotency - prevent processing same event multiple times
@@ -267,7 +269,7 @@ async function manageSubscriptionStatusChange(
     }
 
     // Retrieve the subscription details from Stripe
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
     console.log('[ManageSubscription] Retrieved subscription:', {
       id: subscription.id,
       status: subscription.status,
@@ -317,13 +319,13 @@ async function manageSubscriptionStatusChange(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Partial<Profile> = {
       subscription_status: subscriptionStatus,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
       subscription_current_period_end: subscription.current_period_end 
         ? new Date(subscription.current_period_end * 1000).toISOString() 
-        : null,
+        : undefined,
       subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
       is_public: isPublic
     }
@@ -331,6 +333,8 @@ async function manageSubscriptionStatusChange(
     // Add cancellation timestamp if subscription is canceled
     if (subscription.status === 'canceled' && subscription.canceled_at) {
       updateData.subscription_canceled_at = new Date(subscription.canceled_at * 1000).toISOString()
+    } else if (subscription.status !== 'canceled') {
+      updateData.subscription_canceled_at = undefined
     }
 
     console.log('[ManageSubscription] Updating profile with data:', updateData)

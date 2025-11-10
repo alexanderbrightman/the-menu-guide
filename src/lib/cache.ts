@@ -1,17 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 // Simple in-memory cache for API responses
-const cache = new Map<string, { data: any; timestamp: number; ttl: number }>()
+interface CacheEntry<T> {
+  data: T
+  timestamp: number
+  ttl: number
+}
 
-export function getCachedResponse(key: string, ttl: number = 60000) {
-  const cached = cache.get(key)
+const cache = new Map<string, CacheEntry<unknown>>()
+
+export function getCachedResponse<T>(key: string, _ttl?: number): T | null {
+  const cached = cache.get(key) as CacheEntry<T> | undefined
   if (cached && Date.now() - cached.timestamp < cached.ttl) {
     return cached.data
   }
   return null
 }
 
-export function setCachedResponse(key: string, data: any, ttl: number = 60000) {
+export function setCachedResponse<T>(key: string, data: T, ttl: number = 60000) {
   cache.set(key, {
     data,
     timestamp: Date.now(),
@@ -48,7 +54,7 @@ export function addCacheHeaders(response: NextResponse, maxAge: number = 60) {
 }
 
 // Helper to create cacheable API response
-export function createCacheableResponse(data: any, maxAge: number = 60) {
+export function createCacheableResponse<T>(data: T, maxAge: number = 60) {
   const response = NextResponse.json(data)
   return addCacheHeaders(response, maxAge)
 }

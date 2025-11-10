@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
+import type { CSSProperties } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ChevronDown, X, Filter } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -19,6 +20,34 @@ interface PublicMenuPageProps {
   categories: MenuCategory[]
   menuItems: MenuItemWithTags[]
   tags: TagType[]
+}
+
+const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
+const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
+const FONT_FAMILY_MAP: Record<string, string> = {
+  'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
+  'Fjalla One': '"Fjalla One", sans-serif',
+  'Georgia': 'Georgia, serif',
+  'Times New Roman': '"Times New Roman", serif',
+  'Arial': 'Arial, sans-serif',
+  'Courier New': '"Courier New", monospace',
+}
+
+const getContrastColor = (hexColor: string) => {
+  if (!hexColor) return '#1f2937'
+  const cleanHex = hexColor.replace('#', '')
+  const normalizedHex = cleanHex.length === 3
+    ? cleanHex.split('').map(char => char + char).join('')
+    : cleanHex
+
+  if (normalizedHex.length !== 6) return '#1f2937'
+
+  const r = parseInt(normalizedHex.substring(0, 2), 16)
+  const g = parseInt(normalizedHex.substring(2, 4), 16)
+  const b = parseInt(normalizedHex.substring(4, 6), 16)
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.6 ? '#1f2937' : '#ffffff'
 }
 
 // Helper function to get border color for allergen tags
@@ -36,22 +65,86 @@ const getAllergenBorderColor = (tagName: string): string => {
   return colorMap[tagName.toLowerCase()] || ''
 }
 
+const hexToRgba = (hexColor: string, alpha: number) => {
+  const cleanHex = hexColor.replace('#', '')
+  const normalized = cleanHex.length === 3
+    ? cleanHex.split('').map((char) => char + char).join('')
+    : cleanHex
+
+  if (normalized.length !== 6) return `rgba(255,255,255,${alpha})`
+
+  const r = parseInt(normalized.substring(0, 2), 16)
+  const g = parseInt(normalized.substring(2, 4), 16)
+  const b = parseInt(normalized.substring(4, 6), 16)
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+const buildTagStyles = (
+  tagName: string,
+  {
+    isDarkBackground,
+    isSelected = false,
+  }: {
+    isDarkBackground: boolean
+    isSelected?: boolean
+  }
+): CSSProperties => {
+  const borderColor = getAllergenBorderColor(tagName)
+
+  if (!borderColor) {
+    if (isDarkBackground) {
+      return {
+        borderColor: 'rgba(255,255,255,0.35)',
+        color: 'rgba(255,255,255,0.92)',
+        backgroundColor: isSelected ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
+      }
+    }
+
+    return {
+      borderColor: 'rgba(17,24,39,0.18)',
+      color: '#1f2937',
+      backgroundColor: isSelected ? 'rgba(17,24,39,0.08)' : 'transparent',
+    }
+  }
+
+  return {
+    borderColor,
+    color: isDarkBackground ? borderColor : '#1f2937',
+    backgroundColor: isSelected
+      ? hexToRgba(borderColor, isDarkBackground ? 0.32 : 0.16)
+      : isDarkBackground
+        ? 'rgba(255,255,255,0.05)'
+        : 'transparent',
+  }
+}
+
 // Memoized menu item card component to prevent unnecessary re-renders
-const MenuItemCard = memo(({ item, onSelect }: { item: MenuItemWithTags; onSelect: (item: MenuItemWithTags) => void }) => (
+const MenuItemCard = memo(({
+  item,
+  onSelect,
+  priceClass,
+  descriptionClass,
+  isDarkBackground,
+}: {
+  item: MenuItemWithTags
+  onSelect: (item: MenuItemWithTags) => void
+  priceClass: string
+  descriptionClass: string
+  isDarkBackground: boolean
+}) => (
   <div 
     className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
     onClick={() => onSelect(item)}
   >
     {item.image_url && (
-      <div className="aspect-[3/2] overflow-hidden rounded-lg mb-2">
-        <img 
-          src={item.image_url} 
+      <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+        <Image
+          src={item.image_url}
           alt={item.title}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-          loading="lazy"
-          decoding="async"
-          width={400}
-          height={267}
+          fill
+          className="object-cover transition-transform duration-300 hover:scale-110"
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
         />
       </div>
     )}
@@ -59,14 +152,14 @@ const MenuItemCard = memo(({ item, onSelect }: { item: MenuItemWithTags; onSelec
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold text-lg">{item.title}</h3>
         {item.price && (
-          <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
+          <div className={`font-semibold text-xs whitespace-nowrap ml-2 ${priceClass}`}>
             ${item.price.toFixed(2)}
           </div>
         )}
       </div>
       
       {item.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+        <p className={`text-sm mb-3 line-clamp-2 ${descriptionClass}`}>
           {item.description}
         </p>
       )}
@@ -77,10 +170,8 @@ const MenuItemCard = memo(({ item, onSelect }: { item: MenuItemWithTags; onSelec
             <Badge 
               key={index} 
               variant="outline" 
-              className="text-xs"
-              style={{
-                borderColor: getAllergenBorderColor(itemTag.tags.name)
-              }}
+              className="text-xs bg-transparent"
+              style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
             >
               {itemTag.tags.name}
             </Badge>
@@ -99,6 +190,42 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  const menuFont = profile.menu_font || DEFAULT_MENU_FONT
+  const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
+  const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
+  const isDarkBackground = contrastColor === '#ffffff'
+
+  const primaryTextClass = isDarkBackground ? 'text-white' : 'text-gray-900'
+  const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-gray-600'
+  const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-gray-500'
+  const subtleTextClass = isDarkBackground ? 'text-gray-100/70' : 'text-gray-700'
+  const filterPanelClass = isDarkBackground ? 'bg-white/10 border border-white/20 backdrop-blur' : 'bg-white border border-gray-200'
+  const dividerBorderClass = isDarkBackground ? 'border-white/10' : 'border-gray-200'
+
+  const iconMutedClass = isDarkBackground ? 'text-gray-200/60' : 'text-gray-400'
+  const linkAccentClass = isDarkBackground ? 'text-blue-200 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'
+
+  const themeStyle = useMemo(() => ({
+    backgroundColor: menuBackgroundColor,
+    color: contrastColor,
+    fontFamily: FONT_FAMILY_MAP[menuFont] ?? menuFont,
+  }), [menuBackgroundColor, contrastColor, menuFont])
+
+  const baseCategoryButtonClass =
+    'flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px] transition-colors'
+
+  const getCategoryButtonClass = useCallback((isSelected: boolean) => {
+    if (isDarkBackground) {
+      if (isSelected) {
+        return `${baseCategoryButtonClass} bg-white text-gray-900 border border-transparent hover:bg-white/90`
+      }
+
+      return `${baseCategoryButtonClass} text-white border border-white/35 bg-transparent hover:bg-white/10`
+    }
+
+    return baseCategoryButtonClass
+  }, [isDarkBackground, baseCategoryButtonClass])
 
   // Pre-compute tag ID sets for each menu item (memoized for performance)
   const itemTagIdSets = useMemo(() => {
@@ -201,16 +328,19 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   }, [selectedItem])
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F2EE' }}>
+    <div className="min-h-screen transition-colors" style={themeStyle}>
       {/* Large Header Photo */}
       <header className="relative max-w-screen-2xl mx-auto w-full">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="h-[20vh] w-full overflow-hidden rounded-lg bg-gray-100">
+          <div className="relative h-[20vh] w-full overflow-hidden rounded-lg bg-gray-100">
             {profile.avatar_url ? (
-              <img 
+              <Image 
                 src={profile.avatar_url} 
                 alt={profile.display_name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -226,17 +356,17 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         
         {/* Restaurant Name - Large Title Below Photo */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-          <h1 className="text-6xl font-bold text-gray-900 text-center">{profile.display_name}</h1>
+          <h1 className={`text-6xl font-bold text-center ${primaryTextClass}`}>{profile.display_name}</h1>
           
           {profile.bio && (
             <div className="mt-1 text-center">
-              <div className="text-sm text-gray-700 inline-block">
+              <div className={`text-sm inline-block ${subtleTextClass}`}>
                 {profile.bio.length > 100 && !isBioExpanded ? (
                   <>
                     {profile.bio.substring(0, 100)}...
                     <button
                       onClick={() => setIsBioExpanded(true)}
-                      className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
+                      className={`ml-1 inline-flex items-center ${linkAccentClass}`}
                     >
                       <ChevronDown className="h-3 w-3" />
                     </button>
@@ -247,7 +377,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                     {profile.bio.length > 100 && isBioExpanded && (
                       <button
                         onClick={() => setIsBioExpanded(false)}
-                        className="ml-1 text-blue-600 hover:text-blue-800 inline-flex items-center"
+                        className={`ml-1 inline-flex items-center ${linkAccentClass}`}
                       >
                         <ChevronDown className="h-3 w-3 rotate-180" />
                       </button>
@@ -263,10 +393,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Filters */}
         <div className="mb-6">
-          <div className="space-y-1.5">
+          <div className={`space-y-1.5 rounded-lg p-4 ${filterPanelClass}`}>
             {/* Filter Menu Header */}
             <div className="mb-1.5">
-              <h3 className="text-sm font-medium text-gray-600">Filter Menu</h3>
+              <h3 className={`text-sm font-medium ${secondaryTextClass}`}>Filter Menu</h3>
             </div>
 
             {/* Category Filter */}
@@ -277,7 +407,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                     variant={selectedCategory === 'all' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handleCategoryChange('all')}
-                    className="flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
+                    className={getCategoryButtonClass(selectedCategory === 'all')}
                     disabled={isPending}
                   >
                     All Items
@@ -288,7 +418,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       variant={selectedCategory === category.id ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => handleCategoryChange(category.id)}
-                      className="flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px]"
+                      className={getCategoryButtonClass(selectedCategory === category.id)}
                       disabled={isPending}
                     >
                       {category.name}
@@ -302,29 +432,43 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
             <div>
               <div className="overflow-x-auto scrollbar-hide scroll-smooth">
                 <div className="flex flex-nowrap gap-1.5 pb-1.5">
-                  {tags.map((tag) => (
-                    <Button
-                      key={tag.id}
-                      variant={selectedTagsSetForButtons.has(tag.id) ? "default" : "outline"}
-                      size="sm"
-                      className="cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px]"
-                      onClick={() => toggleTag(tag.id)}
-                      disabled={isPending}
-                      style={{
-                        borderColor: getAllergenBorderColor(tag.name)
-                      }}
-                    >
-                      {tag.name}
-                    </Button>
-                  ))}
+                  {tags.map((tag) => {
+                    const isSelected = selectedTagsSetForButtons.has(tag.id)
+                    return (
+                      <Button
+                        key={tag.id}
+                        variant="outline"
+                        size="sm"
+                        className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors ${
+                          isSelected ? 'font-semibold shadow-sm' : 'font-medium'
+                        } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                        onClick={() => toggleTag(tag.id)}
+                        disabled={isPending}
+                        style={buildTagStyles(tag.name, { isDarkBackground, isSelected })}
+                      >
+                        {tag.name}
+                      </Button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
 
               {/* Clear Filters */}
               {hasActiveFilters && (
-                <div className="pt-1.5 border-t">
-                  <Button variant="outline" size="sm" onClick={clearFilters} className="py-[3.74px] px-[7.48px] text-[9.9px]" disabled={isPending}>
+                <div className={`pt-1.5 border-t ${dividerBorderClass}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    className={`py-[3.74px] px-[7.48px] text-[9.9px]`}
+                    style={isDarkBackground ? {
+                      borderColor: 'rgba(255,255,255,0.35)',
+                      color: '#ffffff',
+                      backgroundColor: 'rgba(255,255,255,0.05)'
+                    } : undefined}
+                    disabled={isPending}
+                  >
                     Clear All Filters
                   </Button>
                 </div>
@@ -335,27 +479,35 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         {/* Menu Items */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Menu</h2>
-            <div className="text-xs text-gray-500">
+            <h2 className={`text-2xl font-bold ${primaryTextClass}`}>Menu</h2>
+            <div className={`text-xs ${mutedTextClass}`}>
               {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
               {hasActiveFilters && ' (filtered)'}
             </div>
           </div>
 
           {filteredItems.length === 0 ? (
-            <div className="text-center py-12 border-t border-gray-200">
-              <div className="text-gray-400 mb-4">
+            <div className={`text-center py-12 border-t ${dividerBorderClass}`}>
+              <div className={`mb-4 ${iconMutedClass}`}>
                 <Filter className="h-12 w-12 mx-auto" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-              <p className="text-gray-500 mb-4">
+              <h3 className={`text-lg font-medium mb-2 ${primaryTextClass}`}>No items found</h3>
+              <p className={`mb-4 ${mutedTextClass}`}>
                 {hasActiveFilters 
                   ? 'Try adjusting your filters to see more items.'
                   : 'This menu is empty.'
                 }
               </p>
               {hasActiveFilters && (
-                <Button variant="outline" onClick={clearFilters}>
+                <Button
+                  variant="outline"
+                  onClick={clearFilters}
+                  className={isDarkBackground ? 'text-white' : ''}
+                  style={isDarkBackground ? {
+                    borderColor: 'rgba(255,255,255,0.35)',
+                    backgroundColor: 'rgba(255,255,255,0.05)'
+                  } : undefined}
+                >
                   Clear Filters
                 </Button>
               )}
@@ -363,10 +515,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {filteredItems.map((item) => (
-                <MenuItemCard 
+                <MenuItemCard
                   key={item.id}
                   item={item}
                   onSelect={handleItemSelect}
+                  priceClass={primaryTextClass}
+                  descriptionClass={secondaryTextClass}
+                  isDarkBackground={isDarkBackground}
                 />
               ))}
             </div>
@@ -374,10 +529,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-500">
+        <div className={`mt-12 text-center text-sm ${mutedTextClass}`}>
           <Link
             href="/"
-            className="text-black underline hover:text-gray-800 transition-colors"
+            className={`underline transition-colors ${isDarkBackground ? 'text-white hover:text-gray-100' : 'text-black hover:text-gray-800'}`}
           >
             Want to show off your food?
           </Link>
@@ -411,10 +566,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               {/* Large Image */}
               {selectedItem.image_url && (
                 <div className="aspect-video overflow-hidden">
-                  <img 
+                  <Image 
                     src={selectedItem.image_url} 
                     alt={selectedItem.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 40vw, 90vw"
+                    priority
                   />
                 </div>
               )}
@@ -453,10 +611,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="text-sm"
-                          style={{
-                            borderColor: getAllergenBorderColor(itemTag.tags.name)
-                          }}
+                          className="text-sm bg-transparent"
+                          style={buildTagStyles(itemTag.tags.name, { isDarkBackground: false })}
                         >
                           {itemTag.tags.name}
                         </Badge>

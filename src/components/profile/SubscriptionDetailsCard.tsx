@@ -184,23 +184,25 @@ export function SubscriptionDetailsCard() {
               {error}
             </AlertDescription>
           </Alert>
-          <div className="mt-4 space-y-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={fetchSubscriptionDetails}
+              className="flex items-center gap-2"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4" />
               Retry
             </Button>
-            <Button 
-              variant="default" 
-              size="sm" 
+            <Button
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2"
               onClick={async () => {
                 if (!supabase) return
                 setLoading(true)
                 setError('')
-                
+
                 try {
                   const token = await getSessionToken()
                   if (token) {
@@ -228,7 +230,7 @@ export function SubscriptionDetailsCard() {
                 }
               }}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4" />
               Sync with Stripe
             </Button>
           </div>

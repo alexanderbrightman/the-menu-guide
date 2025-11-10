@@ -34,7 +34,7 @@ export default function DatabaseTest() {
 
       // Test 1: Check if we can query profiles table
       addLog('Testing profiles table query...')
-      const { data: profiles, error: profilesError } = await supabase
+      const { error: profilesError } = await supabase
         .from('profiles')
         .select('count')
         .limit(1)

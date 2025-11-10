@@ -83,20 +83,8 @@ const nextConfig: NextConfig = {
           }
         ],
       },
-      {
-        // Allow source maps to load properly in development
-        source: '/_next/static/:path*/*.map',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*'
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET'
-          },
-        ],
-      },
     ]
   },
 };
+
+export default nextConfig;

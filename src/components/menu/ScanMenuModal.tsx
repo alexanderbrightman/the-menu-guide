@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScanLine, Upload, X } from 'lucide-react'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 
@@ -197,12 +198,17 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
               <>
                 {filePreview && (
                   <div className="space-y-3">
-                    <div className="relative">
-                      <img
-                        src={filePreview}
-                        alt="Menu preview"
-                        className="w-full max-h-64 object-contain rounded-lg border border-gray-200"
-                      />
+                    <div className="relative w-full max-h-64">
+                      <div className="relative w-full h-64 rounded-lg border border-gray-200 overflow-hidden bg-white">
+                        <Image
+                          src={filePreview}
+                          alt="Menu preview"
+                          fill
+                          className="object-contain"
+                          sizes="100vw"
+                          unoptimized
+                        />
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
