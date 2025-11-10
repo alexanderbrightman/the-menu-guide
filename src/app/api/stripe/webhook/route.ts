@@ -320,15 +320,17 @@ async function manageSubscriptionStatusChange(
 
     // Prepare update data
     const updateData: Partial<Profile> = {
-      subscription_status: subscriptionStatus,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
-      subscription_current_period_end: subscription.current_period_end 
-        ? new Date(subscription.current_period_end * 1000).toISOString() 
-        : undefined,
       subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
       is_public: isPublic
     }
+    updateData.subscription_status = subscriptionStatus
+
+    const periodEndSeconds = subscription.items?.data?.[0]?.current_period_end
+    updateData.subscription_current_period_end = periodEndSeconds
+      ? new Date(periodEndSeconds * 1000).toISOString()
+      : undefined
 
     // Add cancellation timestamp if subscription is canceled
     if (subscription.status === 'canceled' && subscription.canceled_at) {
