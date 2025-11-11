@@ -14,8 +14,14 @@ import { Settings, Globe, Eye, EyeOff, Trash2, AlertTriangle, Check } from 'luci
 import { SubscriptionDetailsCard } from './SubscriptionDetailsCard'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 import { validatePremiumAccess } from '@/lib/premium-validation'
+import { cn } from '@/lib/utils'
+import { UpgradeCard } from '@/components/payment/UpgradeCard'
 
-export function SettingsDialog() {
+interface SettingsDialogProps {
+  triggerClassName?: string
+}
+
+export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
   const { user, profile, refreshProfile } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
   const [isPublic, setIsPublic] = useState(profile?.is_public || false)
@@ -174,7 +180,7 @@ export function SettingsDialog() {
   return (
     <Dialog open={showSettings} onOpenChange={setShowSettings}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className={cn(triggerClassName)}>
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </Button>
@@ -252,11 +258,13 @@ export function SettingsDialog() {
             </Card>
 
             {/* Subscription Details */}
-            {hasPremiumAccess && (
+            {hasPremiumAccess ? (
               <>
                 <SubscriptionExpiryWarning />
                 <SubscriptionDetailsCard />
               </>
+            ) : (
+              <UpgradeCard />
             )}
 
             {/* Delete Account Section */}
@@ -367,7 +375,7 @@ export function SettingsDialog() {
           </div>
         </div>
 
-        <div className="flex-shrink-0 flex justify-end pt-3 border-t bg-white">
+        <div className="flex-shrink-0 flex justify-end pt-3 bg-white">
           <Button variant="outline" size="sm" onClick={() => setShowSettings(false)}>
             Close
           </Button>

@@ -39,9 +39,10 @@ export function LandingPage() {
       <div className="relative z-10 flex flex-col min-h-screen px-4 sm:px-6 lg:px-8">
         {/* Top right login button */}
         <div className="absolute top-8 right-8 z-20">
-          <Button 
+          <Button
             onClick={() => setShowAuthForm(true)}
-            className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-lg text-lg font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-8 py-4 border border-gray-200"
+            variant="outline"
+            className="border-slate-900 text-slate-900 hover:bg-slate-100 bg-transparent rounded-lg text-lg font-light transition-all duration-300 px-8 py-4"
           >
             Log In
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -317,9 +318,10 @@ export function LandingPage() {
 
           {/* Call to action */}
           <div className="text-center space-y-3">
-            <Button 
+            <Button
               onClick={() => setShowAuthForm(true)}
-              className="bg-white/60 backdrop-blur-sm text-gray-700 rounded-lg text-sm sm:text-base md:text-lg font-light hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-3.5 border border-gray-200"
+              variant="outline"
+              className="border-slate-900 text-slate-900 hover:bg-slate-100 bg-transparent rounded-lg text-sm sm:text-base md:text-lg font-light transition-all duration-300 px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-3.5"
             >
               Start building your menu!
             </Button>

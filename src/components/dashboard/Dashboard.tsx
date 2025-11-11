@@ -1,26 +1,72 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogOut, QrCode } from 'lucide-react'
 import Image from 'next/image'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { SettingsDialog } from '@/components/profile/SettingsDialog'
-import { CategoryManager } from '@/components/menu/CategoryManager'
-import { MenuItemManager } from '@/components/menu/MenuItemManager'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
-import { UpgradeCard } from '@/components/payment/UpgradeCard'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
+import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
+
+const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
+const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
+const FONT_FAMILY_MAP: Record<string, string> = {
+  'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
+  'Fjalla One': '"Fjalla One", sans-serif',
+  Georgia: 'Georgia, serif',
+  'Times New Roman': '"Times New Roman", serif',
+  Arial: 'Arial, sans-serif',
+  'Courier New': '"Courier New", monospace',
+}
+
+const getContrastColor = (hexColor: string) => {
+  if (!hexColor) return '#1f2937'
+  const cleanHex = hexColor.replace('#', '')
+  const normalized = cleanHex.length === 3
+    ? cleanHex.split('').map((char) => char + char).join('')
+    : cleanHex
+
+  if (normalized.length !== 6) return '#1f2937'
+
+  const r = parseInt(normalized.substring(0, 2), 16)
+  const g = parseInt(normalized.substring(2, 4), 16)
+  const b = parseInt(normalized.substring(4, 6), 16)
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.6 ? '#1f2937' : '#ffffff'
+}
 
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+
+  const menuBackgroundColor = profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
+  const menuFont = profile?.menu_font || DEFAULT_MENU_FONT
+
+  const contrastColor = useMemo(
+    () => getContrastColor(menuBackgroundColor),
+    [menuBackgroundColor]
+  )
+  const isDarkBackground = contrastColor === '#ffffff'
+  const menuFontFamily = useMemo(
+    () => FONT_FAMILY_MAP[menuFont] ?? menuFont,
+    [menuFont]
+  )
+  const subtleTextClass = isDarkBackground ? 'text-white/75' : 'text-gray-600'
+  const outlineButtonClass = isDarkBackground
+    ? 'border-white/60 !text-white hover:bg-white/10 bg-transparent'
+    : 'border-slate-400 !text-slate-900 hover:bg-slate-100 bg-transparent'
+  const cardSurfaceClass = `rounded-2xl transition-colors ${
+    isDarkBackground
+      ? 'bg-white/10 text-white shadow-xl shadow-black/20'
+      : 'bg-white/95 shadow-sm'
+  }`
 
   // Premium feature validation
   const qrCodeAccess = usePremiumFeature('QR code generation')
@@ -107,113 +153,76 @@ export function Dashboard() {
     return <div>Loading...</div>
   }
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    const previousBodyBg = document.body.style.backgroundColor
+    const previousHtmlBg = document.documentElement.style.backgroundColor
+    document.body.style.backgroundColor = menuBackgroundColor
+    document.documentElement.style.backgroundColor = menuBackgroundColor
+
+    return () => {
+      document.body.style.backgroundColor = previousBodyBg
+      document.documentElement.style.backgroundColor = previousHtmlBg
+    }
+  }, [menuBackgroundColor])
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="shadow-sm border-b" style={{ backgroundColor: '#F4F2EE' }}>
+    <div
+      className="min-h-screen transition-colors"
+      style={{
+        backgroundColor: menuBackgroundColor,
+        color: contrastColor,
+        fontFamily: menuFontFamily,
+      }}
+    >
+      <header className="border-b border-white/10 backdrop-blur-sm" style={{ backgroundColor: menuBackgroundColor }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Image 
-                src="/logo_notext.png" 
-                alt="The Menu Guide Logo" 
-                width={40}
-                height={40}
-                className="h-10 w-10 object-contain"
-                priority
-              />
-              <h1 className="text-2xl font-semibold text-gray-900">The Menu Guide</h1>
+          <div className="flex justify-between items-center h-16 gap-4">
+            <h1
+              className="text-2xl font-semibold"
+              style={{ color: contrastColor, fontFamily: menuFontFamily }}
+            >
+              The Menu Guide
+            </h1>
+            <div className="flex items-center space-x-4">
+              <SettingsDialog triggerClassName={outlineButtonClass} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                disabled={signingOut}
+                className={outlineButtonClass}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {signingOut ? 'Signing Out...' : 'Sign Out'}
+              </Button>
             </div>
-        <div className="flex items-center space-x-4">
-          <SettingsDialog />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={signOut}
-            disabled={signingOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            {signingOut ? 'Signing Out...' : 'Sign Out'}
-          </Button>
-        </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.avatar_url || ''} />
-                <AvatarFallback>
-                  {profile.display_name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle className="text-2xl">{profile.display_name}</CardTitle>
-                <CardDescription className="text-lg">@{profile.username}</CardDescription>
-                {profile.bio && (
-                  <p className="text-gray-600 mt-2">{profile.bio}</p>
-                )}
+      <div className="flex flex-col gap-16 pb-20">
+        <PrivateMenuPage onEditProfile={() => setShowProfileEdit(true)} />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* QR Code Section */}
+          {qrCodeUrl && (
+            <div className="mt-6 space-y-4">
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <div className="flex items-center gap-2" style={{ color: contrastColor }}>
+                  <QrCode className="h-5 w-5" />
+                  <span className="text-lg font-semibold">Your Menu QR Code</span>
+                </div>
+                <p className={`text-sm max-w-2xl ${subtleTextClass}`}>
+                  Download this QR code to add to your physical menu. Customers can scan it to view your digital menu.
+                </p>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={() => window.open(`/menu/${profile.username}`, '_blank')}>
-                View Menu
-              </Button>
-              <Button variant="outline" onClick={() => setShowProfileEdit(true)}>
-                Edit Profile
-              </Button>
-              {user && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const event = new CustomEvent('open-scan-menu')
-                    window.dispatchEvent(event)
-                  }}
-                >
-                  Scan Menu
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Menu Management */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Categories */}
-          <div className="lg:col-span-2">
-            <CategoryManager />
-          </div>
-
-          {/* Menu Items */}
-          <div className="lg:col-span-2">
-            <MenuItemManager />
-          </div>
-        </div>
-
-        {/* QR Code Section - Above Payment Portal */}
-        {qrCodeUrl && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="h-5 w-5" />
-                Your Menu QR Code
-              </CardTitle>
-              <CardDescription>
-                Download this QR code to add to your physical menu. Customers can scan it to view your digital menu.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center space-y-3">
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <Image 
-                    src={qrCodeUrl} 
-                    alt="Menu QR Code" 
+                  <Image
+                    src={qrCodeUrl}
+                    alt="Menu QR Code"
                     width={256}
                     height={256}
                     className="h-64 w-64 object-contain"
@@ -221,13 +230,18 @@ export function Dashboard() {
                     priority
                   />
                 </div>
-                <div className="flex space-x-4">
-                  <Button onClick={downloadQRCode} className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    className={`${outlineButtonClass} flex items-center gap-2`}
+                    onClick={downloadQRCode}
+                  >
                     <QrCode className="h-4 w-4" />
                     Download PNG
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
+                    className={outlineButtonClass}
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
                     }}
@@ -235,33 +249,34 @@ export function Dashboard() {
                     Copy Link
                   </Button>
                 </div>
-                <p className="text-sm text-gray-600 text-center max-w-md">
+                <p className={`text-sm text-center max-w-md ${subtleTextClass}`}>
                   The QR code links to: <br />
-                  <code className="bg-gray-100 px-2 py-1 rounded text-xs">
+                  <code
+                    className="px-2 py-1 rounded text-xs"
+                    style={{
+                      backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.12)' : 'rgba(17,24,39,0.08)',
+                      color: contrastColor,
+                    }}
+                  >
                     {window.location.origin}/menu/{profile.username}
                   </code>
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Subscription Status */}
-        <div className="mt-8 space-y-4">
-          <SubscriptionExpiryWarning showCard={true} />
-          <UpgradeCard />
-          {/* Hidden instance of ScanMenuModal to handle opening via event */}
-          {user && (
-            <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => {}}
-            />
+            </div>
           )}
+
+          <div className="mt-6 space-y-4">
+            <div className={cardSurfaceClass}>
+              <SubscriptionExpiryWarning showCard={true} />
+            </div>
+            {user && (
+              <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => {}} />
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Profile Edit Modal */}
-      {showProfileEdit && (
-        <ProfileEditForm onClose={() => setShowProfileEdit(false)} />
-      )}
+      {showProfileEdit && <ProfileEditForm onClose={() => setShowProfileEdit(false)} />}
     </div>
   )
 }

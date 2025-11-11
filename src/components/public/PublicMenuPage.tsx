@@ -210,7 +210,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-gray-600'
   const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-gray-500'
   const subtleTextClass = isDarkBackground ? 'text-gray-100/70' : 'text-gray-700'
-  const filterPanelClass = isDarkBackground ? 'bg-white/10 border border-white/20 backdrop-blur' : 'bg-white border border-gray-200'
   const dividerBorderClass = isDarkBackground ? 'border-white/10' : 'border-gray-200'
 
   const iconMutedClass = isDarkBackground ? 'text-gray-200/60' : 'text-gray-400'
@@ -247,17 +246,31 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     setTitleFontSize((prev) => (prev !== nextSize ? nextSize : prev))
   }, [])
 
-  const getCategoryButtonClass = useCallback((isSelected: boolean) => {
-    if (isDarkBackground) {
-      if (isSelected) {
-        return `${baseCategoryButtonClass} bg-white text-gray-900 border border-transparent hover:bg-white/90`
+  const getCategoryButtonClass = useCallback(
+    (isSelected: boolean) => {
+      const emphasis = isSelected ? 'font-semibold shadow-sm' : 'font-medium'
+      const hoverState = isDarkBackground ? 'hover:bg-white/12 text-white' : 'hover:bg-gray-100 text-gray-900'
+      return `${baseCategoryButtonClass} cursor-pointer border rounded-md ${emphasis} ${hoverState}`
+    },
+    [isDarkBackground, baseCategoryButtonClass]
+  )
+
+  const getCategoryButtonStyle = useCallback(
+    (isSelected: boolean) => {
+      const borderColor = isDarkBackground ? 'rgba(255,255,255,0.55)' : 'rgba(17,24,39,0.35)'
+      const fillColor = isSelected
+        ? isDarkBackground
+          ? 'rgba(255,255,255,0.18)'
+          : 'rgba(17,24,39,0.08)'
+        : 'transparent'
+      return {
+        borderColor,
+        backgroundColor: fillColor,
+        color: isDarkBackground ? '#ffffff' : '#1f2937',
       }
-
-      return `${baseCategoryButtonClass} text-white border border-white/35 bg-transparent hover:bg-white/10`
-    }
-
-    return baseCategoryButtonClass
-  }, [isDarkBackground, baseCategoryButtonClass])
+    },
+    [isDarkBackground]
+  )
 
   // Pre-compute tag ID sets for each menu item (memoized for performance)
   const itemTagIdSets = useMemo(() => {
@@ -490,9 +503,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Filters */}
         <div className="mb-6">
-          <div className={`space-y-1.5 rounded-lg p-4 ${filterPanelClass}`}>
+          <div className="space-y-2">
             {/* Filter Menu Header */}
-            <div className="mb-1.5">
+            <div className="mb-0.5">
               <h3
                 className={`text-sm font-medium ${secondaryTextClass}`}
                 style={{ fontFamily: menuFontFamily }}
@@ -504,12 +517,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
             {/* Category Filter */}
             <div>
               <div className="overflow-x-auto scrollbar-hide scroll-smooth">
-                <div className="flex flex-nowrap gap-1.5 pb-1.5">
+                <div className="flex flex-nowrap gap-1.5 pb-1">
                   <Button
-                    variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => handleCategoryChange('all')}
                     className={getCategoryButtonClass(selectedCategory === 'all')}
+                    style={getCategoryButtonStyle(selectedCategory === 'all')}
                     disabled={isPending}
                   >
                     All Items
@@ -517,10 +531,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   {categories.map((category) => (
                     <Button
                       key={category.id}
-                      variant={selectedCategory === category.id ? 'default' : 'outline'}
+                      variant="outline"
                       size="sm"
                       onClick={() => handleCategoryChange(category.id)}
                       className={getCategoryButtonClass(selectedCategory === category.id)}
+                      style={getCategoryButtonStyle(selectedCategory === category.id)}
                       disabled={isPending}
                     >
                       {category.name}
@@ -533,7 +548,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
             {/* Dietary Tags Filter */}
             <div>
               <div className="overflow-x-auto scrollbar-hide scroll-smooth">
-                <div className="flex flex-nowrap gap-1.5 pb-1.5">
+                <div className="flex flex-nowrap gap-1.5 pb-1">
                   {tags.map((tag) => {
                     const isSelected = selectedTagsSetForButtons.has(tag.id)
                     return (

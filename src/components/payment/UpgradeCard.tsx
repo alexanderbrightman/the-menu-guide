@@ -151,11 +151,7 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
           </div>
           <div className="flex items-center gap-2 text-sm text-orange-700">
             <Check className="h-4 w-4 text-green-600" />
-            Advanced analytics
-          </div>
-          <div className="flex items-center gap-2 text-sm text-orange-700">
-            <Check className="h-4 w-4 text-green-600" />
-            Priority support
+            AI menu scanner
           </div>
         </div>
         

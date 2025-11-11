@@ -365,12 +365,12 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
   return (
     <Dialog open={true} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className="sm:max-w-lg p-6">
+      <DialogContent className="sm:max-w-lg p-6 overflow-hidden">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-xl font-semibold text-center">Edit Profile</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           {/* Header Photo */}
           <div className="relative overflow-hidden rounded-xl border bg-gray-100">
             {profile?.avatar_url ? (
