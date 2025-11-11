@@ -751,30 +751,39 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
                   }`}
                 >
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className={`w-full px-6 py-5 flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
-                    onClick={() => toggleCategory(category.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        toggleCategory(category.id)
-                      }
-                    }}
-                  >
-                    <div>
-                      <h2
-                        className={`text-2xl font-semibold ${primaryTextClass}`}
-                        style={{ fontFamily: menuFontFamily }}
-                      >
-                        {category.name}
-                      </h2>
-                      <p className={`text-sm mt-1 ${mutedTextClass}`}>
-                        {itemCount} item{itemCount === 1 ? '' : 's'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
+                  <div className="px-6 py-5 space-y-4">
+                    <button
+                      type="button"
+                      className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
+                      onClick={() => toggleCategory(category.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          toggleCategory(category.id)
+                        }
+                      }}
+                    >
+                      <div>
+                        <h2
+                          className={`text-2xl font-semibold ${primaryTextClass}`}
+                          style={{ fontFamily: menuFontFamily }}
+                        >
+                          {category.name}
+                        </h2>
+                        <p className={`text-sm mt-1 ${mutedTextClass}`}>
+                          {itemCount} item{itemCount === 1 ? '' : 's'}
+                        </p>
+                      </div>
+                      <span className="mt-1">
+                        {isOpen ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </span>
+                    </button>
+
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -812,11 +821,6 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         <Trash2 className="h-4 w-4" />
                         Delete
                       </Button>
-                      {isOpen ? (
-                        <ChevronUp className="h-5 w-5" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5" />
-                      )}
                     </div>
                   </div>
 
