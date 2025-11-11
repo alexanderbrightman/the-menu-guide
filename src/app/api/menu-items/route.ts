@@ -63,12 +63,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500 })
     }
 
-    // Add cache control headers for better performance
+    // No caching for authenticated requests to ensure fresh data
     return NextResponse.json(
       { items, total: count || items?.length || 0 },
       {
         headers: {
-          'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       }
     )
@@ -384,7 +386,16 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to delete menu items' }, { status: 500 })
       }
 
-      return NextResponse.json({ success: true, deletedCount: itemIds.length })
+      return NextResponse.json(
+        { success: true, deletedCount: itemIds.length },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        }
+      )
     }
 
     // First, get the menu item to extract image URL for storage cleanup
@@ -447,7 +458,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete menu item' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in menu items DELETE:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

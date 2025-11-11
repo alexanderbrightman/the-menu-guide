@@ -332,7 +332,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
   const hasActiveFilters = selectedTags.length > 0 || selectedCategory !== 'all'
 
-  // Close modal on Esc key
+  // Close modal on Esc key and lock body scroll
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && selectedItem) {
@@ -341,8 +341,17 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     }
 
     if (selectedItem) {
+      // Lock body scroll when modal is open
+      const originalStyle = window.getComputedStyle(document.body).overflow
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+      
       window.addEventListener('keydown', handleKeyDown)
-      return () => window.removeEventListener('keydown', handleKeyDown)
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown)
+        document.body.style.overflow = originalStyle
+        document.documentElement.style.overflow = originalStyle
+      }
     }
   }, [selectedItem])
 
@@ -596,7 +605,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
       {/* Expanded Menu Item Modal */}
       {selectedItem && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 full-vh-mobile"
+          style={{
+            width: '100vw',
+            overflow: 'auto',
+          }}
           onClick={() => setSelectedItem(null)}
         >
           <div 

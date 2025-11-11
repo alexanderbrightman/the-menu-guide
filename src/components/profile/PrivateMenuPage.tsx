@@ -241,9 +241,18 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       }
 
       const [itemsRes, categoriesRes, tagsRes] = await Promise.all([
-        fetch('/api/menu-items', { headers }),
-        fetch('/api/menu-categories', { headers }),
-        fetch('/api/tags', { headers }),
+        fetch('/api/menu-items', { 
+          headers,
+          cache: 'no-store',
+        }),
+        fetch('/api/menu-categories', { 
+          headers,
+          cache: 'no-store',
+        }),
+        fetch('/api/tags', { 
+          headers,
+          cache: 'no-store',
+        }),
       ])
 
       const [itemsData, categoriesData, tagsData] = await Promise.all([
@@ -860,73 +869,77 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                           No menu items yet. Use the New Item button to add your first dish.
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                        <div className="space-y-4">
                           {items.map((item) => (
                             <article
                               key={item.id}
-                              className={`group overflow-hidden rounded-xl border ${
-                                isDarkBackground
-                                  ? 'border-white/10 bg-white/10'
-                                  : 'border-gray-200 bg-white'
-                              }`}
+                              className="group flex flex-row items-center gap-4 relative"
                             >
                               {item.image_url && (
-                                <div className="relative aspect-[3/2] w-full overflow-hidden">
+                                <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
                                   <Image
                                     src={item.image_url}
                                     alt={item.title}
                                     fill
                                     className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                    sizes="96px"
                                   />
                                 </div>
                               )}
-                              <div className="p-5 space-y-4">
-                                <div>
+                              <div className="flex-1 flex flex-col min-w-0 relative pr-20 sm:pr-24">
+                                <div className="flex-1">
                                   <h3
-                                    className={`text-xl font-semibold ${primaryTextClass}`}
+                                    className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words mb-2`}
                                     style={{ fontFamily: menuFontFamily }}
                                   >
                                     {item.title}
                                   </h3>
-                                  {typeof item.price === 'number' && (
-                                    <p className={`mt-1 text-sm ${secondaryTextClass}`}>
+
+                                  {item.description && (
+                                    <div className="relative mb-3">
+                                      <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 pr-16`}>
+                                        {item.description}
+                                      </p>
+                                      {typeof item.price === 'number' && (
+                                        <p className={`absolute bottom-0 right-0 text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap`}>
+                                          ${item.price.toFixed(2)}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {!item.description && typeof item.price === 'number' && (
+                                    <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} mb-3`}>
                                       ${item.price.toFixed(2)}
                                     </p>
                                   )}
+
+                                  {item.menu_item_tags && item.menu_item_tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {item.menu_item_tags.map((itemTag, index) => (
+                                        <Badge
+                                          key={`${item.id}-tag-${index}`}
+                                          variant="outline"
+                                          className="text-xs"
+                                          style={buildTagStyles(itemTag.tags.name, {
+                                            isDarkBackground,
+                                          })}
+                                        >
+                                          {itemTag.tags.name}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
 
-                                {item.description && (
-                                  <p className={`text-sm leading-relaxed ${secondaryTextClass}`}>
-                                    {item.description}
-                                  </p>
-                                )}
-
-                                {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                                  <div className="flex flex-wrap gap-2">
-                                    {item.menu_item_tags.map((itemTag, index) => (
-                                      <Badge
-                                        key={`${item.id}-tag-${index}`}
-                                        variant="outline"
-                                        className="text-xs"
-                                        style={buildTagStyles(itemTag.tags.name, {
-                                          isDarkBackground,
-                                        })}
-                                      >
-                                        {itemTag.tags.name}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-
-                                <div className="flex items-center gap-2 pt-2">
+                                <div className="absolute top-0 right-0 flex items-center gap-1.5">
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className={outlineButtonClass}
                                     onClick={() => startEditItem(item)}
                                   >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     size="sm"
@@ -934,8 +947,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                     className={outlineButtonClass}
                                     onClick={() => handleDeleteItem(item.id)}
                                   >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </div>
@@ -977,71 +989,77 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   </Button>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-6">
+                <div className="mt-6 space-y-4">
                   {uncategorizedItems.map((item) => (
                     <article
                       key={item.id}
-                      className={`group overflow-hidden rounded-xl border ${
-                        isDarkBackground ? 'border-white/10 bg-white/10' : 'border-gray-200 bg-white'
-                      }`}
+                      className="group flex flex-row items-center gap-4 relative"
                     >
                       {item.image_url && (
-                        <div className="relative aspect-[3/2] w-full overflow-hidden">
+                        <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
                           <Image
                             src={item.image_url}
                             alt={item.title}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            sizes="96px"
                           />
                         </div>
                       )}
-                      <div className="p-5 space-y-4">
-                        <div>
+                      <div className="flex-1 flex flex-col min-w-0 relative pr-20 sm:pr-24">
+                        <div className="flex-1">
                           <h3
-                            className={`text-xl font-semibold ${primaryTextClass}`}
+                            className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words mb-2`}
                             style={{ fontFamily: menuFontFamily }}
                           >
                             {item.title}
                           </h3>
-                          {typeof item.price === 'number' && (
-                            <p className={`mt-1 text-sm ${secondaryTextClass}`}>
+
+                          {item.description && (
+                            <div className="relative mb-3">
+                              <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 pr-16`}>
+                                {item.description}
+                              </p>
+                              {typeof item.price === 'number' && (
+                                <p className={`absolute bottom-0 right-0 text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap`}>
+                                  ${item.price.toFixed(2)}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {!item.description && typeof item.price === 'number' && (
+                            <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} mb-3`}>
                               ${item.price.toFixed(2)}
                             </p>
                           )}
+
+                          {item.menu_item_tags && item.menu_item_tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {item.menu_item_tags.map((itemTag, index) => (
+                                <Badge
+                                  key={`${item.id}-uncat-${index}`}
+                                  variant="outline"
+                                  className="text-xs"
+                                  style={buildTagStyles(itemTag.tags.name, {
+                                    isDarkBackground,
+                                  })}
+                                >
+                                  {itemTag.tags.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
-                        {item.description && (
-                          <p className={`text-sm leading-relaxed ${secondaryTextClass}`}>
-                            {item.description}
-                          </p>
-                        )}
-
-                        {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {item.menu_item_tags.map((itemTag, index) => (
-                              <Badge
-                                key={`${item.id}-uncat-${index}`}
-                                variant="outline"
-                                className="text-xs"
-                                style={buildTagStyles(itemTag.tags.name, {
-                                  isDarkBackground,
-                                })}
-                              >
-                                {itemTag.tags.name}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 pt-2">
+                        <div className="absolute top-0 right-0 flex items-center gap-1.5">
                           <Button
                             size="sm"
                             variant="outline"
                             className={outlineButtonClass}
                             onClick={() => startEditItem(item)}
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -1049,8 +1067,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                             className={outlineButtonClass}
                             onClick={() => handleDeleteItem(item.id)}
                           >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>

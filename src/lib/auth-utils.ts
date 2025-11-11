@@ -15,12 +15,23 @@ export async function getSafeSession() {
     if (error) {
       console.error('Session error:', error)
       
-      // Handle refresh token errors specifically
-      if (error.message.includes('refresh token') || error.message.includes('Refresh Token')) {
+      // Handle refresh token errors specifically - check multiple error message formats
+      const errorMessage = error.message?.toLowerCase() || ''
+      const isRefreshTokenError = 
+        errorMessage.includes('refresh token') || 
+        errorMessage.includes('refresh_token') ||
+        errorMessage.includes('invalid refresh token') ||
+        error.code === 'PGRST301' || // PostgREST error code for auth issues
+        error.status === 401
+        
+      if (isRefreshTokenError) {
         console.log('Refresh token invalid, clearing session')
-        // Clear the session and redirect to login
-        if (supabase) {
+        // Clear the session silently
+        try {
           await supabase.auth.signOut()
+        } catch (signOutError) {
+          // Ignore sign out errors - session may already be cleared
+          console.log('Sign out error (ignored):', signOutError)
         }
         return { session: null, error: 'Session expired. Please sign in again.' }
       }
@@ -33,11 +44,25 @@ export async function getSafeSession() {
     console.error('Error getting session:', error)
     
     // Handle refresh token errors in catch block too
-    if (error && typeof error === 'object' && 'message' in error && 
-        (String(error.message).includes('refresh token') || String(error.message).includes('Refresh Token'))) {
+    const errorMessage = error && typeof error === 'object' && 'message' in error 
+      ? String(error.message).toLowerCase() 
+      : String(error).toLowerCase()
+      
+    const isRefreshTokenError = 
+      errorMessage.includes('refresh token') || 
+      errorMessage.includes('refresh_token') ||
+      errorMessage.includes('invalid refresh token') ||
+      (error && typeof error === 'object' && 'name' in error && error.name === 'AuthApiError')
+      
+    if (isRefreshTokenError) {
       console.log('Refresh token invalid in catch, clearing session')
-      if (supabase) {
-        await supabase.auth.signOut()
+      try {
+        if (supabase) {
+          await supabase.auth.signOut()
+        }
+      } catch (signOutError) {
+        // Ignore sign out errors
+        console.log('Sign out error (ignored):', signOutError)
       }
       return { session: null, error: 'Session expired. Please sign in again.' }
     }
@@ -69,11 +94,30 @@ export async function getSessionToken(): Promise<string | null> {
 export function handleAuthError(error: unknown, context: string = 'Unknown') {
   console.error(`Auth error in ${context}:`, error)
   
-  if (error && typeof error === 'object' && 'message' in error && 
-      (String(error.message).includes('refresh token') || String(error.message).includes('Refresh Token'))) {
+  // Check if it's a refresh token error
+  const errorMessage = error && typeof error === 'object' && 'message' in error 
+    ? String(error.message).toLowerCase() 
+    : String(error).toLowerCase()
+    
+  const isRefreshTokenError = 
+    errorMessage.includes('refresh token') || 
+    errorMessage.includes('refresh_token') ||
+    errorMessage.includes('invalid refresh token') ||
+    errorMessage.includes('refresh token not found') ||
+    (error && typeof error === 'object' && 'name' in error && error.name === 'AuthApiError' && 
+     (errorMessage.includes('refresh') || (error as any).status === 401))
+  
+  if (isRefreshTokenError) {
     console.log('Refresh token error detected, signing out user')
-    if (supabase) {
-      supabase.auth.signOut()
+    try {
+      if (supabase) {
+        supabase.auth.signOut().catch(() => {
+          // Ignore sign out errors - session may already be cleared
+        })
+      }
+    } catch (signOutError) {
+      // Ignore sign out errors
+      console.log('Sign out error (ignored):', signOutError)
     }
     // Use router.replace instead of window.location to avoid adding to history stack
     // This will be handled by the auth context which has access to Next.js router

@@ -150,4 +150,11 @@
       border-radius: 2px;
     }
   }
+  
+  /* Full viewport height for mobile modals (iOS Safari support) */
+  .full-vh-mobile {
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
 }

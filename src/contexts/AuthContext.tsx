@@ -181,7 +181,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } catch (error) {
               console.error('Auth state change error:', error)
               handleAuthError(error, 'onAuthStateChange')
-              if (error instanceof Error && (error.message.includes('refresh token') || error.message.includes('Session expired'))) {
+              
+              // Check for refresh token errors more comprehensively
+              const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+              const isRefreshTokenError = 
+                errorMessage.includes('refresh token') || 
+                errorMessage.includes('refresh_token') ||
+                errorMessage.includes('invalid refresh token') ||
+                errorMessage.includes('refresh token not found') ||
+                (error && typeof error === 'object' && 'name' in error && error.name === 'AuthApiError')
+                
+              if (isRefreshTokenError) {
+                console.log('Refresh token error in auth state change, clearing session')
                 setUser(null)
                 setProfile(null)
                 await clearAuthData()
@@ -193,12 +204,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Listen for custom auth refresh error events
+    const handleRefreshError = () => {
+      console.log('Custom auth refresh error event received')
+      if (mounted) {
+        setUser(null)
+        setProfile(null)
+        clearAuthData()
+      }
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:refresh-error', handleRefreshError)
+    }
+
     initializeAuth()
 
     return () => {
       mounted = false
       if (subscription) {
         subscription.unsubscribe()
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('auth:refresh-error', handleRefreshError)
       }
     }
   }, [fetchProfile, clearAuthData])

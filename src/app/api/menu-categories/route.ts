@@ -42,12 +42,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
     }
 
-    // Add cache control headers for better performance
+    // No caching for authenticated requests to ensure fresh data
     return NextResponse.json(
       { categories },
       {
         headers: {
-          'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       }
     )
@@ -238,7 +240,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in categories DELETE:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
