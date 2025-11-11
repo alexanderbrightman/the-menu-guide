@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { LogOut, QrCode } from 'lucide-react'
 import Image from 'next/image'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
-import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
@@ -186,7 +185,6 @@ export function Dashboard() {
               The Menu Guide
             </h1>
             <div className="flex items-center space-x-4">
-              <SettingsDialog triggerClassName={outlineButtonClass} />
               <Button
                 variant="outline"
                 size="sm"

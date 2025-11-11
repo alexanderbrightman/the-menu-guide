@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { SettingsDialog } from '@/components/profile/SettingsDialog'
 
 interface MenuItemWithRelations extends MenuItem {
   menu_categories?: { name: string }
@@ -32,9 +33,6 @@ const FONT_FAMILY_MAP: Record<string, string> = {
   Arial: 'Arial, sans-serif',
   'Courier New': '"Courier New", monospace',
 }
-
-const MAX_TITLE_FONT_SIZE = 64
-const MIN_TITLE_FONT_SIZE = 28
 
 const getContrastColor = (hexColor: string) => {
   if (!hexColor) return '#1f2937'
@@ -198,19 +196,6 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     [menuFont]
   )
 
-  const titleFontSize = useMemo(() => {
-    if (!profile?.display_name) {
-      return MIN_TITLE_FONT_SIZE
-    }
-
-    if (profile.display_name.length <= 10) {
-      return MAX_TITLE_FONT_SIZE
-    }
-
-    const step = Math.max(MIN_TITLE_FONT_SIZE, MAX_TITLE_FONT_SIZE - Math.floor(profile.display_name.length / 2))
-    return step
-  }, [profile?.display_name])
-
   const primaryTextClass = isDarkBackground ? 'text-white' : 'text-slate-900'
   const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-slate-600'
   const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
@@ -231,7 +216,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     return () => clearTimeout(timeout)
   }, [])
 
-  const fetchMenuData = useCallback(async () => {
+  const fetchMenuData = useCallback(async (showLoading = true) => {
     if (!user) return
     if (!supabase) {
       setTransientMessage('Error: Supabase client not available')
@@ -239,7 +224,9 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
 
     try {
-      setLoading(true)
+      if (showLoading) {
+        setLoading(true)
+      }
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -286,7 +273,9 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       console.error('Error fetching menu data:', error)
       setTransientMessage('Error fetching menu data')
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
   }, [user, setTransientMessage])
 
@@ -408,12 +397,20 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       return
     }
 
+    // Optimistic update: remove category from state immediately
+    const categoryToDelete = categories.find((cat) => cat.id === categoryId)
+    setCategories((prev) => prev.filter((cat) => cat.id !== categoryId))
+
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession()
 
       if (!session?.access_token) {
+        // Restore on error
+        if (categoryToDelete) {
+          setCategories((prev) => [...prev, categoryToDelete])
+        }
         setTransientMessage('Error: Not authenticated')
         return
       }
@@ -427,12 +424,21 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
       if (response.ok) {
         setTransientMessage('Category deleted')
-        await fetchMenuData()
+        // Refresh data in background to ensure consistency (silent, no loading indicator)
+        fetchMenuData(false)
       } else {
+        // Restore on error
+        if (categoryToDelete) {
+          setCategories((prev) => [...prev, categoryToDelete])
+        }
         const data = await response.json()
         setTransientMessage(`Error: ${data.error || 'Unable to delete category'}`)
       }
     } catch (error) {
+      // Restore on error
+      if (categoryToDelete) {
+        setCategories((prev) => [...prev, categoryToDelete])
+      }
       console.error('Error deleting category:', error)
       setTransientMessage('Error deleting category')
     }
@@ -578,12 +584,20 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       return
     }
 
+    // Optimistic update: remove item from state immediately
+    const itemToDelete = menuItems.find((item) => item.id === itemId)
+    setMenuItems((prev) => prev.filter((item) => item.id !== itemId))
+
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession()
 
       if (!session?.access_token) {
+        // Restore on error
+        if (itemToDelete) {
+          setMenuItems((prev) => [...prev, itemToDelete])
+        }
         setTransientMessage('Error: Not authenticated')
         return
       }
@@ -597,12 +611,21 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
       if (response.ok) {
         setTransientMessage('Menu item deleted')
-        await fetchMenuData()
+        // Refresh data in background to ensure consistency (silent, no loading indicator)
+        fetchMenuData(false)
       } else {
+        // Restore on error
+        if (itemToDelete) {
+          setMenuItems((prev) => [...prev, itemToDelete])
+        }
         const data = await response.json()
         setTransientMessage(`Error: ${data.error || 'Unable to delete menu item'}`)
       }
     } catch (error) {
+      // Restore on error
+      if (itemToDelete) {
+        setMenuItems((prev) => [...prev, itemToDelete])
+      }
       console.error('Error deleting menu item:', error)
       setTransientMessage('Error deleting menu item')
     }
@@ -646,7 +669,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               )}
               <h1
                 className={`font-bold leading-tight ${primaryTextClass}`}
-                style={{ fontSize: `${titleFontSize}px`, fontFamily: menuFontFamily }}
+                style={{ fontSize: '42px', fontFamily: menuFontFamily }}
               >
                 {profileData?.display_name || 'Your Restaurant'}
               </h1>
@@ -665,6 +688,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               {user && (
                 <Button
                   variant="outline"
+                  size="sm"
                   className={`${outlineButtonClass} flex items-center gap-2`}
                   onClick={handleOpenScanMenu}
                 >
@@ -675,6 +699,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               {onEditProfile && (
                 <Button
                   variant="outline"
+                  size="sm"
                   className={`${outlineButtonClass} flex items-center gap-2`}
                   onClick={onEditProfile}
                 >
@@ -682,9 +707,11 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   Edit Profile
                 </Button>
               )}
+              <SettingsDialog triggerClassName={`${outlineButtonClass} flex items-center gap-2`} />
               {usernameLink && (
                 <Button
                   variant="outline"
+                  size="sm"
                   className={`${outlineButtonClass} flex items-center gap-2`}
                   onClick={() => window.open(usernameLink, '_blank')}
                 >
@@ -694,6 +721,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               )}
               <Button
                 variant="outline"
+                size="sm"
                 className={`${outlineButtonClass} flex items-center gap-2`}
                 onClick={openCreateCategory}
               >
@@ -702,6 +730,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 className={`${outlineButtonClass} flex items-center gap-2`}
                 onClick={startCreateItem}
               >
@@ -852,38 +881,18 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 </div>
                               )}
                               <div className="p-5 space-y-4">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <h3
-                                      className={`text-xl font-semibold ${primaryTextClass}`}
-                                      style={{ fontFamily: menuFontFamily }}
-                                    >
-                                      {item.title}
-                                    </h3>
-                                    {typeof item.price === 'number' && (
-                                      <p className={`mt-1 text-sm ${secondaryTextClass}`}>
-                                        ${item.price.toFixed(2)}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      size="icon"
-                                      variant="outline"
-                                      className={outlineButtonClass}
-                                      onClick={() => startEditItem(item)}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="outline"
-                                      className={outlineButtonClass}
-                                      onClick={() => handleDeleteItem(item.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                                <div>
+                                  <h3
+                                    className={`text-xl font-semibold ${primaryTextClass}`}
+                                    style={{ fontFamily: menuFontFamily }}
+                                  >
+                                    {item.title}
+                                  </h3>
+                                  {typeof item.price === 'number' && (
+                                    <p className={`mt-1 text-sm ${secondaryTextClass}`}>
+                                      ${item.price.toFixed(2)}
+                                    </p>
+                                  )}
                                 </div>
 
                                 {item.description && (
@@ -908,6 +917,27 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                     ))}
                                   </div>
                                 )}
+
+                                <div className="flex items-center gap-2 pt-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={outlineButtonClass}
+                                    onClick={() => startEditItem(item)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={outlineButtonClass}
+                                    onClick={() => handleDeleteItem(item.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
                               </div>
                             </article>
                           ))}
@@ -966,38 +996,18 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         </div>
                       )}
                       <div className="p-5 space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3
-                              className={`text-xl font-semibold ${primaryTextClass}`}
-                              style={{ fontFamily: menuFontFamily }}
-                            >
-                              {item.title}
-                            </h3>
-                            {typeof item.price === 'number' && (
-                              <p className={`mt-1 text-sm ${secondaryTextClass}`}>
-                                ${item.price.toFixed(2)}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className={outlineButtonClass}
-                              onClick={() => startEditItem(item)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className={outlineButtonClass}
-                              onClick={() => handleDeleteItem(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        <div>
+                          <h3
+                            className={`text-xl font-semibold ${primaryTextClass}`}
+                            style={{ fontFamily: menuFontFamily }}
+                          >
+                            {item.title}
+                          </h3>
+                          {typeof item.price === 'number' && (
+                            <p className={`mt-1 text-sm ${secondaryTextClass}`}>
+                              ${item.price.toFixed(2)}
+                            </p>
+                          )}
                         </div>
 
                         {item.description && (
@@ -1022,6 +1032,27 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                             ))}
                           </div>
                         )}
+
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={outlineButtonClass}
+                            onClick={() => startEditItem(item)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={outlineButtonClass}
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </article>
                   ))}
@@ -1237,20 +1268,20 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
         <SheetContent
           side="right"
-          className={`sm:max-w-lg overflow-hidden ${isDarkBackground ? 'border-white/15' : 'border-slate-200'}`}
+          className={`!w-full sm:!w-3/4 sm:max-w-lg overflow-hidden ${isDarkBackground ? 'border-white/15' : 'border-slate-200'}`}
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
           }}
         >
-          <SheetHeader>
-            <SheetTitle style={{ color: contrastColor }}>
+          <SheetHeader className="px-6 pt-6 pb-4">
+            <SheetTitle className="text-xl sm:text-lg" style={{ color: contrastColor }}>
               {editingItem ? 'Edit Menu Item' : 'Create Menu Item'}
             </SheetTitle>
           </SheetHeader>
-          <form onSubmit={upsertMenuItem} className="flex flex-col gap-5 px-4 pb-6 max-h-[75vh] overflow-y-auto pr-2">
-            <div className="space-y-2">
-              <Label htmlFor="item-title">Title</Label>
+          <form onSubmit={upsertMenuItem} className="flex flex-col gap-6 px-6 pb-8 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto">
+            <div className="space-y-3">
+              <Label htmlFor="item-title" className="text-base font-medium">Title</Label>
               <Input
                 id="item-title"
                 value={itemForm.title}
@@ -1259,11 +1290,12 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 }
                 placeholder="e.g. Truffle Fries"
                 required
+                className="h-12 text-base"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="item-description">Description</Label>
+            <div className="space-y-3">
+              <Label htmlFor="item-description" className="text-base font-medium">Description</Label>
               <Textarea
                 id="item-description"
                 value={itemForm.description}
@@ -1271,13 +1303,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   setItemForm((prev) => ({ ...prev, description: event.target.value }))
                 }
                 placeholder="Describe the dish and highlight key details."
-                rows={4}
+                rows={5}
+                className="text-base min-h-[120px]"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <Label htmlFor="item-price">Price</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="item-price" className="text-base font-medium">Price</Label>
                 <Input
                   id="item-price"
                   type="number"
@@ -1288,13 +1321,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     setItemForm((prev) => ({ ...prev, price: event.target.value }))
                   }
                   placeholder="12.50"
+                  className="h-12 text-base"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="item-category">Category</Label>
+              <div className="space-y-3">
+                <Label htmlFor="item-category" className="text-base font-medium">Category</Label>
                 <Select value={itemCategory} onValueChange={setItemCategory}>
-                  <SelectTrigger id="item-category">
+                  <SelectTrigger id="item-category" className="h-12 text-base">
                     <SelectValue placeholder="Assign a category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1309,8 +1343,8 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Dietary tags</Label>
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Dietary tags</Label>
               {tags.length === 0 ? (
                 <p className={`text-sm ${mutedTextClass}`}>
                   Create tags in the Tags manager to categorize dietary preferences.
@@ -1344,9 +1378,9 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="item-image">Menu photo</Label>
-              <div className="flex items-center gap-3">
+            <div className="space-y-3">
+              <Label htmlFor="item-image" className="text-base font-medium">Menu photo</Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <Input
                   id="item-image"
                   type="file"
@@ -1357,12 +1391,13 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                       setImageFile(file)
                     }
                   }}
+                  className="h-12 text-base file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:cursor-pointer"
                 />
                 {itemForm.image_url && !imageFile && (
                   <Button
                     type="button"
                     variant="outline"
-                    className={outlineButtonClass}
+                    className={`${outlineButtonClass} h-12 px-4`}
                     onClick={() =>
                       setItemForm((prev) => ({
                         ...prev,
@@ -1381,15 +1416,15 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               )}
             </div>
 
-            <div className="flex flex-col gap-3 pt-2">
-              <Button type="submit" className={`${accentButtonClass} flex items-center gap-2`}>
-                <Upload className="h-4 w-4" />
+            <div className="flex flex-col gap-3 pt-4 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+              <Button type="submit" className={`${accentButtonClass} flex items-center justify-center gap-2 h-12 text-base font-medium`}>
+                <Upload className="h-5 w-5" />
                 {editingItem ? 'Save menu item' : 'Create menu item'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className={outlineButtonClass}
+                className={`${outlineButtonClass} h-12 text-base font-medium`}
                 onClick={() => closeItemSheet(false)}
               >
                 Cancel

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback, useRef } from 'react'
+import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -24,8 +24,6 @@ interface PublicMenuPageProps {
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
-const MAX_TITLE_FONT_SIZE = 64
-const MIN_TITLE_FONT_SIZE = 28
 const FONT_FAMILY_MAP: Record<string, string> = {
   'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
   'Fjalla One': '"Fjalla One", sans-serif',
@@ -153,8 +151,8 @@ const MenuItemCard = memo(({
       </div>
     )}
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-lg" style={{ fontFamily: headingFontFamily }}>{item.title}</h3>
+      <div className="flex items-center justify-between mb-1.5">
+        <h3 className="font-semibold text-base" style={{ fontFamily: headingFontFamily }}>{item.title}</h3>
         {item.price && (
           <div className={`font-semibold text-xs whitespace-nowrap ml-2 ${priceClass}`}>
             ${item.price.toFixed(2)}
@@ -163,7 +161,7 @@ const MenuItemCard = memo(({
       </div>
       
       {item.description && (
-        <p className={`text-sm mb-3 line-clamp-2 ${descriptionClass}`}>
+        <p className={`text-xs mb-2 line-clamp-2 ${descriptionClass}`}>
           {item.description}
         </p>
       )}
@@ -194,8 +192,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
-  const titleRef = useRef<HTMLHeadingElement | null>(null)
-  const [titleFontSize, setTitleFontSize] = useState<number>(MAX_TITLE_FONT_SIZE)
 
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
@@ -223,28 +219,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
   const baseCategoryButtonClass =
     'flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px] transition-colors'
-
-  const fitTitleToContainer = useCallback(() => {
-    const element = titleRef.current
-    if (!element) return
-
-    const container = element.parentElement
-    if (!container) return
-
-    const availableWidth = Math.max(container.clientWidth - 8, 0)
-    if (availableWidth === 0) return
-
-    let nextSize = MAX_TITLE_FONT_SIZE
-    element.style.fontSize = `${nextSize}px`
-    element.style.whiteSpace = 'nowrap'
-
-    while (element.scrollWidth > availableWidth && nextSize > MIN_TITLE_FONT_SIZE) {
-      nextSize -= 1
-      element.style.fontSize = `${nextSize}px`
-    }
-
-    setTitleFontSize((prev) => (prev !== nextSize ? nextSize : prev))
-  }, [])
 
   const getCategoryButtonClass = useCallback(
     (isSelected: boolean) => {
@@ -373,49 +347,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   }, [selectedItem])
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const runResize = () => {
-      fitTitleToContainer()
-    }
-
-    runResize()
-    window.addEventListener('resize', runResize)
-
-    const element = titleRef.current
-    let resizeObserver: ResizeObserver | null = null
-    if (element && 'ResizeObserver' in window) {
-      resizeObserver = new ResizeObserver(runResize)
-      resizeObserver.observe(element)
-      if (element.parentElement) {
-        resizeObserver.observe(element.parentElement)
-      }
-    }
-
-    let cancelled = false
-    if ('fonts' in document) {
-      const fontsReady = (document as Document & { fonts: FontFaceSet }).fonts.ready
-      fontsReady
-        .then(() => {
-          if (!cancelled) {
-            runResize()
-          }
-        })
-        .catch(() => {
-          /* ignore font loading errors */
-        })
-    }
-
-    return () => {
-      cancelled = true
-      window.removeEventListener('resize', runResize)
-      resizeObserver?.disconnect()
-    }
-  }, [fitTitleToContainer, menuFontFamily, profile.display_name])
-
-  useEffect(() => {
     if (typeof document === 'undefined') {
       return
     }
@@ -462,9 +393,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         {/* Restaurant Name - Large Title Below Photo */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
           <h1
-            ref={titleRef}
-            className={`text-6xl font-bold text-center whitespace-nowrap ${primaryTextClass}`}
-            style={{ fontFamily: menuFontFamily, fontSize: `${titleFontSize}px`, lineHeight: 1.1 }}
+            className={`font-bold text-center whitespace-nowrap ${primaryTextClass}`}
+            style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
           >
             {profile.display_name}
           </h1>
@@ -636,7 +566,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
               {filteredItems.map((item) => (
                 <MenuItemCard
                   key={item.id}
