@@ -12,7 +12,7 @@ const getAllergenBorderColor = (tagName: string): string => {
   const colorMap: Record<string, string> = {
     'dairy-free': '#B5C1D9',
     'gluten-free': '#D48963',
-    'nut-free': '#5C5086',
+    'nut-free': '#408250',
     'pescatarian': '#F698A7',
     'shellfish-free': '#317987',
     'spicy': '#F04F68',

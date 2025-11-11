@@ -57,7 +57,7 @@ const getAllergenBorderColor = (tagName: string): string => {
   const colorMap: Record<string, string> = {
     'dairy-free': '#B5C1D9',
     'gluten-free': '#D48963',
-    'nut-free': '#F7EAE3',
+    'nut-free': '#408250',
     'pescatarian': '#F698A7',
     'shellfish-free': '#F6D98E',
     'spicy': '#F04F68',
@@ -654,8 +654,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-auto animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            className="relative bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="public-menu-item-heading"
             style={{
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
@@ -670,61 +673,71 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
             </button>
 
             {/* Content */}
-            <div className="relative">
-              {/* Large Image */}
-              {selectedItem.image_url && (
-                <div className="aspect-video overflow-hidden">
+            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-8">
+              <div className="relative h-64 w-full bg-gray-100 md:h-full md:min-h-[24rem]">
+                {selectedItem.image_url ? (
                   <Image 
                     src={selectedItem.image_url} 
                     alt={selectedItem.title}
                     fill
                     className="object-cover"
                     sizes="(min-width: 1024px) 40vw, 90vw"
-                    priority
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+                    Photo coming soon
+                  </div>
+                )}
+              </div>
 
-              <div className="p-6 md:p-8">
+              <div className="flex flex-col gap-6 p-6 md:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
                 {/* Title and Price */}
-                <div className="flex items-start justify-between mb-4">
-                  <h2
-                    className="text-3xl font-bold text-gray-900"
-                    style={{ fontFamily: menuFontFamily }}
-                  >
-                    {selectedItem.title}
-                  </h2>
-                  {selectedItem.price && (
-                    <div className="text-base font-semibold text-gray-900">
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
+                    <h2
+                      id="public-menu-item-heading"
+                      className="text-3xl font-bold text-gray-900"
+                      style={{ fontFamily: menuFontFamily }}
+                    >
+                      {selectedItem.title}
+                    </h2>
+                    {selectedItem.menu_categories && (
+                      <Badge variant="secondary" className="self-start">
+                        {selectedItem.menu_categories.name}
+                      </Badge>
+                    )}
+                  </div>
+                  {typeof selectedItem.price === 'number' && (
+                    <div className="text-xl font-semibold text-gray-900">
                       ${selectedItem.price.toFixed(2)}
                     </div>
                   )}
                 </div>
 
-                {/* Category */}
-                {selectedItem.menu_categories && (
-                  <Badge variant="secondary" className="mb-4">
-                    {selectedItem.menu_categories.name}
-                  </Badge>
-                )}
-
                 {/* Description */}
                 {selectedItem.description && (
-                  <p className="text-gray-700 text-lg mb-6 leading-relaxed">
-                    {selectedItem.description}
-                  </p>
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                      Description
+                    </h3>
+                    <p className="mt-2 text-base leading-relaxed text-gray-700">
+                      {selectedItem.description}
+                    </p>
+                  </div>
                 )}
 
                 {/* Dietary Tags */}
                 {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Dietary Information</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                      Dietary Information
+                    </h3>
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {selectedItem.menu_item_tags.map((itemTag, index) => (
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="text-sm bg-transparent"
+                          className="text-xs bg-transparent"
                           style={buildTagStyles(itemTag.tags.name, { isDarkBackground: false })}
                         >
                           {itemTag.tags.name}
