@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
+import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -24,6 +24,8 @@ interface PublicMenuPageProps {
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
+const MAX_TITLE_FONT_SIZE = 64
+const MIN_TITLE_FONT_SIZE = 28
 const FONT_FAMILY_MAP: Record<string, string> = {
   'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
   'Fjalla One': '"Fjalla One", sans-serif',
@@ -55,11 +57,11 @@ const getAllergenBorderColor = (tagName: string): string => {
   const colorMap: Record<string, string> = {
     'dairy-free': '#B5C1D9',
     'gluten-free': '#D48963',
-    'nut-free': '#5C5086',
+    'nut-free': '#F7EAE3',
     'pescatarian': '#F698A7',
-    'shellfish-free': '#317987',
+    'shellfish-free': '#F6D98E',
     'spicy': '#F04F68',
-    'vegan': '#5F3196',
+    'vegan': '#A9CC66',
     'vegetarian': '#3B91A2'
   }
   return colorMap[tagName.toLowerCase()] || ''
@@ -192,6 +194,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
+  const titleRef = useRef<HTMLHeadingElement | null>(null)
+  const [titleFontSize, setTitleFontSize] = useState<number>(MAX_TITLE_FONT_SIZE)
 
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
@@ -220,6 +224,28 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
   const baseCategoryButtonClass =
     'flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px] transition-colors'
+
+  const fitTitleToContainer = useCallback(() => {
+    const element = titleRef.current
+    if (!element) return
+
+    const container = element.parentElement
+    if (!container) return
+
+    const availableWidth = Math.max(container.clientWidth - 8, 0)
+    if (availableWidth === 0) return
+
+    let nextSize = MAX_TITLE_FONT_SIZE
+    element.style.fontSize = `${nextSize}px`
+    element.style.whiteSpace = 'nowrap'
+
+    while (element.scrollWidth > availableWidth && nextSize > MIN_TITLE_FONT_SIZE) {
+      nextSize -= 1
+      element.style.fontSize = `${nextSize}px`
+    }
+
+    setTitleFontSize((prev) => (prev !== nextSize ? nextSize : prev))
+  }, [])
 
   const getCategoryButtonClass = useCallback((isSelected: boolean) => {
     if (isDarkBackground) {
@@ -333,6 +359,65 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     }
   }, [selectedItem])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const runResize = () => {
+      fitTitleToContainer()
+    }
+
+    runResize()
+    window.addEventListener('resize', runResize)
+
+    const element = titleRef.current
+    let resizeObserver: ResizeObserver | null = null
+    if (element && 'ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(runResize)
+      resizeObserver.observe(element)
+      if (element.parentElement) {
+        resizeObserver.observe(element.parentElement)
+      }
+    }
+
+    let cancelled = false
+    if ('fonts' in document) {
+      ;(document as any).fonts.ready
+        .then(() => {
+          if (!cancelled) {
+            runResize()
+          }
+        })
+        .catch(() => {
+          /* ignore font loading errors */
+        })
+    }
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('resize', runResize)
+      resizeObserver?.disconnect()
+    }
+  }, [fitTitleToContainer, menuFontFamily, profile.display_name])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    const previousBodyBg = document.body.style.backgroundColor
+    const previousHtmlBg = document.documentElement.style.backgroundColor
+
+    document.body.style.backgroundColor = menuBackgroundColor
+    document.documentElement.style.backgroundColor = menuBackgroundColor
+
+    return () => {
+      document.body.style.backgroundColor = previousBodyBg
+      document.documentElement.style.backgroundColor = previousHtmlBg
+    }
+  }, [menuBackgroundColor])
+
   return (
     <div className="min-h-screen transition-colors" style={themeStyle}>
       {/* Large Header Photo */}
@@ -363,8 +448,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
         {/* Restaurant Name - Large Title Below Photo */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
           <h1
-            className={`text-6xl font-bold text-center ${primaryTextClass}`}
-            style={{ fontFamily: menuFontFamily }}
+            ref={titleRef}
+            className={`text-6xl font-bold text-center whitespace-nowrap ${primaryTextClass}`}
+            style={{ fontFamily: menuFontFamily, fontSize: `${titleFontSize}px`, lineHeight: 1.1 }}
           >
             {profile.display_name}
           </h1>
@@ -407,7 +493,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
           <div className={`space-y-1.5 rounded-lg p-4 ${filterPanelClass}`}>
             {/* Filter Menu Header */}
             <div className="mb-1.5">
-              <h3 className={`text-sm font-medium ${secondaryTextClass}`}>Filter Menu</h3>
+              <h3
+                className={`text-sm font-medium ${secondaryTextClass}`}
+                style={{ fontFamily: menuFontFamily }}
+              >
+                Filter Menu
+              </h3>
             </div>
 
             {/* Category Filter */}
