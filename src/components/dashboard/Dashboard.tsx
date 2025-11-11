@@ -149,10 +149,6 @@ export function Dashboard() {
     }
   }
 
-  if (!user || !profile) {
-    return <div>Loading...</div>
-  }
-
   useEffect(() => {
     if (typeof document === 'undefined') return
 
@@ -166,6 +162,10 @@ export function Dashboard() {
       document.documentElement.style.backgroundColor = previousHtmlBg
     }
   }, [menuBackgroundColor])
+
+  if (!user || !profile) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div

@@ -170,7 +170,7 @@ interface PrivateMenuPageProps {
 }
 
 export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile } = useAuth()
   const [menuItems, setMenuItems] = useState<MenuItemWithRelations[]>([])
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [tags, setTags] = useState<TagType[]>([])

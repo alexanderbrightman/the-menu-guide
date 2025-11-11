@@ -396,7 +396,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
     let cancelled = false
     if ('fonts' in document) {
-      ;(document as any).fonts.ready
+      const fontsReady = (document as Document & { fonts: FontFaceSet }).fonts.ready
+      fontsReady
         .then(() => {
           if (!cancelled) {
             runResize()
