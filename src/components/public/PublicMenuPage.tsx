@@ -327,6 +327,20 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     setSelectedItem(item)
   }, [])
 
+  const handleTagClickFromModal = useCallback((tagId: number) => {
+    // Close the modal
+    setSelectedItem(null)
+    // Set the selected tag filter
+    startTransition(() => {
+      setSelectedTags([tagId])
+      setSelectedCategory('all') // Reset category to show all items with this tag
+    })
+    // Scroll to top of menu section after a brief delay to allow modal to close
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 100)
+  }, [])
+
   // Memoize selectedTagsSet for tag button checks
   const selectedTagsSetForButtons = useMemo(() => new Set(selectedTags), [selectedTags])
 
@@ -696,8 +710,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="text-xs bg-transparent"
+                          className="text-xs bg-transparent cursor-pointer hover:opacity-80 transition-opacity"
                           style={buildTagStyles(itemTag.tags.name, { isDarkBackground: false })}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleTagClickFromModal(itemTag.tags.id)
+                          }}
                         >
                           {itemTag.tags.name}
                         </Badge>
