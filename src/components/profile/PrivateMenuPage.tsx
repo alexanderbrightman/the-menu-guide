@@ -1088,7 +1088,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           {categorySections.length > 0 && uncategorizedItems.length > 0 && (
             <section
               className={`rounded-2xl border transition ${
-                isDarkBackground ? 'border-white/12 bg-white/8' : 'border-gray-200 bg-white'
+                isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
               }`}
             >
               <div
@@ -1132,42 +1132,71 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
               {uncategorizedOpen && (
                 <div className="border-t border-white/10 px-6 py-6 space-y-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                    {uncategorizedItems.map((item) => (
-                      <article
-                        key={item.id}
-                        className={`group overflow-hidden rounded-xl border ${
-                          isDarkBackground ? 'border-white/10 bg-white/10' : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        {item.image_url && (
-                          <div className="relative aspect-[3/2] w-full overflow-hidden">
-                            <Image
-                              src={item.image_url}
-                              alt={item.title}
-                              fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          </div>
-                        )}
-                        <div className="p-5 space-y-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3
-                                className={`text-xl font-semibold ${primaryTextClass}`}
-                                style={{ fontFamily: menuFontFamily }}
-                              >
-                                {item.title}
-                              </h3>
-                              {typeof item.price === 'number' && (
-                                <p className={`mt-1 text-sm ${secondaryTextClass}`}>
-                                  ${item.price.toFixed(2)}
+                  {uncategorizedItems.length === 0 ? (
+                    <div className={`text-sm ${mutedTextClass}`}>
+                      No uncategorized items.
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {uncategorizedItems.map((item) => (
+                        <article
+                          key={item.id}
+                          className="group flex flex-row items-center gap-4 relative"
+                        >
+                          {item.image_url && (
+                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                              <Image
+                                src={item.image_url}
+                                alt={item.title}
+                                fill
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                sizes="96px"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 flex flex-col min-w-0 relative pr-12 sm:pr-14">
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h3
+                                  className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words flex-1`}
+                                  style={{ fontFamily: menuFontFamily }}
+                                >
+                                  {item.title}
+                                </h3>
+                                {typeof item.price === 'number' && (
+                                  <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap flex-shrink-0`}>
+                                    ${item.price.toFixed(2)}
+                                  </p>
+                                )}
+                              </div>
+
+                              {item.description && (
+                                <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 mb-3`}>
+                                  {item.description}
                                 </p>
                               )}
+
+                              {item.menu_item_tags && item.menu_item_tags.length > 0 && (
+                                <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
+                                  {item.menu_item_tags.map((itemTag, index) => (
+                                    <Badge
+                                      key={`${item.id}-tag-${index}`}
+                                      variant="outline"
+                                      className="text-xs flex-shrink-0"
+                                      style={buildTagStyles(itemTag.tags.name, {
+                                        isDarkBackground,
+                                      })}
+                                    >
+                                      {itemTag.tags.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2">
+
+                            <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col gap-1.5">
                               <Button
-                                size="icon"
+                                size="sm"
                                 variant="outline"
                                 className={outlineButtonClass}
                                 onClick={() => startEditItem(item)}
@@ -1175,7 +1204,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
-                                size="icon"
+                                size="sm"
                                 variant="outline"
                                 className={outlineButtonClass}
                                 onClick={() => handleDeleteItem(item.id)}
@@ -1184,33 +1213,10 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                               </Button>
                             </div>
                           </div>
-
-                          {item.description && (
-                            <p className={`text-sm leading-relaxed ${secondaryTextClass}`}>
-                              {item.description}
-                            </p>
-                          )}
-
-                          {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {item.menu_item_tags.map((itemTag, index) => (
-                                <Badge
-                                  key={`${item.id}-uncat-tag-${index}`}
-                                  variant="outline"
-                                  className="text-xs"
-                                  style={buildTagStyles(itemTag.tags.name, {
-                                    isDarkBackground,
-                                  })}
-                                >
-                                  {itemTag.tags.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </section>
