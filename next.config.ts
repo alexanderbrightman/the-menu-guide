@@ -10,16 +10,16 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   // Performance optimizations
-  experimental: {
-    // Enable faster builds and hot reloads
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  // Turbopack configuration (moved from experimental.turbo)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
+  },
+  experimental: {
     // Optimize bundle splitting - add more packages for better code splitting
     optimizePackageImports: [
       'lucide-react',
