@@ -960,8 +960,8 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white'
               }`}
             >
-              <div className="px-6 py-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+              <div className="px-6 py-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 mb-6">
                   <div>
                     <h2
                       className={`text-2xl font-semibold ${primaryTextClass}`}
@@ -983,7 +983,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   </Button>
                 </div>
 
-                <div className="mt-6 space-y-6">
+                <div className="space-y-6">
                   {uncategorizedItems.map((item) => (
                     <article
                       key={item.id}
