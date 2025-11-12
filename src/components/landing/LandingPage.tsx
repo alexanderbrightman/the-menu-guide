@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
@@ -24,6 +24,49 @@ const getAllergenBorderColor = (tagName: string): string => {
 
 export function LandingPage() {
   const [showAuthForm, setShowAuthForm] = useState(false)
+  const [scale, setScale] = useState(1)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (!containerRef.current || !measureRef.current) return
+
+      const containerWidth = containerRef.current.offsetWidth
+      const contentWidth = measureRef.current.scrollWidth
+      const padding = 80 // Account for padding and margins
+      const availableWidth = Math.max(200, containerWidth - padding)
+
+      let newScale = 1
+      if (contentWidth > availableWidth && availableWidth > 0) {
+        newScale = availableWidth / contentWidth
+        newScale = Math.max(0.3, Math.min(1, newScale)) // Clamp between 0.3 and 1
+      }
+
+      setScale(newScale)
+    }
+
+    // Initial measurement with a delay to ensure DOM is ready
+    const timeoutId = setTimeout(updateScale, 150)
+
+    const handleResize = () => {
+      updateScale()
+    }
+
+    const handleOrientationChange = () => {
+      setTimeout(updateScale, 200)
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleOrientationChange)
+
+    return () => {
+      clearTimeout(timeoutId)
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleOrientationChange)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -51,11 +94,48 @@ export function LandingPage() {
 
         {/* Main content centered */}
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-full max-w-7xl mx-auto">
-            {/* Centered logo and title */}
+          <div ref={containerRef} className="w-full max-w-7xl mx-auto relative">
+            {/* Hidden measurement element - always at scale 1 */}
+            <div 
+              ref={measureRef}
+              className="flex items-center space-x-4 invisible absolute"
+              aria-hidden="true"
+            >
+              {/* Logo - same as visible */}
+              <div
+                className="flex-shrink-0 relative w-auto h-[17.28vw] md:h-[23.04vw] lg:h-[28.8vw] min-h-[11.52rem] min-w-[11.52rem] max-h-[34.56rem] max-w-[34.56rem]"
+                style={{ height: 'clamp(11.52rem, 23.04vw, 34.56rem)' }}
+              >
+                <Image 
+                  src="/logo_notext.png" 
+                  alt="" 
+                  fill
+                  className="object-contain"
+                  sizes="(min-width: 1024px) 30vw, 60vw"
+                />
+              </div>
+              
+              {/* Title - same as visible */}
+              <div className="flex-shrink-0">
+                <h1 className="text-[9.6vw] md:text-[12.8vw] lg:text-[16vw] font-light text-black leading-none tracking-tight" style={{ fontSize: 'clamp(6.4rem, 12.8vw, 19.2rem)' }}>
+                  <div className="mb-2">The</div>
+                  <div className="mb-2">Menu</div>
+                  <div>Guide</div>
+                </h1>
+              </div>
+            </div>
+
+            {/* Centered logo and title - visible */}
             <div className="flex items-center justify-center w-full">
-              <div className="flex items-center space-x-4">
-                {/* Logo - same height as title, 60% larger */}
+              <div 
+                ref={contentRef}
+                className="flex items-center space-x-4 transition-transform duration-300"
+                style={{ 
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'center',
+                }}
+              >
+                {/* Logo - scales with title */}
                 <div
                   className="flex-shrink-0 relative w-auto h-[17.28vw] md:h-[23.04vw] lg:h-[28.8vw] min-h-[11.52rem] min-w-[11.52rem] max-h-[34.56rem] max-w-[34.56rem]"
                   style={{ height: 'clamp(11.52rem, 23.04vw, 34.56rem)' }}
@@ -70,9 +150,9 @@ export function LandingPage() {
                   />
                 </div>
                 
-                {/* Title - left aligned within the centered group, 60% larger */}
+                {/* Title - scales with logo, black text */}
                 <div className="flex-shrink-0">
-                  <h1 className="text-[9.6vw] md:text-[12.8vw] lg:text-[16vw] font-light text-gray-800 leading-none tracking-tight" style={{ fontSize: 'clamp(6.4rem, 12.8vw, 19.2rem)' }}>
+                  <h1 className="text-[9.6vw] md:text-[12.8vw] lg:text-[16vw] font-light text-black leading-none tracking-tight" style={{ fontSize: 'clamp(6.4rem, 12.8vw, 19.2rem)' }}>
                     <div className="mb-2">The</div>
                     <div className="mb-2">Menu</div>
                     <div>Guide</div>

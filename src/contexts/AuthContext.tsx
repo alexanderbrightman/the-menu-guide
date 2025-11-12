@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { Profile } from '@/lib/supabase'
-import { getSafeSession, handleAuthError } from '@/lib/auth-utils'
+import { getSafeSession, handleAuthError, isRefreshTokenError } from '@/lib/auth-utils'
 
 interface AuthContextType {
   user: User | null
@@ -179,23 +179,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(null)
               }
             } catch (error) {
-              console.error('Auth state change error:', error)
-              handleAuthError(error, 'onAuthStateChange')
-              
-              // Check for refresh token errors more comprehensively
-              const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
-              const isRefreshTokenError = 
-                errorMessage.includes('refresh token') || 
-                errorMessage.includes('refresh_token') ||
-                errorMessage.includes('invalid refresh token') ||
-                errorMessage.includes('refresh token not found') ||
-                (error && typeof error === 'object' && 'name' in error && error.name === 'AuthApiError')
-                
-              if (isRefreshTokenError) {
+              // Suppress refresh token errors - they're handled gracefully
+              if (isRefreshTokenError(error)) {
                 console.log('Refresh token error in auth state change, clearing session')
                 setUser(null)
                 setProfile(null)
                 await clearAuthData()
+              } else {
+                console.error('Auth state change error:', error)
+                handleAuthError(error, 'onAuthStateChange')
               }
             }
           }

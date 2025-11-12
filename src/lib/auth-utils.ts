@@ -1,6 +1,27 @@
 import { supabase } from './supabase'
 
 /**
+ * Check if an error is a refresh token error
+ */
+export function isRefreshTokenError(error: unknown): boolean {
+  const errorMessage = error && typeof error === 'object' && 'message' in error 
+    ? String(error.message).toLowerCase() 
+    : String(error).toLowerCase()
+    
+  const errorName = error && typeof error === 'object' && 'name' in error ? String(error.name) : ''
+  const errorStatus = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 0
+  
+  return (
+    errorMessage.includes('refresh token') || 
+    errorMessage.includes('refresh_token') ||
+    errorMessage.includes('invalid refresh token') ||
+    errorMessage.includes('refresh token not found') ||
+    errorName === 'AuthApiError' ||
+    (errorName === 'AuthApiError' && (errorMessage.includes('refresh') || errorStatus === 401))
+  )
+}
+
+/**
  * Safely get the current session with proper error handling for refresh token issues
  * @returns Promise<{ session: Session | null, error: string | null }>
  */
@@ -13,18 +34,13 @@ export async function getSafeSession() {
     const { data: { session }, error } = await supabase.auth.getSession()
     
     if (error) {
-      console.error('Session error:', error)
-      
-      // Handle refresh token errors specifically - check multiple error message formats
-      const errorMessage = error.message?.toLowerCase() || ''
-      const isRefreshTokenError = 
-        errorMessage.includes('refresh token') || 
-        errorMessage.includes('refresh_token') ||
-        errorMessage.includes('invalid refresh token') ||
+      // Handle refresh token errors specifically
+      const isRefreshTokenErr = isRefreshTokenError(error) || 
         error.code === 'PGRST301' || // PostgREST error code for auth issues
         error.status === 401
         
-      if (isRefreshTokenError) {
+      if (isRefreshTokenErr) {
+        // Suppress console error for refresh token errors - handled gracefully
         console.log('Refresh token invalid, clearing session')
         // Clear the session silently
         try {
@@ -41,20 +57,9 @@ export async function getSafeSession() {
     
     return { session, error: null }
   } catch (error: unknown) {
-    console.error('Error getting session:', error)
-    
     // Handle refresh token errors in catch block too
-    const errorMessage = error && typeof error === 'object' && 'message' in error 
-      ? String(error.message).toLowerCase() 
-      : String(error).toLowerCase()
-      
-    const isRefreshTokenError = 
-      errorMessage.includes('refresh token') || 
-      errorMessage.includes('refresh_token') ||
-      errorMessage.includes('invalid refresh token') ||
-      (error && typeof error === 'object' && 'name' in error && error.name === 'AuthApiError')
-      
-    if (isRefreshTokenError) {
+    if (isRefreshTokenError(error)) {
+      // Suppress console error for refresh token errors - handled gracefully
       console.log('Refresh token invalid in catch, clearing session')
       try {
         if (supabase) {
@@ -67,6 +72,8 @@ export async function getSafeSession() {
       return { session: null, error: 'Session expired. Please sign in again.' }
     }
     
+    // Log other errors normally
+    console.error('Error getting session:', error)
     return { session: null, error: 'Failed to get session' }
   }
 }
@@ -92,22 +99,14 @@ export async function getSessionToken(): Promise<string | null> {
  * @param context - Context where the error occurred (for logging)
  */
 export function handleAuthError(error: unknown, context: string = 'Unknown') {
-  console.error(`Auth error in ${context}:`, error)
+  // Only log non-refresh-token errors to console
+  if (!isRefreshTokenError(error)) {
+    console.error(`Auth error in ${context}:`, error)
+  } else {
+    console.log(`Refresh token error in ${context} (handled gracefully)`)
+  }
   
-  // Check if it's a refresh token error
-  const errorMessage = error && typeof error === 'object' && 'message' in error 
-    ? String(error.message).toLowerCase() 
-    : String(error).toLowerCase()
-    
-  const isRefreshTokenError = 
-    errorMessage.includes('refresh token') || 
-    errorMessage.includes('refresh_token') ||
-    errorMessage.includes('invalid refresh token') ||
-    errorMessage.includes('refresh token not found') ||
-    (error && typeof error === 'object' && 'name' in error && error.name === 'AuthApiError' && 
-     (errorMessage.includes('refresh') || (error as any).status === 401))
-  
-  if (isRefreshTokenError) {
+  if (isRefreshTokenError(error)) {
     console.log('Refresh token error detected, signing out user')
     try {
       if (supabase) {

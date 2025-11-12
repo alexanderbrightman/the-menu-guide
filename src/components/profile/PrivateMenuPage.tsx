@@ -869,7 +869,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                           No menu items yet. Use the New Item button to add your first dish.
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                           {items.map((item) => (
                             <article
                               key={item.id}
@@ -886,41 +886,35 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                   />
                                 </div>
                               )}
-                              <div className="flex-1 flex flex-col min-w-0 relative pr-20 sm:pr-24">
+                              <div className="flex-1 flex flex-col min-w-0 relative pr-12 sm:pr-14">
                                 <div className="flex-1">
-                                  <h3
-                                    className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words mb-2`}
-                                    style={{ fontFamily: menuFontFamily }}
-                                  >
-                                    {item.title}
-                                  </h3>
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <h3
+                                      className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words flex-1`}
+                                      style={{ fontFamily: menuFontFamily }}
+                                    >
+                                      {item.title}
+                                    </h3>
+                                    {typeof item.price === 'number' && (
+                                      <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap flex-shrink-0`}>
+                                        ${item.price.toFixed(2)}
+                                      </p>
+                                    )}
+                                  </div>
 
                                   {item.description && (
-                                    <div className="relative mb-3">
-                                      <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 pr-16`}>
-                                        {item.description}
-                                      </p>
-                                      {typeof item.price === 'number' && (
-                                        <p className={`absolute bottom-0 right-0 text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap`}>
-                                          ${item.price.toFixed(2)}
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {!item.description && typeof item.price === 'number' && (
-                                    <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} mb-3`}>
-                                      ${item.price.toFixed(2)}
+                                    <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 mb-3`}>
+                                      {item.description}
                                     </p>
                                   )}
 
                                   {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
                                       {item.menu_item_tags.map((itemTag, index) => (
                                         <Badge
                                           key={`${item.id}-tag-${index}`}
                                           variant="outline"
-                                          className="text-xs"
+                                          className="text-xs flex-shrink-0"
                                           style={buildTagStyles(itemTag.tags.name, {
                                             isDarkBackground,
                                           })}
@@ -932,7 +926,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                   )}
                                 </div>
 
-                                <div className="absolute top-0 right-0 flex items-center gap-1.5">
+                                <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col gap-1.5">
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -989,7 +983,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   </Button>
                 </div>
 
-                <div className="mt-6 space-y-4">
+                <div className="mt-6 space-y-6">
                   {uncategorizedItems.map((item) => (
                     <article
                       key={item.id}
@@ -1006,41 +1000,35 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                           />
                         </div>
                       )}
-                      <div className="flex-1 flex flex-col min-w-0 relative pr-20 sm:pr-24">
+                      <div className="flex-1 flex flex-col min-w-0 relative pr-12 sm:pr-14">
                         <div className="flex-1">
-                          <h3
-                            className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words mb-2`}
-                            style={{ fontFamily: menuFontFamily }}
-                          >
-                            {item.title}
-                          </h3>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3
+                              className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words flex-1`}
+                              style={{ fontFamily: menuFontFamily }}
+                            >
+                              {item.title}
+                            </h3>
+                            {typeof item.price === 'number' && (
+                              <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap flex-shrink-0`}>
+                                ${item.price.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
 
                           {item.description && (
-                            <div className="relative mb-3">
-                              <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 pr-16`}>
-                                {item.description}
-                              </p>
-                              {typeof item.price === 'number' && (
-                                <p className={`absolute bottom-0 right-0 text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap`}>
-                                  ${item.price.toFixed(2)}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {!item.description && typeof item.price === 'number' && (
-                            <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} mb-3`}>
-                              ${item.price.toFixed(2)}
+                            <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 mb-3`}>
+                              {item.description}
                             </p>
                           )}
 
                           {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
                               {item.menu_item_tags.map((itemTag, index) => (
                                 <Badge
                                   key={`${item.id}-uncat-${index}`}
                                   variant="outline"
-                                  className="text-xs"
+                                  className="text-xs flex-shrink-0"
                                   style={buildTagStyles(itemTag.tags.name, {
                                     isDarkBackground,
                                   })}
@@ -1052,7 +1040,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                           )}
                         </div>
 
-                        <div className="absolute top-0 right-0 flex items-center gap-1.5">
+                        <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col gap-1.5">
                           <Button
                             size="sm"
                             variant="outline"
