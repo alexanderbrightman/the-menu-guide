@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
+import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { Badge } from '@/components/ui/badge'
 import { X, ArrowRight, ChevronDown } from 'lucide-react'
 
@@ -24,6 +25,7 @@ const getAllergenBorderColor = (tagName: string): string => {
 
 export function LandingPage() {
   const [showAuthForm, setShowAuthForm] = useState(false)
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [scale, setScale] = useState(1)
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -440,10 +442,21 @@ export function LandingPage() {
               </div>
             </div>
             <div className="px-6 pb-6 overflow-y-auto max-h-[calc(85vh-100px)]">
-              <AuthForm onSuccess={() => setShowAuthForm(false)} />
+              <AuthForm 
+                onSuccess={() => setShowAuthForm(false)} 
+                onForgotPassword={() => {
+                  setShowAuthForm(false)
+                  setShowPasswordResetModal(true)
+                }}
+              />
             </div>
           </div>
         </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {showPasswordResetModal && (
+        <PasswordResetModal onClose={() => setShowPasswordResetModal(false)} />
       )}
     </div>
   )

@@ -11,11 +11,18 @@ export function isRefreshTokenError(error: unknown): boolean {
   const errorName = error && typeof error === 'object' && 'name' in error ? String(error.name) : ''
   const errorStatus = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 0
   
-  return (
+  // Check for various refresh token error messages
+  const isRefreshTokenMessage = 
     errorMessage.includes('refresh token') || 
     errorMessage.includes('refresh_token') ||
     errorMessage.includes('invalid refresh token') ||
     errorMessage.includes('refresh token not found') ||
+    errorMessage.includes('refresh token: refresh token not found') ||
+    errorMessage.includes('jwt expired') ||
+    errorMessage.includes('token expired')
+  
+  return (
+    isRefreshTokenMessage ||
     errorName === 'AuthApiError' ||
     (errorName === 'AuthApiError' && (errorMessage.includes('refresh') || errorStatus === 401))
   )
