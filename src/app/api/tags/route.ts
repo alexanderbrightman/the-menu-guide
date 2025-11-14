@@ -1,46 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSecurityHeaders } from '@/lib/security'
+import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
 
 // GET - Fetch all available tags
 export async function GET(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    // Fetch all tags - use service role key for tags since they're read-only and public
-    const { data: tags, error } = await supabase
-      .from('tags')
-      .select('*')
-      .order('name')
+    // Fetch all tags - tags are read-only and public
+    const { data: tags, error } = await supabase.from('tags').select('*').order('name')
 
     if (error) {
       console.error('Error fetching tags:', error)
       // Return empty array instead of error for tags (they're optional)
-      return NextResponse.json({ tags: [] })
+      return NextResponse.json({ tags: [] }, { headers: getSecurityHeaders() })
     }
 
     // Add cache control headers for better performance
@@ -49,11 +35,12 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+          ...getSecurityHeaders(),
         },
       }
     )
   } catch (error) {
     console.error('Error in tags GET:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

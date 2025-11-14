@@ -1,28 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { sanitizeTextInput, sanitizePrice } from '@/lib/sanitize'
+import { getSecurityHeaders } from '@/lib/security'
+import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { checkRateLimit, getRateLimitHeaders, PHOTO_UPLOAD_RATE_LIMIT } from '@/lib/rate-limiting'
 
 export const runtime = 'nodejs'
+
+// Maximum file size (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MIN_FILE_SIZE = 200 * 1024
 
 // Initialize OpenAI client lazily (only when needed)
 const getOpenAIClient = () => {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY is not configured')
   return new OpenAI({ apiKey })
-}
-
-// Helper to create a Supabase client with the user's token
-const getSupabaseClientWithAuth = (token: string) => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    }
-  )
 }
 
 interface ParsedMenuItem {
@@ -40,43 +33,73 @@ type CategoryRecord = { id: string; name: string }
 
 export async function POST(request: NextRequest) {
   try {
-    // Authentication
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
-    const token = authHeader.substring(7)
-    const supabase = getSupabaseClientWithAuth(token)
+
+    const supabase = createAuthenticatedClient(token)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply generous rate limiting for menu scanning (photo upload limit)
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'scan-menu:POST',
+      PHOTO_UPLOAD_RATE_LIMIT.maxRequests,
+      PHOTO_UPLOAD_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before scanning another menu.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
+    }
 
     // Parse form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const userId = formData.get('userId') as string | null
-    if (!file) return NextResponse.json({ error: 'File is required' }, { status: 400 })
-    if (!userId || userId !== user.id)
-      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 })
+
+    if (!file) {
+      return NextResponse.json({ error: 'File is required' }, { status: 400, headers: getSecurityHeaders() })
+    }
+
+    if (!userId || userId !== user.id) {
+      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400, headers: getSecurityHeaders() })
+    }
 
     // Validate file
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Upload JPEG, PNG, WebP, or PDF.' },
-        { status: 400 }
+        { status: 400, headers: getSecurityHeaders() }
       )
     }
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
+
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: 'File too large. Maximum size is 10MB.' },
-        { status: 400 }
+        { status: 400, headers: getSecurityHeaders() }
       )
     }
-    if (file.size < 200 * 1024) {
+
+    if (file.size < MIN_FILE_SIZE) {
       return NextResponse.json(
         { error: 'Image too small or low resolution. Upload a clearer photo.' },
-        { status: 400 }
+        { status: 400, headers: getSecurityHeaders() }
       )
     }
 
@@ -108,27 +131,30 @@ Rules:
     const imageData = {
       type: 'image_url' as const,
       image_url: {
-        url: `data:${mimeType};base64,${base64}`
-      }
+        url: `data:${mimeType};base64,${base64}`,
+      },
     }
 
     // Single OpenAI round-trip for structured JSON directly from the image
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout
-    const parseResponse = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using gpt-4o-mini for menu scanning
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: structuredPrompt },
-            imageData
-          ]
-        }
-      ],
-      response_format: { type: 'json_object' },
-      max_completion_tokens: 1200
-    }, { signal: controller.signal })
+    const parseResponse = await openai.chat.completions.create(
+      {
+        model: 'gpt-4o-mini', // Using gpt-4o-mini for menu scanning
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: structuredPrompt },
+              imageData,
+            ],
+          },
+        ],
+        response_format: { type: 'json_object' },
+        max_completion_tokens: 1200,
+      },
+      { signal: controller.signal }
+    )
     clearTimeout(timeout)
 
     const parsed = parseResponse.choices[0]?.message?.content || '{}'
@@ -138,15 +164,15 @@ Rules:
       menuData = JSON.parse(cleaned) as ParsedMenu
     } catch {
       return NextResponse.json(
-        { error: 'Failed to parse structured data. Try again with a clearer image.' },
-        { status: 500 }
+        { error: 'Failed to parse menu data. Try again with a clearer image.' },
+        { status: 500, headers: getSecurityHeaders() }
       )
     }
 
     if (!menuData.items?.length) {
       return NextResponse.json(
         { error: 'No menu items found. Ensure the text is readable.' },
-        { status: 400 }
+        { status: 400, headers: getSecurityHeaders() }
       )
     }
 
@@ -168,11 +194,7 @@ Rules:
     )
 
     if (categoryNames.length > 0) {
-      const existingResponse = await supabase
-        .from('menu_categories')
-        .select('id,name')
-        .eq('user_id', user.id)
-        .in('name', categoryNames)
+      const existingResponse = await supabase.from('menu_categories').select('id,name').eq('user_id', user.id).in('name', categoryNames)
 
       const existing = existingResponse.data as CategoryRecord[] | null
       existing?.forEach((category) => categoryMap.set(category.name, category.id))
@@ -192,57 +214,57 @@ Rules:
     const placeholderImageUrl =
       'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
 
-    const itemsToInsert = menuData.items.map((item) => {
-      const title = sanitizeTextInput(item.title || '')
-      const description = item.description ? sanitizeTextInput(item.description) : null
-      const price = item.price !== null && item.price !== undefined ? sanitizePrice(item.price) : null
-      const categoryName = item.category ? sanitizeTextInput(item.category) : null
-      const category_id = categoryName ? categoryMap.get(categoryName) || null : null
-      return {
-        user_id: user.id,
-        title,
-        description,
-        price,
-        category_id,
-        image_url: placeholderImageUrl,
-      }
-    }).filter((menuItem) => menuItem.title.length > 0)
+    const itemsToInsert = menuData.items
+      .map((item) => {
+        const title = sanitizeTextInput(item.title || '')
+        const description = item.description ? sanitizeTextInput(item.description) : null
+        const price = item.price !== null && item.price !== undefined ? sanitizePrice(item.price) : null
+        const categoryName = item.category ? sanitizeTextInput(item.category) : null
+        const category_id = categoryName ? categoryMap.get(categoryName) || null : null
+        return {
+          user_id: user.id,
+          title,
+          description,
+          price,
+          category_id,
+          image_url: placeholderImageUrl,
+        }
+      })
+      .filter((menuItem) => menuItem.title.length > 0)
 
     if (itemsToInsert.length > 0) {
       const { error } = await supabase.from('menu_items').insert(itemsToInsert)
       if (!error) itemsInserted = itemsToInsert.length
     }
 
-    return NextResponse.json({
-      itemsInserted,
-      categoriesCreated,
-      message: `Imported ${itemsInserted} item${itemsInserted !== 1 ? 's' : ''} successfully.`
-    })
+    return NextResponse.json(
+      {
+        itemsInserted,
+        categoriesCreated,
+        message: `Imported ${itemsInserted} item${itemsInserted !== 1 ? 's' : ''} successfully.`,
+      },
+      {
+        headers: {
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error: unknown) {
     console.error('Error in scan-menu POST:', error)
-    const responseStatus = typeof error === 'object' && error !== null && 'response' in error
-      ? (error as { response?: { status?: number } }).response?.status
-      : undefined
-    const errorCode = typeof error === 'object' && error !== null && 'code' in error
-      ? (error as { code?: string }).code
-      : undefined
-    const errorMessage = error instanceof Error ? error.message : 'Failed to scan menu. Try again later.'
+    const responseStatus =
+      typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { status?: number } }).response?.status
+        : undefined
+    const errorCode = typeof error === 'object' && error !== null && 'code' in error ? (error as { code?: string }).code : undefined
+    const errorMessage = error instanceof Error ? error.message : 'An error occurred while scanning the menu'
 
     if (responseStatus === 401) {
-      return NextResponse.json(
-        { error: 'Invalid OpenAI API key.' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'An error occurred with the scanning service' }, { status: 500, headers: getSecurityHeaders() })
     }
     if (errorCode === 'insufficient_quota') {
-      return NextResponse.json(
-        { error: 'OpenAI API quota exceeded. Check billing.' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Scanning service temporarily unavailable. Please try again later.' }, { status: 503, headers: getSecurityHeaders() })
     }
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: errorMessage }, { status: 500, headers: getSecurityHeaders() })
   }
 }

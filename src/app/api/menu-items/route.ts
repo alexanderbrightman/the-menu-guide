@@ -1,42 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { sanitizeTextInput, sanitizeUrl, sanitizePrice } from '@/lib/sanitize'
+import { sanitizeTextInput, sanitizeUrl, sanitizePrice, sanitizeUUID, sanitizeInteger, sanitizeIntegerArray } from '@/lib/sanitize'
+import { getSecurityHeaders } from '@/lib/security'
+import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { checkRateLimit, getRateLimitHeaders, PHOTO_UPLOAD_RATE_LIMIT, STANDARD_RATE_LIMIT, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
+
+// Maximum request body size (1MB)
+const MAX_REQUEST_SIZE = 1024 * 1024
 
 // GET - Fetch all menu items for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
     // Get query parameters for filtering and pagination
     const { searchParams } = new URL(request.url)
-    const categoryId = searchParams.get('categoryId')
-    const limit = parseInt(searchParams.get('limit') || '100') // Default to 100 items
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const categoryIdParam = searchParams.get('categoryId')
+    const limitParam = searchParams.get('limit') || '100'
+    const offsetParam = searchParams.get('offset') || '0'
+    
+    // Validate and sanitize inputs
+    const categoryId = categoryIdParam ? sanitizeUUID(categoryIdParam) : null
+    const limit = sanitizeInteger(limitParam, 1, 1000) ?? 100 // Max 1000 items
+    const offset = sanitizeInteger(offsetParam, 0) ?? 0
+    
+    // Validate categoryId if provided
+    if (categoryIdParam && !categoryId) {
+      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
+    }
 
     let query = supabase
       .from('menu_items')
@@ -60,72 +63,102 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching menu items:', error)
-      return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while fetching menu items' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     // No caching for authenticated requests to ensure fresh data
-    return NextResponse.json(
+    const response = NextResponse.json(
       { items, total: count || items?.length || 0 },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
+          ...getSecurityHeaders(),
         },
       }
     )
+    return response
   } catch (error) {
     console.error('Error in menu items GET:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }
 
 // POST - Create a new menu item
 export async function POST(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check request size
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
+    }
+    
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply generous rate limiting for photo uploads
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'menu-items:POST',
+      PHOTO_UPLOAD_RATE_LIMIT.maxRequests,
+      PHOTO_UPLOAD_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before uploading more items.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     const body = await request.json()
     const { title, description, price, category_id, image_url, tag_ids } = body
 
     // Sanitize inputs
-    const sanitizedTitle = sanitizeTextInput(title)
+    const sanitizedTitle = title ? sanitizeTextInput(title) : ''
     const sanitizedDescription = description ? sanitizeTextInput(description) : ''
     const sanitizedPrice = price ? sanitizePrice(price) : null
-    const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : ''
+    const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : null
+    const sanitizedCategoryId = category_id ? sanitizeUUID(category_id) : null
+    const sanitizedTagIds = tag_ids ? sanitizeIntegerArray(tag_ids, 1) : null
 
     // Validate required fields early
     if (!sanitizedTitle) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Title is required' }, { status: 400, headers: getSecurityHeaders() })
     }
 
     if (!sanitizedImageUrl) {
-      return NextResponse.json({ error: 'Image URL is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Image URL is required and must be valid' }, { status: 400, headers: getSecurityHeaders() })
+    }
+    
+    // Validate category_id if provided
+    if (category_id && !sanitizedCategoryId) {
+      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
+    }
+    
+    // Validate tag_ids if provided
+    if (tag_ids && sanitizedTagIds === null) {
+      return NextResponse.json({ error: 'Invalid tag IDs format' }, { status: 400, headers: getSecurityHeaders() })
     }
 
     // Create the menu item
@@ -136,7 +169,7 @@ export async function POST(request: NextRequest) {
         title: sanitizedTitle,
         description: sanitizedDescription,
         price: sanitizedPrice,
-        category_id: category_id || null,
+        category_id: sanitizedCategoryId,
         image_url: sanitizedImageUrl
       })
       .select()
@@ -144,12 +177,12 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating menu item:', error)
-      return NextResponse.json({ error: 'Failed to create menu item' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while creating the menu item' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     // Add tags if provided (in parallel for better performance)
-    if (tag_ids && tag_ids.length > 0) {
-      const tagInserts = tag_ids.map((tagId: number) => ({
+    if (sanitizedTagIds && sanitizedTagIds.length > 0) {
+      const tagInserts = sanitizedTagIds.map((tagId: number) => ({
         menu_item_id: item.id,
         tag_id: tagId
       }))
@@ -164,56 +197,109 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ item })
+    return NextResponse.json(
+      { item },
+      {
+        headers: {
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in menu items POST:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }
 
 // PATCH - Update a menu item
 export async function PATCH(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check request size
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
+    }
+    
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply generous rate limiting for photo updates
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'menu-items:PATCH',
+      PHOTO_UPLOAD_RATE_LIMIT.maxRequests,
+      PHOTO_UPLOAD_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before updating more items.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     const body = await request.json()
     const { id, title, description, price, category_id, image_url, tag_ids } = body
 
+    // Validate and sanitize ID (required)
+    const sanitizedId = sanitizeUUID(id)
+    if (!sanitizedId) {
+      return NextResponse.json({ error: 'Invalid menu item ID format' }, { status: 400, headers: getSecurityHeaders() })
+    }
+
+    // Sanitize all inputs
+    const sanitizedTitle = title ? sanitizeTextInput(title) : null
+    const sanitizedDescription = description ? sanitizeTextInput(description) : null
+    const sanitizedPrice = price !== undefined && price !== null ? sanitizePrice(price) : null
+    const sanitizedCategoryId = category_id ? sanitizeUUID(category_id) : null
+    const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : null
+    const sanitizedTagIds = tag_ids !== undefined ? sanitizeIntegerArray(tag_ids, 1) : undefined
+    
+    // Validate image_url if provided
+    if (image_url && !sanitizedImageUrl) {
+      return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400, headers: getSecurityHeaders() })
+    }
+    
+    // Validate category_id if provided
+    if (category_id && !sanitizedCategoryId) {
+      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
+    }
+    
+    // Validate tag_ids if provided
+    if (tag_ids !== undefined && sanitizedTagIds === null) {
+      return NextResponse.json({ error: 'Invalid tag IDs format' }, { status: 400, headers: getSecurityHeaders() })
+    }
+
     // Get current menu item to check for old image
     const { data: currentItem } = await supabase
       .from('menu_items')
       .select('image_url')
-      .eq('id', id)
+      .eq('id', sanitizedId)
       .eq('user_id', user.id)
       .single()
 
     // Delete old image from storage if image_url is changing and old image exists
-    if (currentItem?.image_url && currentItem.image_url !== image_url && image_url) {
+    if (currentItem?.image_url && currentItem.image_url !== sanitizedImageUrl && sanitizedImageUrl) {
       try {
         // Extract file path from Supabase storage URL
         const urlParts = currentItem.image_url.split('/')
@@ -241,38 +327,47 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    // Build update object with only provided fields
+    const updateData: {
+      title?: string
+      description?: string | null
+      price?: number | null
+      category_id?: string | null
+      image_url?: string
+    } = {}
+    
+    if (sanitizedTitle !== null) updateData.title = sanitizedTitle
+    if (sanitizedDescription !== null) updateData.description = sanitizedDescription || null
+    if (sanitizedPrice !== null) updateData.price = sanitizedPrice
+    if (sanitizedCategoryId !== null) updateData.category_id = sanitizedCategoryId
+    if (sanitizedImageUrl !== null) updateData.image_url = sanitizedImageUrl
+
     // Update the menu item
     const { data: item, error } = await supabase
       .from('menu_items')
-      .update({
-        title,
-        description,
-        price: price ? parseFloat(price) : null,
-        category_id: category_id || null,
-        image_url: image_url || ''
-      })
-      .eq('id', id)
+      .update(updateData)
+      .eq('id', sanitizedId)
       .eq('user_id', user.id)
       .select()
       .single()
 
     if (error) {
       console.error('Error updating menu item:', error)
-      return NextResponse.json({ error: 'Failed to update menu item' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to update menu item' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     // Update tags if provided
-    if (tag_ids !== undefined) {
+    if (sanitizedTagIds !== undefined) {
       // First, remove existing tags
       await supabase
         .from('menu_item_tags')
         .delete()
-        .eq('menu_item_id', id)
+        .eq('menu_item_id', sanitizedId)
 
       // Then add new tags
-      if (tag_ids.length > 0) {
-        const tagInserts = tag_ids.map((tagId: number) => ({
-          menu_item_id: id,
+      if (sanitizedTagIds && sanitizedTagIds.length > 0) {
+        const tagInserts = sanitizedTagIds.map((tagId: number) => ({
+          menu_item_id: sanitizedId,
           tag_id: tagId
         }))
 
@@ -286,49 +381,69 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ item })
+    return NextResponse.json(
+      { item },
+      {
+        headers: {
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in menu items PATCH:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while updating the menu item' }, { status: 500, headers: getSecurityHeaders() })
   }
 }
 
 // DELETE - Delete a menu item
 export async function DELETE(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply strict rate limiting for delete operations
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'menu-items:DELETE',
+      STRICT_RATE_LIMIT.maxRequests,
+      STRICT_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many delete requests. Please wait a moment before trying again.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     const { searchParams } = new URL(request.url)
     const deleteAll = searchParams.get('all') === 'true'
     const itemId = searchParams.get('id')
 
-    if (!deleteAll && !itemId) {
-      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+    // Validate itemId if provided
+    const sanitizedItemId = itemId ? sanitizeUUID(itemId) : null
+    if (!deleteAll && !sanitizedItemId) {
+      return NextResponse.json({ error: 'Item ID is required and must be valid UUID' }, { status: 400, headers: getSecurityHeaders() })
     }
 
     if (deleteAll) {
@@ -339,11 +454,11 @@ export async function DELETE(request: NextRequest) {
 
       if (fetchItemsError) {
         console.error('Error fetching menu items for bulk delete:', fetchItemsError)
-        return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500, headers: getSecurityHeaders() })
       }
 
       if (!items || items.length === 0) {
-        return NextResponse.json({ success: true, deletedCount: 0 })
+        return NextResponse.json({ success: true, deletedCount: 0 }, { headers: getSecurityHeaders() })
       }
 
       const itemIds = items.map((item) => item.id)
@@ -383,7 +498,7 @@ export async function DELETE(request: NextRequest) {
 
       if (deleteError) {
         console.error('Error deleting menu items in bulk:', deleteError)
-        return NextResponse.json({ error: 'Failed to delete menu items' }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to delete menu items' }, { status: 500, headers: getSecurityHeaders() })
       }
 
       return NextResponse.json(
@@ -393,6 +508,7 @@ export async function DELETE(request: NextRequest) {
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0',
+            ...getSecurityHeaders(),
           },
         }
       )
@@ -402,12 +518,12 @@ export async function DELETE(request: NextRequest) {
     const { data: menuItem, error: fetchError } = await supabase
       .from('menu_items')
       .select('image_url')
-      .eq('id', itemId)
+      .eq('id', sanitizedItemId!)
       .eq('user_id', user.id)
       .single()
 
     if (fetchError || !menuItem) {
-      return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Menu item not found' }, { status: 404, headers: getSecurityHeaders() })
     }
 
     // Delete the image from storage if it exists
@@ -444,18 +560,18 @@ export async function DELETE(request: NextRequest) {
     await supabase
       .from('menu_item_tags')
       .delete()
-      .eq('menu_item_id', itemId)
+      .eq('menu_item_id', sanitizedItemId!)
 
     // Delete the menu item
     const { error } = await supabase
       .from('menu_items')
       .delete()
-      .eq('id', itemId)
+      .eq('id', sanitizedItemId!)
       .eq('user_id', user.id)
 
     if (error) {
       console.error('Error deleting menu item:', error)
-      return NextResponse.json({ error: 'Failed to delete menu item' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while deleting the menu item' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     return NextResponse.json(
@@ -465,11 +581,13 @@ export async function DELETE(request: NextRequest) {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
         },
       }
     )
   } catch (error) {
     console.error('Error in menu items DELETE:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
 import type { Profile } from '@/lib/supabase'
+import { getSecurityHeaders } from '@/lib/security'
 
 // Admin Supabase client for webhook operations
 const supabaseAdmin = createClient(
@@ -33,17 +34,20 @@ setInterval(() => {
 }, 60 * 60 * 1000)
 
 export async function GET() {
-  return NextResponse.json({ 
-    message: 'Stripe webhook endpoint is ready',
-    timestamp: new Date().toISOString()
-  })
+  return NextResponse.json(
+    {
+      message: 'Stripe webhook endpoint is ready',
+      timestamp: new Date().toISOString(),
+    },
+    { headers: getSecurityHeaders() }
+  )
 }
 
 export async function POST(req: NextRequest) {
   // Check if Stripe is configured
   if (!stripe) {
     console.error('[Webhook] Stripe not configured')
-    return new NextResponse('Stripe not configured', { status: 503 })
+    return new NextResponse('Stripe not configured', { status: 503, headers: getSecurityHeaders() })
   }
 
   const body = await req.text()
@@ -60,14 +64,14 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     console.error(`[Webhook] Signature verification failed: ${message}`)
-    return new NextResponse(`Webhook Error: ${message}`, { status: 400 })
+    return new NextResponse(`Webhook Error: ${message}`, { status: 400, headers: getSecurityHeaders() })
   }
 
   // Check idempotency - prevent processing same event multiple times
   const eventId = event.id
   if (processedEvents.has(eventId)) {
     console.log(`[Webhook] Event ${eventId} already processed, skipping`)
-    return new NextResponse(JSON.stringify({ received: true, skipped: true }), { status: 200 })
+    return new NextResponse(JSON.stringify({ received: true, skipped: true }), { status: 200, headers: getSecurityHeaders() })
   }
 
   console.log(`[Webhook] Received event: ${event.type} (ID: ${eventId})`)
@@ -105,11 +109,11 @@ export async function POST(req: NextRequest) {
       console.error(`[Webhook] Error handling event ${event.type}:`, error)
       // Remove from processed events on error so it can be retried
       processedEvents.delete(eventId)
-      return new NextResponse(`Webhook handler failed: ${error}`, { status: 400 })
+      return new NextResponse(`Webhook handler failed: ${error}`, { status: 400, headers: getSecurityHeaders() })
     }
   }
 
-  return new NextResponse(JSON.stringify({ received: true }), { status: 200 })
+  return new NextResponse(JSON.stringify({ received: true }), { status: 200, headers: getSecurityHeaders() })
 }
 
 async function handleCheckoutSessionCompleted(event: Stripe.Event) {

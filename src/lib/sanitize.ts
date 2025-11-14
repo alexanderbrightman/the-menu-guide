@@ -55,3 +55,65 @@ export function sanitizePrice(price: string | number): number | null {
   
   return Math.round(numPrice * 100) / 100 // Round to 2 decimal places
 }
+
+/**
+ * Validate UUID format
+ */
+export function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
+}
+
+/**
+ * Validate and sanitize UUID input
+ */
+export function sanitizeUUID(uuid: string | null | undefined): string | null {
+  if (!uuid || typeof uuid !== 'string') {
+    return null
+  }
+  return isValidUUID(uuid) ? uuid : null
+}
+
+/**
+ * Validate and sanitize integer input with min/max bounds
+ */
+export function sanitizeInteger(
+  value: string | number | null | undefined,
+  min: number = 0,
+  max: number = Number.MAX_SAFE_INTEGER
+): number | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  
+  const numValue = typeof value === 'string' ? parseInt(value, 10) : value
+  
+  if (isNaN(numValue) || !Number.isInteger(numValue)) {
+    return null
+  }
+  
+  if (numValue < min || numValue > max) {
+    return null
+  }
+  
+  return numValue
+}
+
+/**
+ * Validate and sanitize array of integers (for tag_ids, etc.)
+ */
+export function sanitizeIntegerArray(
+  value: unknown,
+  min: number = 0,
+  max: number = Number.MAX_SAFE_INTEGER
+): number[] | null {
+  if (!Array.isArray(value)) {
+    return null
+  }
+  
+  const sanitized = value
+    .map(item => sanitizeInteger(item, min, max))
+    .filter((item): item is number => item !== null)
+  
+  return sanitized.length === value.length ? sanitized : null
+}

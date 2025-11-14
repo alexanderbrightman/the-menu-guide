@@ -117,7 +117,9 @@ export default function ResetPasswordPage() {
         setError(updateError.message)
       } else {
         setMessage('Password reset successfully! Redirecting to sign in...')
-        // Redirect to home page after 2 seconds
+        // Sign out the user so they need to sign in with their new password
+        await supabase.auth.signOut()
+        // Redirect to home page after 2 seconds (will show login form since user is logged out)
         setTimeout(() => {
           router.push('/')
         }, 2000)

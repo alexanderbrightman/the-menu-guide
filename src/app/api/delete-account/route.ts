@@ -2,21 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
 import { PREMIUM_API_HEADERS } from '@/lib/premium-validation'
-
-// Helper to create a Supabase client with the user's token
-const getSupabaseClientWithAuth = (token: string) => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    }
-  )
-}
+import { getSecurityHeaders } from '@/lib/security'
+import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { checkRateLimit, getRateLimitHeaders, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
 
 // Admin Supabase client for data deletion
 const supabaseAdmin = createClient(
@@ -28,22 +16,37 @@ export async function DELETE(request: NextRequest) {
   try {
     // Check if Stripe is configured
     if (!stripe) {
-      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503, headers: getSecurityHeaders() })
     }
 
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    const supabase = getSupabaseClientWithAuth(token)
+    const supabase = createAuthenticatedClient(token)
 
     // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply strict rate limiting for account deletion
+    const rateLimit = checkRateLimit(request, user.id, 'delete-account:DELETE', STRICT_RATE_LIMIT.maxRequests, STRICT_RATE_LIMIT.windowMs)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before trying again.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     // Get the user's profile with subscription info
@@ -55,7 +58,7 @@ export async function DELETE(request: NextRequest) {
 
     if (profileError) {
       console.error('Error fetching profile:', profileError)
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404, headers: getSecurityHeaders() })
     }
 
     console.log('Starting account deletion for user:', user.id)
@@ -204,28 +207,32 @@ export async function DELETE(request: NextRequest) {
       const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
       if (authDeleteError) {
         console.error('Error deleting user from auth:', authDeleteError)
-        return NextResponse.json({ error: 'Failed to delete user account' }, { status: 500 })
+        return NextResponse.json({ error: 'An error occurred while deleting your account' }, { status: 500, headers: getSecurityHeaders() })
       }
       console.log('User deleted from Supabase Auth successfully')
     } catch (error) {
       console.error('Error deleting user from auth:', error)
-      return NextResponse.json({ error: 'Failed to delete user account' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while deleting your account' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     console.log('Account deletion completed successfully for user:', user.id)
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Account deleted successfully. All data has been permanently removed.',
-      deletedAt: new Date().toISOString()
-    }, {
-      headers: PREMIUM_API_HEADERS
-    })
-
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Account deleted successfully. All data has been permanently removed.',
+        deletedAt: new Date().toISOString(),
+      },
+      {
+        headers: {
+          ...PREMIUM_API_HEADERS,
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error) {
     console.error('Error deleting account:', error)
-    return NextResponse.json({ 
-      error: 'An unexpected error occurred while deleting your account. Please contact support.' 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'An unexpected error occurred while deleting your account. Please contact support.' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

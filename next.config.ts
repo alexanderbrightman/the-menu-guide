@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
+// Validate environment variables at build time
+if (process.env.NODE_ENV === 'production') {
+  try {
+    const { validateEnv } = require('./src/lib/env-validation');
+    validateEnv();
+    console.log('✅ Environment variables validated successfully');
+  } catch (error) {
+    console.error('❌ Environment validation failed:', error);
+    // Don't fail the build, but warn the developer
+  }
+}
+
 const nextConfig: NextConfig = {
   eslint: {
     // Only ignore ESLint errors in development

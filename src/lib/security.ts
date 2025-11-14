@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server'
+
 /**
  * Security headers middleware for Next.js API routes
  */
@@ -21,4 +23,21 @@ export function addSecurityHeaders(response: Response): Response {
   })
   
   return response
+}
+
+/**
+ * Helper to create a secure JSON response with security headers
+ */
+export function secureJsonResponse(
+  data: unknown,
+  status: number = 200,
+  additionalHeaders: Record<string, string> = {}
+): NextResponse {
+  return NextResponse.json(data, {
+    status,
+    headers: {
+      ...getSecurityHeaders(),
+      ...additionalHeaders,
+    },
+  })
 }

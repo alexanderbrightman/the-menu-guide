@@ -47,3 +47,36 @@ export const supabaseAdmin = createClient(
     }
   }
 )
+
+/**
+ * Create an authenticated Supabase client for API routes
+ * This helper reuses the same client creation pattern across all API routes
+ * @param token - The user's access token from the Authorization header
+ * @returns Authenticated Supabase client
+ */
+export function createAuthenticatedClient(token: string) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    }
+  )
+}
+
+/**
+ * Extract and validate authorization token from request
+ * @param request - NextRequest object
+ * @returns Token string or null if invalid
+ */
+export function getAuthToken(request: Request): string | null {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null
+  }
+  return authHeader.substring(7)
+}

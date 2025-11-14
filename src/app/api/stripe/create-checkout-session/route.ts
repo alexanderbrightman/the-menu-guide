@@ -1,42 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe'
-import { createClient } from '@supabase/supabase-js'
+import { getSecurityHeaders } from '@/lib/security'
+import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { checkRateLimit, getRateLimitHeaders, STANDARD_RATE_LIMIT } from '@/lib/rate-limiting'
 
-// Helper to create a Supabase client with the user's token
-const getSupabaseClientWithAuth = (token: string) => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    }
-  )
-}
+// Maximum request body size (1MB)
+const MAX_REQUEST_SIZE = 1024 * 1024
 
 export async function POST(request: NextRequest) {
   try {
+    // Check request size
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
+    }
+
     // Check if Stripe is configured
     if (!stripe) {
-      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503 })
+      return NextResponse.json({ error: 'Payment system not configured' }, { status: 503, headers: getSecurityHeaders() })
     }
 
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    const supabase = getSupabaseClientWithAuth(token)
+    const supabase = createAuthenticatedClient(token)
 
     // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply standard rate limiting
+    const rateLimit = checkRateLimit(request, user.id, 'stripe:create-checkout', STANDARD_RATE_LIMIT.maxRequests, STANDARD_RATE_LIMIT.windowMs)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before trying again.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     // Get only essential profile data to reduce query time
@@ -47,7 +58,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404, headers: getSecurityHeaders() })
     }
 
     // Pre-calculate URLs to avoid repeated string operations
@@ -94,9 +105,17 @@ export async function POST(request: NextRequest) {
       payment_method_collection: 'always',
     })
 
-    return NextResponse.json({ sessionId: session.id, url: session.url })
+    return NextResponse.json(
+      { sessionId: session.id, url: session.url },
+      {
+        headers: {
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error) {
     console.error('Error creating checkout session:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while creating the checkout session' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

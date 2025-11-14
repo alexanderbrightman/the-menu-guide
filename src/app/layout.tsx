@@ -4,6 +4,9 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 
+// Note: Environment validation is handled at build time and in API routes
+// This file runs on both server and client, so we avoid importing server-only code here
+
 const fjallaOne = Fjalla_One({
   variable: "--font-heading",
   subsets: ["latin"],

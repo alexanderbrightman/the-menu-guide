@@ -1,34 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { sanitizeTextInput, sanitizeUUID } from '@/lib/sanitize'
+import { getSecurityHeaders } from '@/lib/security'
+import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { checkRateLimit, getRateLimitHeaders, STANDARD_RATE_LIMIT, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
+
+// Maximum request body size (1MB)
+const MAX_REQUEST_SIZE = 1024 * 1024
 
 // GET - Fetch all categories for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
     const { data: categories, error } = await supabase
@@ -39,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching categories:', error)
-      return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while fetching categories' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     // No caching for authenticated requests to ensure fresh data
@@ -50,194 +44,264 @@ export async function GET(request: NextRequest) {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
+          ...getSecurityHeaders(),
         },
       }
     )
   } catch (error) {
     console.error('Error in categories GET:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }
 
 // POST - Create a new category
 export async function POST(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check request size
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply standard rate limiting
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'menu-categories:POST',
+      STANDARD_RATE_LIMIT.maxRequests,
+      STANDARD_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before creating more categories.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     const body = await request.json()
     const { name } = body
 
-    if (!name || name.trim() === '') {
-      return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+    // Sanitize and validate input
+    const sanitizedName = name ? sanitizeTextInput(name) : ''
+    if (!sanitizedName || sanitizedName.trim() === '') {
+      return NextResponse.json({ error: 'Category name is required' }, { status: 400, headers: getSecurityHeaders() })
     }
 
     const { data: category, error } = await supabase
       .from('menu_categories')
       .insert({
         user_id: user.id,
-        name: name.trim()
+        name: sanitizedName
       })
       .select()
       .single()
 
     if (error) {
       console.error('Error creating category:', error)
-      return NextResponse.json({ error: 'Failed to create category' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while creating the category' }, { status: 500, headers: getSecurityHeaders() })
     }
 
-    return NextResponse.json({ category })
+    return NextResponse.json(
+      { category },
+      {
+        headers: {
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in categories POST:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }
 
 // PATCH - Update a category
 export async function PATCH(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check request size
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply standard rate limiting
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'menu-categories:PATCH',
+      STANDARD_RATE_LIMIT.maxRequests,
+      STANDARD_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before updating more categories.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     const body = await request.json()
     const { id, name } = body
 
-    if (!id || !name || name.trim() === '') {
-      return NextResponse.json({ error: 'Category ID and name are required' }, { status: 400 })
+    // Validate and sanitize inputs
+    const sanitizedId = sanitizeUUID(id)
+    const sanitizedName = name ? sanitizeTextInput(name) : ''
+
+    if (!sanitizedId) {
+      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
+    }
+
+    if (!sanitizedName || sanitizedName.trim() === '') {
+      return NextResponse.json({ error: 'Category name is required' }, { status: 400, headers: getSecurityHeaders() })
     }
 
     const { data: category, error } = await supabase
       .from('menu_categories')
-      .update({ name: name.trim() })
-      .eq('id', id)
+      .update({ name: sanitizedName })
+      .eq('id', sanitizedId)
       .eq('user_id', user.id)
       .select()
       .single()
 
     if (error) {
       console.error('Error updating category:', error)
-      return NextResponse.json({ error: 'Failed to update category' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while updating the category' }, { status: 500, headers: getSecurityHeaders() })
     }
 
-    return NextResponse.json({ category })
+    return NextResponse.json(
+      { category },
+      {
+        headers: {
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+        },
+      }
+    )
   } catch (error) {
     console.error('Error in categories PATCH:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }
 
 // DELETE - Delete a category
 export async function DELETE(request: NextRequest) {
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get and validate auth token
+    const token = getAuthToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Create a Supabase client with the user's token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    )
+    // Create authenticated Supabase client
+    const supabase = createAuthenticatedClient(token)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+    }
+
+    // Apply strict rate limiting for delete operations
+    const rateLimit = checkRateLimit(
+      request,
+      user.id,
+      'menu-categories:DELETE',
+      STRICT_RATE_LIMIT.maxRequests,
+      STRICT_RATE_LIMIT.windowMs
+    )
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many delete requests. Please wait a moment before trying again.' },
+        {
+          status: 429,
+          headers: {
+            ...getSecurityHeaders(),
+            ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
+          },
+        }
+      )
     }
 
     const { searchParams } = new URL(request.url)
     const categoryId = searchParams.get('id')
 
-    if (!categoryId) {
-      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 })
+    // Validate category ID
+    const sanitizedCategoryId = categoryId ? sanitizeUUID(categoryId) : null
+    if (!sanitizedCategoryId) {
+      return NextResponse.json({ error: 'Category ID is required and must be valid' }, { status: 400, headers: getSecurityHeaders() })
     }
 
     // First check if category has menu items
     const { data: menuItems, error: itemsError } = await supabase
       .from('menu_items')
       .select('id')
-      .eq('category_id', categoryId)
+      .eq('category_id', sanitizedCategoryId)
       .limit(1)
 
     if (itemsError) {
       console.error('Error checking menu items:', itemsError)
-      return NextResponse.json({ error: 'Failed to check menu items' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while checking menu items' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     if (menuItems && menuItems.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete category with existing menu items. Please move or delete the items first.' 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Cannot delete category with existing menu items. Please move or delete the items first.',
+        },
+        { status: 400, headers: getSecurityHeaders() }
+      )
     }
 
-    const { error } = await supabase
-      .from('menu_categories')
-      .delete()
-      .eq('id', categoryId)
-      .eq('user_id', user.id)
+    const { error } = await supabase.from('menu_categories').delete().eq('id', sanitizedCategoryId).eq('user_id', user.id)
 
     if (error) {
       console.error('Error deleting category:', error)
-      return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 })
+      return NextResponse.json({ error: 'An error occurred while deleting the category' }, { status: 500, headers: getSecurityHeaders() })
     }
 
     return NextResponse.json(
@@ -247,11 +311,13 @@ export async function DELETE(request: NextRequest) {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
+          ...getSecurityHeaders(),
+          ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
         },
       }
     )
   } catch (error) {
     console.error('Error in categories DELETE:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

@@ -9,7 +9,7 @@ interface RateLimitEntry {
 const rateLimitStore = new Map<string, RateLimitEntry>()
 
 /**
- * Rate limiting for premium API endpoints
+ * Rate limiting for API endpoints
  * @param request - NextRequest object
  * @param userId - User ID for rate limiting
  * @param endpoint - API endpoint name
@@ -23,7 +23,7 @@ export function checkRateLimit(
   endpoint: string,
   maxRequests: number = 60,
   windowMs: number = 60000
-): { allowed: boolean; remaining: number; resetTime: number } {
+): { allowed: boolean; remaining: number; resetTime: number; limit: number } {
   const now = Date.now()
   const key = `${userId}:${endpoint}`
   const entry = rateLimitStore.get(key)
@@ -44,7 +44,8 @@ export function checkRateLimit(
     return {
       allowed: true,
       remaining: maxRequests - 1,
-      resetTime: now + windowMs
+      resetTime: now + windowMs,
+      limit: maxRequests
     }
   }
 
@@ -53,7 +54,8 @@ export function checkRateLimit(
     return {
       allowed: false,
       remaining: 0,
-      resetTime: currentEntry.resetTime
+      resetTime: currentEntry.resetTime,
+      limit: maxRequests
     }
   }
 
@@ -64,7 +66,8 @@ export function checkRateLimit(
   return {
     allowed: true,
     remaining: maxRequests - currentEntry.count,
-    resetTime: currentEntry.resetTime
+    resetTime: currentEntry.resetTime,
+    limit: maxRequests
   }
 }
 
@@ -72,14 +75,42 @@ export function checkRateLimit(
  * Get rate limit headers for API responses
  * @param remaining - Remaining requests
  * @param resetTime - Reset time timestamp
+ * @param limit - Maximum requests allowed
  * @returns Headers object
  */
-export function getRateLimitHeaders(remaining: number, resetTime: number) {
+export function getRateLimitHeaders(remaining: number, resetTime: number, limit: number) {
   return {
-    'X-RateLimit-Limit': '60',
+    'X-RateLimit-Limit': limit.toString(),
     'X-RateLimit-Remaining': remaining.toString(),
     'X-RateLimit-Reset': Math.ceil(resetTime / 1000).toString()
   }
+}
+
+/**
+ * Generous rate limits for photo uploads and bulk operations
+ * Allows 200 requests per 5 minutes (enough for uploading many photos)
+ */
+export const PHOTO_UPLOAD_RATE_LIMIT = {
+  maxRequests: 200,
+  windowMs: 5 * 60 * 1000 // 5 minutes
+}
+
+/**
+ * Standard rate limits for regular API operations
+ * 100 requests per minute
+ */
+export const STANDARD_RATE_LIMIT = {
+  maxRequests: 100,
+  windowMs: 60 * 1000 // 1 minute
+}
+
+/**
+ * Strict rate limits for sensitive operations (delete, account changes)
+ * 20 requests per minute
+ */
+export const STRICT_RATE_LIMIT = {
+  maxRequests: 20,
+  windowMs: 60 * 1000 // 1 minute
 }
 
 /**
