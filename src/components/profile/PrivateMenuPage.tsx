@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp, Edit, Link2, Plus, Scan, Trash2, Upload } from 'lucide-react'
+import { ChevronDown, ChevronUp, Edit, Link2, Plus, Scan, Trash2, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, MenuCategory, MenuItem, Profile, Tag as TagType } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
@@ -184,6 +184,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
   const [itemCategory, setItemCategory] = useState<string>('none')
   const [itemTags, setItemTags] = useState<number[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [selectedItem, setSelectedItem] = useState<MenuItemWithRelations | null>(null)
 
   const { uploading, progress, uploadImage, resetProgress } = useImageUpload()
 
@@ -302,6 +303,29 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       document.body.style.backgroundColor = previousBodyBg
     }
   }, [menuBackgroundColor])
+
+  // Close modal on Esc key and lock body scroll
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedItem) {
+        setSelectedItem(null)
+      }
+    }
+
+    if (selectedItem) {
+      // Lock body scroll when modal is open
+      const originalStyle = window.getComputedStyle(document.body).overflow
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+      
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown)
+        document.body.style.overflow = originalStyle
+        document.documentElement.style.overflow = originalStyle
+      }
+    }
+  }, [selectedItem])
 
   const groupedItems = useMemo<CategoryMap>(() => {
     return menuItems.reduce<CategoryMap>((acc, item) => {
@@ -863,89 +887,59 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   </div>
 
                   {isOpen && (
-                    <div className="border-t border-white/10 px-6 py-6 space-y-6">
+                    <div className="border-t border-white/10 px-6 py-6">
                       {itemCount === 0 ? (
                         <div className={`text-sm ${mutedTextClass}`}>
                           No menu items yet. Use the New Item button to add your first dish.
                         </div>
                       ) : (
-                        <div className="space-y-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
                           {items.map((item) => (
-                            <article
+                            <div
                               key={item.id}
-                              className="group flex flex-row items-center gap-4 relative"
+                              className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                              onClick={() => setSelectedItem(item)}
                             >
                               {item.image_url && (
-                                <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                                <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
                                   <Image
                                     src={item.image_url}
                                     alt={item.title}
                                     fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                    sizes="96px"
+                                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                                   />
                                 </div>
                               )}
-                              <div className="flex-1 flex flex-col min-w-0 relative pr-12 sm:pr-14">
-                                <div className="flex-1">
-                                  <div className="flex items-start justify-between gap-2 mb-2">
-                                    <h3
-                                      className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words flex-1`}
-                                      style={{ fontFamily: menuFontFamily }}
-                                    >
-                                      {item.title}
-                                    </h3>
-                                    {typeof item.price === 'number' && (
-                                      <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap flex-shrink-0`}>
-                                        ${item.price.toFixed(2)}
-                                      </p>
-                                    )}
-                                  </div>
-
-                                  {item.description && (
-                                    <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 mb-3`}>
-                                      {item.description}
-                                    </p>
-                                  )}
-
-                                  {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                                    <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
-                                      {item.menu_item_tags.map((itemTag, index) => (
-                                        <Badge
-                                          key={`${item.id}-tag-${index}`}
-                                          variant="outline"
-                                          className="text-xs flex-shrink-0"
-                                          style={buildTagStyles(itemTag.tags.name, {
-                                            isDarkBackground,
-                                          })}
-                                        >
-                                          {itemTag.tags.name}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col gap-1.5">
+                              <div className="flex-1 flex flex-col">
+                                <h3
+                                  className={`font-semibold text-base mb-3 ${primaryTextClass}`}
+                                  style={{ fontFamily: menuFontFamily }}
+                                >
+                                  {item.title}
+                                </h3>
+                                <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className={outlineButtonClass}
+                                    className={`${outlineButtonClass} flex-1`}
                                     onClick={() => startEditItem(item)}
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className={outlineButtonClass}
+                                    className={`${outlineButtonClass} flex-1`}
                                     onClick={() => handleDeleteItem(item.id)}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
                                   </Button>
                                 </div>
                               </div>
-                            </article>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -983,83 +977,53 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   </Button>
                 </div>
 
-                <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
                   {uncategorizedItems.map((item) => (
-                    <article
+                    <div
                       key={item.id}
-                      className="group flex flex-row items-center gap-4 relative"
+                      className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                      onClick={() => setSelectedItem(item)}
                     >
                       {item.image_url && (
-                        <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                        <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
                           <Image
                             src={item.image_url}
                             alt={item.title}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            sizes="96px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                           />
                         </div>
                       )}
-                      <div className="flex-1 flex flex-col min-w-0 relative pr-12 sm:pr-14">
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <h3
-                              className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words flex-1`}
-                              style={{ fontFamily: menuFontFamily }}
-                            >
-                              {item.title}
-                            </h3>
-                            {typeof item.price === 'number' && (
-                              <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap flex-shrink-0`}>
-                                ${item.price.toFixed(2)}
-                              </p>
-                            )}
-                          </div>
-
-                          {item.description && (
-                            <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 mb-3`}>
-                              {item.description}
-                            </p>
-                          )}
-
-                          {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                            <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
-                              {item.menu_item_tags.map((itemTag, index) => (
-                                <Badge
-                                  key={`${item.id}-uncat-${index}`}
-                                  variant="outline"
-                                  className="text-xs flex-shrink-0"
-                                  style={buildTagStyles(itemTag.tags.name, {
-                                    isDarkBackground,
-                                  })}
-                                >
-                                  {itemTag.tags.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col gap-1.5">
+                      <div className="flex-1 flex flex-col">
+                        <h3
+                          className={`font-semibold text-base mb-3 ${primaryTextClass}`}
+                          style={{ fontFamily: menuFontFamily }}
+                        >
+                          {item.title}
+                        </h3>
+                        <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant="outline"
-                            className={outlineButtonClass}
+                            className={`${outlineButtonClass} flex-1`}
                             onClick={() => startEditItem(item)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className={outlineButtonClass}
+                            className={`${outlineButtonClass} flex-1`}
                             onClick={() => handleDeleteItem(item.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
                           </Button>
                         </div>
                       </div>
-                    </article>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1137,83 +1101,53 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                       No uncategorized items.
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
                       {uncategorizedItems.map((item) => (
-                        <article
+                        <div
                           key={item.id}
-                          className="group flex flex-row items-center gap-4 relative"
+                          className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                          onClick={() => setSelectedItem(item)}
                         >
                           {item.image_url && (
-                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                            <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
                               <Image
                                 src={item.image_url}
                                 alt={item.title}
                                 fill
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="96px"
+                                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                               />
                             </div>
                           )}
-                          <div className="flex-1 flex flex-col min-w-0 relative pr-12 sm:pr-14">
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <h3
-                                  className={`text-lg sm:text-xl font-semibold ${primaryTextClass} break-words flex-1`}
-                                  style={{ fontFamily: menuFontFamily }}
-                                >
-                                  {item.title}
-                                </h3>
-                                {typeof item.price === 'number' && (
-                                  <p className={`text-sm sm:text-base font-semibold ${primaryTextClass} whitespace-nowrap flex-shrink-0`}>
-                                    ${item.price.toFixed(2)}
-                                  </p>
-                                )}
-                              </div>
-
-                              {item.description && (
-                                <p className={`text-sm leading-relaxed ${secondaryTextClass} line-clamp-2 mb-3`}>
-                                  {item.description}
-                                </p>
-                              )}
-
-                              {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                                <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
-                                  {item.menu_item_tags.map((itemTag, index) => (
-                                    <Badge
-                                      key={`${item.id}-tag-${index}`}
-                                      variant="outline"
-                                      className="text-xs flex-shrink-0"
-                                      style={buildTagStyles(itemTag.tags.name, {
-                                        isDarkBackground,
-                                      })}
-                                    >
-                                      {itemTag.tags.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col gap-1.5">
+                          <div className="flex-1 flex flex-col">
+                            <h3
+                              className={`font-semibold text-base mb-3 ${primaryTextClass}`}
+                              style={{ fontFamily: menuFontFamily }}
+                            >
+                              {item.title}
+                            </h3>
+                            <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className={outlineButtonClass}
+                                className={`${outlineButtonClass} flex-1`}
                                 onClick={() => startEditItem(item)}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className={outlineButtonClass}
+                                className={`${outlineButtonClass} flex-1`}
                                 onClick={() => handleDeleteItem(item.id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
                               </Button>
                             </div>
                           </div>
-                        </article>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -1444,6 +1378,122 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           </form>
         </SheetContent>
       </Sheet>
+
+      {/* Menu Item Details Popup */}
+      {selectedItem && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          style={{
+            width: '100vw',
+            overflow: 'auto',
+          }}
+          onClick={() => setSelectedItem(null)}
+        >
+          <div 
+            className="relative rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="menu-item-heading"
+            style={{
+              backgroundColor: menuBackgroundColor,
+              color: contrastColor,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedItem(null)}
+              className={`absolute top-4 right-4 p-2 rounded-full transition-colors shadow-lg z-10 ${
+                isDarkBackground 
+                  ? 'bg-white/20 hover:bg-white/30 text-white' 
+                  : 'bg-white/80 hover:bg-white text-gray-700'
+              }`}
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Content */}
+            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-8">
+              <div className="relative h-64 w-full bg-gray-100 md:h-full md:min-h-[24rem]">
+                {selectedItem.image_url ? (
+                  <Image 
+                    src={selectedItem.image_url} 
+                    alt={selectedItem.title}
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 40vw, 90vw"
+                  />
+                ) : (
+                  <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass}`}>
+                    Photo coming soon
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-4 p-6 md:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
+                {/* Title */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
+                    <h2
+                      id="menu-item-heading"
+                      className={`text-3xl font-bold ${primaryTextClass}`}
+                      style={{ fontFamily: menuFontFamily }}
+                    >
+                      {selectedItem.title}
+                    </h2>
+                    {selectedItem.menu_categories && (
+                      <Badge 
+                        variant="secondary" 
+                        className="self-start"
+                        style={{
+                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          color: contrastColor,
+                        }}
+                      >
+                        {selectedItem.menu_categories.name}
+                      </Badge>
+                    )}
+                  </div>
+                  {typeof selectedItem.price === 'number' && (
+                    <div className={`text-xl font-semibold ${primaryTextClass}`}>
+                      ${selectedItem.price.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                {selectedItem.description && (
+                  <div>
+                    <p className={`text-base leading-relaxed ${secondaryTextClass}`}>
+                      {selectedItem.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Dietary Tags */}
+                {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedItem.menu_item_tags.map((itemTag, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="outline" 
+                          className="text-xs bg-transparent"
+                          style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
+                        >
+                          {itemTag.tags.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

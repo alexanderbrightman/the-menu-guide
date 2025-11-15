@@ -663,9 +663,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 )}
               </div>
 
-              <div className="flex flex-col gap-6 p-6 md:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
+              <div className="flex flex-col gap-4 p-6 md:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
                 {/* Title and Price */}
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   <div className="flex flex-col gap-2">
                     <h2
                       id="public-menu-item-heading"
@@ -690,10 +690,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 {/* Description */}
                 {selectedItem.description && (
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                      Description
-                    </h3>
-                    <p className="mt-2 text-base leading-relaxed text-gray-700">
+                    <p className="text-base leading-relaxed text-gray-700">
                       {selectedItem.description}
                     </p>
                   </div>
@@ -702,10 +699,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 {/* Dietary Tags */}
                 {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                      Dietary Information
-                    </h3>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {selectedItem.menu_item_tags.map((itemTag, index) => (
                         <Badge 
                           key={index} 
