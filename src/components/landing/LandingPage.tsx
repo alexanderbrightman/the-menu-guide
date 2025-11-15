@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown } from 'lucide-react'
+import { X, ArrowRight, ChevronDown, Check } from 'lucide-react'
 
 // Helper function to get border color for allergen tags
 const getAllergenBorderColor = (tagName: string): string => {
@@ -178,15 +178,8 @@ export function LandingPage() {
           {/* Main heading */}
           <div className="text-center mb-6 sm:mb-10 md:mb-14">
             <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-light text-gray-800 mb-3 sm:mb-5">
-              What We're All About
+              How Does The Menu Guide Help?
             </h2>
-            <p className="text-base sm:text-lg md:text-2xl lg:text-3xl font-light text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Hey there! We're here to make your restaurant's menu game stronger.
-            </p>
-          </div>
-
-          {/* Context paragraph */}
-          <div className="mb-6 sm:mb-8 md:mb-12">
             <p className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Here's what your menu could look like — beautiful photos, clear descriptions, and dietary info that helps customers make informed choices.
             </p>
@@ -398,8 +391,70 @@ export function LandingPage() {
             </div>
           </div>
 
+          {/* Separator */}
+          <div className="flex items-center justify-center my-8 sm:my-12 md:my-16 lg:my-20">
+            <div className="w-24 sm:w-32 md:w-40 h-px bg-gray-300"></div>
+          </div>
+
+          {/* Feature list */}
+          <div className="mb-6 sm:mb-10 md:mb-14">
+            <p className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed mb-6 sm:mb-8 md:mb-10">
+              The Menu Guide takes what you already do and makes it smoother, clearer, and more inviting. It's the bridge between your kitchen and your customers' expectations — with none of the hassle of building your own website
+            </p>
+            <ul className="space-y-4 sm:space-y-5 md:space-y-6 text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-700 max-w-3xl mx-auto">
+              <li className="flex items-start group">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <span className="flex-1 leading-relaxed">Scan your existing menu to auto-populate items</span>
+              </li>
+              <li className="flex items-start group">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <span className="flex-1 leading-relaxed">Upload your specials in seconds</span>
+              </li>
+              <li className="flex items-start group">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <span className="flex-1 leading-relaxed">Add allergen tags so guests immediately know what's safe</span>
+              </li>
+              <li className="flex items-start group">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <span className="flex-1 leading-relaxed">Share one simple QR code that drops customers right into your visual menu</span>
+              </li>
+              <li className="flex items-start group">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <span className="flex-1 leading-relaxed">Reduce table-side questions and speed up ordering</span>
+              </li>
+              <li className="flex items-start group">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <span className="flex-1 leading-relaxed">Give guests confidence in what they're choosing</span>
+              </li>
+            </ul>
+          </div>
+
           {/* Call to action */}
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-3 mt-8 sm:mt-12 md:mt-16 lg:mt-20">
             <Button
               onClick={() => setShowAuthForm(true)}
               variant="outline"
