@@ -172,8 +172,14 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
       const data = await response.json()
 
       if (response.ok) {
-        const deletedCount = data.deletedCount ?? data.count ?? 'All'
-        setDangerMessage(`Deleted ${deletedCount} menu item${deletedCount === 1 ? '' : 's'}.`)
+        const deletedCount = data.deletedCount ?? data.count ?? 0
+        const categoriesDeletedCount = data.categoriesDeletedCount ?? 0
+        let message = `Deleted ${deletedCount} menu item${deletedCount === 1 ? '' : 's'}`
+        if (categoriesDeletedCount > 0) {
+          message += ` and ${categoriesDeletedCount} categor${categoriesDeletedCount === 1 ? 'y' : 'ies'}`
+        }
+        message += '.'
+        setDangerMessage(message)
       } else {
         throw new Error(data.error || 'Failed to delete menu items')
       }
@@ -199,9 +205,6 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
             <Settings className="h-5 w-5" />
             Account Settings
           </DialogTitle>
-          <DialogDescription>
-            Manage your account preferences and subscription
-          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-1 py-2">
@@ -297,7 +300,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                 <h3 className="text-base font-semibold text-orange-800">Delete All Menu Items</h3>
               </div>
               <p className="text-sm text-orange-700 -mt-2">
-                Remove every menu item, category association, and stored menu image.
+                Remove every menu item, category, and stored menu image.
               </p>
               <Alert className="border-orange-300 bg-orange-100">
                 <AlertTriangle className="h-4 w-4 text-orange-600" />
@@ -314,7 +317,11 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-3 w-3" />
-                    Menu item images stored in database
+                    All menu categories
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3 w-3" />
+                    Menu item images stored in storage
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-3 w-3" />

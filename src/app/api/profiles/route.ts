@@ -215,7 +215,15 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       console.error('Error updating profile:', error)
-      return NextResponse.json({ error: 'An error occurred while updating the profile' }, { status: 500, headers: getSecurityHeaders() })
+      // Return more detailed error message for debugging
+      const errorMessage = error.message || 'An error occurred while updating the profile'
+      // Check if it's a column doesn't exist error
+      if (errorMessage.includes('column') && errorMessage.includes('does not exist')) {
+        return NextResponse.json({ 
+          error: 'Database column missing. Please run the migration: alter table profiles add column if not exists show_prices boolean default true;' 
+        }, { status: 500, headers: getSecurityHeaders() })
+      }
+      return NextResponse.json({ error: errorMessage }, { status: 500, headers: getSecurityHeaders() })
     }
 
     // Clear cache for this user

@@ -485,11 +485,18 @@ export async function DELETE(request: NextRequest) {
         }
       }
 
-      await supabase
+      // Delete menu item tags first (due to foreign key constraints)
+      const { error: tagsDeleteError } = await supabase
         .from('menu_item_tags')
         .delete()
         .in('menu_item_id', itemIds)
 
+      if (tagsDeleteError) {
+        console.error('Error deleting menu item tags:', tagsDeleteError)
+        return NextResponse.json({ error: 'Failed to delete menu item tags' }, { status: 500, headers: getSecurityHeaders() })
+      }
+
+      // Delete menu items
       const { error: deleteError } = await supabase
         .from('menu_items')
         .delete()
@@ -501,8 +508,35 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to delete menu items' }, { status: 500, headers: getSecurityHeaders() })
       }
 
+      // Delete all categories for this user (since all menu items are deleted)
+      // First, get the count of categories to delete
+      const { data: categoriesToDelete, error: categoriesFetchError } = await supabase
+        .from('menu_categories')
+        .select('id')
+        .eq('user_id', user.id)
+
+      let categoriesDeletedCount = 0
+      if (!categoriesFetchError && categoriesToDelete && categoriesToDelete.length > 0) {
+        const { error: categoriesDeleteError } = await supabase
+          .from('menu_categories')
+          .delete()
+          .eq('user_id', user.id)
+
+        if (categoriesDeleteError) {
+          console.error('Error deleting categories:', categoriesDeleteError)
+          // Don't fail the whole operation if category deletion fails - items are already deleted
+          console.warn('Menu items deleted but categories deletion had an error')
+        } else {
+          categoriesDeletedCount = categoriesToDelete.length
+        }
+      }
+
       return NextResponse.json(
-        { success: true, deletedCount: itemIds.length },
+        { 
+          success: true, 
+          deletedCount: itemIds.length,
+          categoriesDeletedCount: categoriesDeletedCount || 0
+        },
         {
           headers: {
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
