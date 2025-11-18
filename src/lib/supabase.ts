@@ -76,6 +76,7 @@ export interface Profile {
   subscription_status: 'free' | 'pro' | 'canceled'
   menu_font?: string
   menu_background_color?: string
+  show_prices?: boolean
   stripe_customer_id?: string
   stripe_subscription_id?: string
   subscription_current_period_end?: string

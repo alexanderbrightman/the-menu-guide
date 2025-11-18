@@ -126,6 +126,42 @@
 }
 
 @layer utilities {
+  /* Arrow swing animation for search results */
+  @keyframes arrow-swing {
+    0% {
+      transform: translateY(-50%) translateX(0) rotate(0deg);
+    }
+    30% {
+      transform: translateY(-50%) translateX(0) rotate(120deg);
+    }
+    40% {
+      transform: translateY(-50%) translateX(0) rotate(70deg);
+    }
+    50% {
+      transform: translateY(-50%) translateX(0) rotate(110deg);
+    }
+    60% {
+      transform: translateY(-50%) translateX(0) rotate(85deg);
+    }
+    70% {
+      transform: translateY(-50%) translateX(0) rotate(95deg);
+    }
+    80% {
+      transform: translateY(-50%) translateX(0) rotate(88deg);
+    }
+    90% {
+      transform: translateY(-50%) translateX(0) rotate(92deg);
+    }
+    100% {
+      transform: translateY(-50%) translateX(0) rotate(90deg);
+    }
+  }
+
+  .arrow-swing-animation {
+    animation: arrow-swing 0.8s ease-out forwards;
+    transform-origin: center center;
+  }
+
   /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;

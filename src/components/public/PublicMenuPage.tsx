@@ -127,6 +127,7 @@ const MenuItemCard = memo(({
   descriptionClass,
   isDarkBackground,
   headingFontFamily,
+  showPrices,
 }: {
   item: MenuItemWithTags
   onSelect: (item: MenuItemWithTags) => void
@@ -134,6 +135,7 @@ const MenuItemCard = memo(({
   descriptionClass: string
   isDarkBackground: boolean
   headingFontFamily: string
+  showPrices: boolean
 }) => (
   <div 
     className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
@@ -153,7 +155,7 @@ const MenuItemCard = memo(({
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <h3 className="font-semibold text-base" style={{ fontFamily: headingFontFamily }}>{item.title}</h3>
-        {item.price && (
+        {showPrices && item.price && (
           <div className={`font-semibold text-xs whitespace-nowrap ml-2 ${priceClass}`}>
             ${item.price.toFixed(2)}
           </div>
@@ -195,6 +197,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
 
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
+  const showPrices = profile.show_prices !== false // default to true if undefined
   const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
   const isDarkBackground = contrastColor === '#ffffff'
   const menuFontFamily = useMemo(
@@ -599,6 +602,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   descriptionClass={secondaryTextClass}
                   isDarkBackground={isDarkBackground}
                   headingFontFamily={menuFontFamily}
+                  showPrices={showPrices}
                 />
               ))}
             </div>
@@ -680,7 +684,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                       </Badge>
                     )}
                   </div>
-                  {typeof selectedItem.price === 'number' && (
+                  {showPrices && typeof selectedItem.price === 'number' && (
                     <div className="text-xl font-semibold text-gray-900">
                       ${selectedItem.price.toFixed(2)}
                     </div>

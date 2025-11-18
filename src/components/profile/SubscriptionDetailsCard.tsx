@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { getSessionToken, handleAuthError } from '@/lib/auth-utils'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -151,91 +150,83 @@ export function SubscriptionDetailsCard() {
 
   if (loading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Subscription Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-            <span className="ml-2 text-gray-600">Loading subscription details...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-gray-600" />
+          <h3 className="text-base font-semibold">Subscription Details</h3>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+          <span className="ml-2 text-gray-600">Loading subscription details...</span>
+        </div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="shadow-sm border-red-200">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2 text-red-800">
-            <AlertTriangle className="h-4 w-4" />
-            Subscription Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert className="border-red-300 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              {error}
-            </AlertDescription>
-          </Alert>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchSubscriptionDetails}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Retry
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={async () => {
-                if (!supabase) return
-                setLoading(true)
-                setError('')
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <h3 className="text-base font-semibold text-red-800">Subscription Details</h3>
+        </div>
+        <Alert className="border-red-300 bg-red-50">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            {error}
+          </AlertDescription>
+        </Alert>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchSubscriptionDetails}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={async () => {
+              if (!supabase) return
+              setLoading(true)
+              setError('')
 
-                try {
-                  const token = await getSessionToken()
-                  if (token) {
-                    const response = await fetch('/api/sync-stripe-subscription', {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                      },
-                    })
-                    const data = await response.json()
-                    if (response.ok) {
-                      alert('Successfully synced with your Stripe subscription! Refreshing...')
-                      window.location.reload()
-                    } else {
-                      setError(data.error || 'Failed to sync with Stripe')
-                    }
+              try {
+                const token = await getSessionToken()
+                if (token) {
+                  const response = await fetch('/api/sync-stripe-subscription', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                  })
+                  const data = await response.json()
+                  if (response.ok) {
+                    alert('Successfully synced with your Stripe subscription! Refreshing...')
+                    window.location.reload()
+                  } else {
+                    setError(data.error || 'Failed to sync with Stripe')
                   }
-                } catch (error) {
-                  console.error('Error syncing subscription:', error)
-                  handleAuthError(error, 'syncStripeSubscription')
-                  setError('An error occurred while syncing your subscription')
-                } finally {
-                  setLoading(false)
                 }
-              }}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Sync with Stripe
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              } catch (error) {
+                console.error('Error syncing subscription:', error)
+                handleAuthError(error, 'syncStripeSubscription')
+                setError('An error occurred while syncing your subscription')
+              } finally {
+                setLoading(false)
+              }
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync with Stripe
+          </Button>
+        </div>
+      </div>
     )
   }
 
@@ -244,29 +235,27 @@ export function SubscriptionDetailsCard() {
   }
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Subscription Details
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {getStatusBadge(subscriptionDetails.status)}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={fetchSubscriptionDetails}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-gray-600" />
+          <h3 className="text-base font-semibold">Subscription Details</h3>
         </div>
-        <CardDescription>
-          Your Premium subscription information and billing details
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        <div className="flex items-center gap-2">
+          {getStatusBadge(subscriptionDetails.status)}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchSubscriptionDetails}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 -mt-4">
+        Your Premium subscription information and billing details
+      </p>
+      <div className="space-y-6 pt-2">
         {/* Current Billing Period */}
         <div className="space-y-3">
           <h4 className="font-medium text-gray-900 flex items-center gap-2">
@@ -518,7 +507,7 @@ export function SubscriptionDetailsCard() {
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

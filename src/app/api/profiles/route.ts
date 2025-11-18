@@ -192,15 +192,26 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { is_public } = body
+    const { is_public, show_prices } = body
 
-    // Validate input
-    if (typeof is_public !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid value for is_public' }, { status: 400, headers: getSecurityHeaders() })
+    // Build update object with only provided fields
+    const updateData: Record<string, boolean> = {}
+    
+    if (typeof is_public === 'boolean') {
+      updateData.is_public = is_public
+    }
+    
+    if (typeof show_prices === 'boolean') {
+      updateData.show_prices = show_prices
     }
 
-    // Update profile visibility
-    const { data: profile, error } = await supabase.from('profiles').update({ is_public }).eq('id', user.id).select().single()
+    // Validate that at least one field is provided
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400, headers: getSecurityHeaders() })
+    }
+
+    // Update profile
+    const { data: profile, error } = await supabase.from('profiles').update(updateData).eq('id', user.id).select().single()
 
     if (error) {
       console.error('Error updating profile:', error)
@@ -211,7 +222,7 @@ export async function PUT(request: NextRequest) {
     const cacheKey = getProfileCacheKey(user.id)
     setCachedResponse(cacheKey, null, 0) // Clear cache
 
-    console.log('Profile updated successfully:', { id: user.id, is_public })
+    console.log('Profile updated successfully:', { id: user.id, ...updateData })
 
     return NextResponse.json(
       { profile },

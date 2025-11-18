@@ -173,30 +173,46 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
   return (
     <div className="w-full">
       <Tabs defaultValue="signin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin">Sign In</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        <TabsList 
+          className="grid w-full grid-cols-2 bg-white/10 border border-white/20"
+          style={{
+            backdropFilter: 'blur(8px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+          }}
+        >
+          <TabsTrigger value="signin" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">Sign In</TabsTrigger>
+          <TabsTrigger value="signup" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">Sign Up</TabsTrigger>
         </TabsList>
         
         <TabsContent value="signin">
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signin-email">Email</Label>
+              <Label htmlFor="signin-email" className="text-white">Email</Label>
               <Input
                 id="signin-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+                style={{
+                  backdropFilter: 'blur(8px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+                }}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signin-password">Password</Label>
+              <Label htmlFor="signin-password" className="text-white">Password</Label>
               <Input
                 id="signin-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+                style={{
+                  backdropFilter: 'blur(8px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+                }}
                 required
               />
             </div>
@@ -205,13 +221,21 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                 <button
                   type="button"
                   onClick={onForgotPassword}
-                  className="text-sm text-slate-600 hover:text-slate-900 underline"
+                  className="text-sm text-white/70 hover:text-white underline"
                 >
                   Forgot Password?
                 </button>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full border border-white/20 text-white hover:bg-white/30 bg-white/10 backdrop-blur-md"
+              style={{
+                backdropFilter: 'blur(12px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+              }}
+              disabled={loading}
+            >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
@@ -220,83 +244,106 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
         <TabsContent value="signup">
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signup-email">Email</Label>
+              <Label htmlFor="signup-email" className="text-white">Email</Label>
               <Input
                 id="signup-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+                style={{
+                  backdropFilter: 'blur(8px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+                }}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signup-username">Username</Label>
+              <Label htmlFor="signup-username" className="text-white">Username</Label>
               <div className="relative">
                 <Input
                   id="signup-username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className={`pr-10 ${
+                  className={`pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 ${
                     usernameStatus === 'taken' || usernameStatus === 'invalid' 
-                      ? 'border-red-500 focus:border-red-500' 
+                      ? 'border-red-400/50 focus:border-red-400/50' 
                       : usernameStatus === 'available' 
-                      ? 'border-green-500 focus:border-green-500' 
+                      ? 'border-green-400/50 focus:border-green-400/50' 
                       : ''
                   }`}
+                  style={{
+                    backdropFilter: 'blur(8px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+                  }}
                   required
                 />
                 {usernameStatus === 'checking' && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white/70"></div>
                   </div>
                 )}
                 {usernameStatus === 'available' && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="text-green-600">✓</div>
+                    <div className="text-green-400">✓</div>
                   </div>
                 )}
                 {usernameStatus === 'taken' && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="text-red-600">✗</div>
+                    <div className="text-red-400">✗</div>
                   </div>
                 )}
               </div>
               {usernameMessage && (
                 <p className={`text-sm ${
                   usernameStatus === 'available' 
-                    ? 'text-green-600' 
+                    ? 'text-green-400' 
                     : usernameStatus === 'taken' || usernameStatus === 'invalid'
-                    ? 'text-red-600'
-                    : 'text-gray-600'
+                    ? 'text-red-400'
+                    : 'text-white/70'
                 }`}>
                   {usernameMessage}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signup-display-name">Restaurant Name</Label>
+              <Label htmlFor="signup-display-name" className="text-white">Restaurant Name</Label>
               <Input
                 id="signup-display-name"
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+                style={{
+                  backdropFilter: 'blur(8px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+                }}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signup-password">Password</Label>
+              <Label htmlFor="signup-password" className="text-white">Password</Label>
               <Input
                 id="signup-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+                style={{
+                  backdropFilter: 'blur(8px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+                }}
                 required
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full border border-white/20 text-white hover:bg-white/30 bg-white/10 backdrop-blur-md"
+              style={{
+                backdropFilter: 'blur(12px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+              }}
               disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
             >
               {loading ? 'Signing up...' : 'Sign Up'}
@@ -305,7 +352,14 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
         </TabsContent>
         
         {message && (
-          <div className="mt-4 p-3 text-sm text-center bg-gray-100 rounded-md">
+          <div 
+            className="mt-4 p-3 text-sm text-center rounded-md text-white border border-white/20"
+            style={{
+              backdropFilter: 'blur(8px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+            }}
+          >
             {message}
           </div>
         )}

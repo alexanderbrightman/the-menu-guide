@@ -22,6 +22,12 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "The Menu Guide",
   description: "Create and manage your restaurant's digital menu",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    viewportFit: 'cover', // Enable safe area support for iOS devices
+  },
 };
 
 export default function RootLayout({
