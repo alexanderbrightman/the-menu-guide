@@ -281,8 +281,8 @@ export function LandingPage() {
                 height={90}
                 className="flex-shrink-0"
                 style={{
-                  width: 'clamp(3rem, 9vw, 7rem)',
-                  height: 'clamp(3rem, 9vw, 7rem)',
+                  width: 'clamp(3rem, 12vw, 7rem)',
+                  height: 'clamp(3rem, 12vw, 7rem)',
                   objectFit: 'contain',
                   filter: 'brightness(0) invert(1)',
                   WebkitFilter: 'brightness(0) invert(1)',
@@ -293,7 +293,7 @@ export function LandingPage() {
                 className="font-normal leading-none tracking-tight whitespace-nowrap relative flex-shrink-0 text-white"
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(1.75rem, 5.7vw, 5.225rem)',
+                  fontSize: 'clamp(1.75rem, 7.5vw, 5.225rem)',
                   letterSpacing: '-0.02em',
                 }}
               >
