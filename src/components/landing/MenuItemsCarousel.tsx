@@ -151,7 +151,7 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
   const columnData = useMemo(() => {
     if (menuItems.length === 0 || itemsPerColumn === 0) return []
 
-    const baseDuration = 90 // Base animation duration in seconds (slower scroll to ensure items fully exit)
+    const baseDuration = 70 // Base animation duration in seconds (faster scroll speed)
     const speedVariation = 5 // Variation in seconds
 
     return Array.from({ length: columns }, (_, colIndex) => {

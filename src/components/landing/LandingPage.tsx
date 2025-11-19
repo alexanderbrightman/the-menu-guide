@@ -258,7 +258,7 @@ export function LandingPage() {
                 className="font-normal leading-none tracking-tight whitespace-nowrap relative flex-shrink-0 text-white"
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(3rem, 6vw, 5.5rem)',
+                  fontSize: 'clamp(2.85rem, 5.7vw, 5.225rem)',
                   letterSpacing: '-0.02em',
                 }}
               >
