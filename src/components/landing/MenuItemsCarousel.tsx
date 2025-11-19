@@ -2,38 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
-import { Badge } from '@/components/ui/badge'
-
-interface Tag {
-  id: number
-  name: string
-}
-
-interface MenuItemTag {
-  tags: Tag
-}
 
 interface MenuItem {
   image_url: string
   title?: string
-  description?: string
-  price?: number
-  menu_item_tags?: MenuItemTag[]
-}
-
-// Helper function to get border color for allergen tags
-const getAllergenBorderColor = (tagName: string): string => {
-  const colorMap: Record<string, string> = {
-    'dairy-free': '#B5C1D9',
-    'gluten-free': '#D48963',
-    'nut-free': '#408250',
-    'pescatarian': '#F698A7',
-    'shellfish-free': '#F6D98E',
-    'spicy': '#F04F68',
-    'vegan': '#A9CC66',
-    'vegetarian': '#3B91A2'
-  }
-  return colorMap[tagName.toLowerCase()] || ''
 }
 
 interface MenuItemsCarouselProps {
@@ -194,24 +166,22 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
       className={`absolute overflow-hidden ${className}`}
       style={{
         zIndex: 0,
-        // Extend to true edges including safe areas on iOS devices
-        top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-        left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-        right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-        width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-        height: 'calc(100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        // Fill the entire parent container which extends to safe areas
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
         filter: `blur(${blurIntensity}px)`,
         WebkitFilter: `blur(${blurIntensity}px)`,
         willChange: 'filter',
-        transition: 'filter 0.1s ease-out',
+        transform: 'translateZ(0)', // Force GPU acceleration
+        backfaceVisibility: 'hidden', // Improve performance
       }}
     >
       <div 
-        className="flex w-full"
-        style={{
-          height: 'calc(100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
+        className="flex w-full h-full"
       >
         {columnData.map(({ items, duration, columnIndex }) => (
           <div
@@ -225,10 +195,13 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
             {items.map((item, itemIndex) => (
               <div
                 key={`${columnIndex}-${itemIndex}`}
-                className="w-full flex-shrink-0 px-1.5 py-1.5"
+                className="w-full flex-shrink-0"
+                style={{
+                  padding: 'clamp(0.75rem, 2vw, 1.5rem)',
+                }}
               >
                 {item.image_url && (
-                  <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                  <div className="relative aspect-[3/2] overflow-hidden rounded-lg">
                     <Image
                       src={item.image_url}
                       alt={item.title || 'Menu item'}
@@ -241,45 +214,6 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
                     />
                   </div>
                 )}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    {item.title && (
-                      <h3 className="font-semibold text-base text-gray-900">
-                        {item.title}
-                      </h3>
-                    )}
-                    {item.price && (
-                      <div className="text-gray-900 font-semibold text-xs whitespace-nowrap ml-2">
-                        ${item.price.toFixed(2)}
-                      </div>
-                    )}
-                  </div>
-                  {item.description && (
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                      {item.description}
-                    </p>
-                  )}
-                  {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {item.menu_item_tags.map((itemTag, tagIndex) => {
-                        const borderColor = getAllergenBorderColor(itemTag.tags.name)
-                        return (
-                          <Badge
-                            key={tagIndex}
-                            variant="outline"
-                            className="text-xs bg-transparent"
-                            style={{
-                              borderColor: borderColor || 'rgba(17,24,39,0.18)',
-                              color: borderColor || '#1f2937',
-                            }}
-                          >
-                            {itemTag.tags.name}
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
               </div>
             ))}
           </div>

@@ -44,34 +44,46 @@ export function LandingPage() {
   const heroSectionRef = useRef<HTMLDivElement>(null)
   const [arrowAnimationKey, setArrowAnimationKey] = useState(0)
   const titleCardRef = useRef<HTMLDivElement>(null)
+  // Initialize with estimated width to prevent flash of incorrect size
   const [titleWidth, setTitleWidth] = useState<number | null>(null)
   const [titleHeight, setTitleHeight] = useState<number | null>(null)
 
   // Measure title card dimensions to match search bar
-  useEffect(() => {
-    const updateTitleDimensions = () => {
-      if (!titleCardRef.current) return
-      
+  const updateTitleDimensions = useCallback(() => {
+    if (!titleCardRef.current) return
+    
+    // Use double RAF to ensure layout is complete
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (titleCardRef.current) {
           setTitleWidth(titleCardRef.current.offsetWidth)
           setTitleHeight(titleCardRef.current.offsetHeight)
         }
       })
+    })
+  }, [])
+
+  // Use callback ref to measure immediately on mount
+  const titleCardCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    titleCardRef.current = node
+    if (node) {
+      // Measure immediately when element is mounted
+      updateTitleDimensions()
     }
-    
-    const timeoutId = setTimeout(updateTitleDimensions, 100)
+  }, [updateTitleDimensions])
+
+  useEffect(() => {
     window.addEventListener('resize', updateTitleDimensions, { passive: true })
     
+    // Also update when fonts load
     if (document.fonts) {
       document.fonts.ready.then(updateTitleDimensions)
     }
     
     return () => {
-      clearTimeout(timeoutId)
       window.removeEventListener('resize', updateTitleDimensions)
     }
-  }, [])
+  }, [updateTitleDimensions])
 
   const performSearch = useCallback(async (query: string) => {
     if (!query || query.trim().length < 1) {
@@ -124,9 +136,11 @@ export function LandingPage() {
     router.push(`/menu/${username}`)
   }
 
-  // Track scroll progress for blur and color transition with smooth animation
+  // Track scroll progress for blur and color transition with optimized performance
   useEffect(() => {
     let rafId: number | null = null
+    let cachedHeroHeight: number | null = null
+    let cachedViewportHeight: number | null = null
 
     const handleScroll = () => {
       if (rafId) return // Skip if already scheduled
@@ -137,23 +151,41 @@ export function LandingPage() {
           return
         }
         
-        const heroHeight = heroSectionRef.current.offsetHeight
         const scrollY = window.scrollY
-        const viewportHeight = window.innerHeight
+        
+        // Cache expensive calculations (only recalculate if needed)
+        if (!cachedHeroHeight || !cachedViewportHeight) {
+          cachedHeroHeight = heroSectionRef.current.offsetHeight
+          cachedViewportHeight = window.innerHeight
+        }
+        
+        const heroHeight = cachedHeroHeight
+        const viewportHeight = cachedViewportHeight
         
         // Calculate progress: 0 when at top, 1 when hero section is fully scrolled past
         const progress = scrollY >= heroHeight - viewportHeight * 0.5 
           ? 1 
           : Math.min(1, Math.max(0, scrollY / (heroHeight - viewportHeight * 0.5)))
         
-        // Smooth interpolation for less jarring updates
-        setScrollProgress(prev => prev + (progress - prev) * 0.15)
+        // Direct update for immediate, seamless color transition
+        setScrollProgress(progress)
         
         rafId = null
       })
     }
 
+    // Recalculate cached values on resize
+    const handleResize = () => {
+      if (heroSectionRef.current) {
+        cachedHeroHeight = heroSectionRef.current.offsetHeight
+      }
+      cachedViewportHeight = window.innerHeight
+      // Trigger scroll update after resize
+      handleScroll()
+    }
+
     window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleResize, { passive: true })
     handleScroll() // Initial calculation
 
     return () => {
@@ -161,6 +193,7 @@ export function LandingPage() {
         cancelAnimationFrame(rafId)
       }
       window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
     }
   }, [])
 
@@ -176,13 +209,15 @@ export function LandingPage() {
 
       {/* Menu Items Carousel - only behind hero section */}
       <div 
-        className="fixed inset-0" 
+        className="fixed" 
         style={{ 
           // Extend to true edges including safe areas on iOS devices
           top: 'calc(-1 * env(safe-area-inset-top, 0px))',
           left: 'calc(-1 * env(safe-area-inset-left, 0px))',
           right: 'calc(-1 * env(safe-area-inset-right, 0px))',
           bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
           zIndex: 1,
         }}
       >
@@ -197,8 +232,8 @@ export function LandingPage() {
             bottom: 0,
             backgroundColor: `rgba(0, 0, 0, ${scrollProgress * 0.9})`,
             zIndex: 1,
-            willChange: 'opacity',
-            transition: 'opacity 0.1s ease-out',
+            willChange: 'background-color',
+            transform: 'translateZ(0)', // Force GPU acceleration
           }}
         />
       </div>
@@ -225,7 +260,7 @@ export function LandingPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 800px)' }}>
             {/* Title above search bar, centered */}
-            <div ref={titleCardRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', paddingTop: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingBottom: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingLeft: 'clamp(0.25rem, 0.75vw, 0.5rem)', paddingRight: 'clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
+            <div ref={titleCardCallbackRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', paddingTop: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingBottom: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingLeft: 'clamp(0.25rem, 0.75vw, 0.5rem)', paddingRight: 'clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
               {/* Backdrop blur matching search bar */}
               <div
                 className="absolute inset-0"
