@@ -260,7 +260,7 @@ export function LandingPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 800px)' }}>
             {/* Title above search bar, centered */}
-            <div ref={titleCardCallbackRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', paddingTop: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingBottom: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingLeft: 'clamp(0.25rem, 0.75vw, 0.5rem)', paddingRight: 'clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
+            <div ref={titleCardCallbackRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', paddingTop: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingBottom: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingLeft: 'clamp(0.25rem, 0.75vw, 0.5rem)', paddingRight: 'clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%', overflow: 'hidden' }}>
               {/* Backdrop blur matching search bar */}
               <div
                 className="absolute inset-0"
@@ -281,8 +281,8 @@ export function LandingPage() {
                 height={90}
                 className="flex-shrink-0"
                 style={{
-                  width: 'clamp(5rem, 9vw, 7rem)',
-                  height: 'clamp(5rem, 9vw, 7rem)',
+                  width: 'clamp(3rem, 9vw, 7rem)',
+                  height: 'clamp(3rem, 9vw, 7rem)',
                   objectFit: 'contain',
                   filter: 'brightness(0) invert(1)',
                   WebkitFilter: 'brightness(0) invert(1)',
@@ -293,7 +293,7 @@ export function LandingPage() {
                 className="font-normal leading-none tracking-tight whitespace-nowrap relative flex-shrink-0 text-white"
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(2.85rem, 5.7vw, 5.225rem)',
+                  fontSize: 'clamp(1.75rem, 5.7vw, 5.225rem)',
                   letterSpacing: '-0.02em',
                 }}
               >

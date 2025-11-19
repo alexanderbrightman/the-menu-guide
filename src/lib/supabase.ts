@@ -29,15 +29,25 @@ if (supabaseClient && typeof window !== 'undefined') {
     if (error && typeof error === 'object') {
       const errorMessage = String(error.message || '').toLowerCase()
       const errorName = String(error.name || '').toLowerCase()
+      const errorString = String(error).toLowerCase()
+      const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code || '').toLowerCase() : ''
       
-      // Check if it's a refresh token error
-      if (
+      // Check if it's a refresh token error - comprehensive check including all variations
+      const isRefreshTokenError = 
         errorName === 'authapierror' ||
         errorMessage.includes('refresh token') ||
         errorMessage.includes('refresh_token') ||
         errorMessage.includes('invalid refresh token') ||
-        errorMessage.includes('refresh token not found')
-      ) {
+        errorMessage.includes('refresh token not found') ||
+        errorMessage.includes('refresh token: refresh token not found') ||
+        errorString.includes('refresh token') ||
+        errorString.includes('refresh_token') ||
+        errorString.includes('invalid refresh token') ||
+        errorString.includes('refresh token not found') ||
+        (errorName === 'authapierror' && (errorMessage.includes('not found') || errorMessage.includes('refresh'))) ||
+        errorCode === 'pgrst301' // PostgREST auth error code
+      
+      if (isRefreshTokenError) {
         // Suppress refresh token errors - they're handled gracefully
         event.preventDefault()
         console.log('Refresh token error handled gracefully, clearing invalid session')
@@ -60,6 +70,7 @@ if (supabaseClient && typeof window !== 'undefined') {
       }
     }
   })
+
 }
 
 export const supabase = supabaseClient
