@@ -225,7 +225,7 @@ export function LandingPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 800px)' }}>
             {/* Title above search bar, centered */}
-            <div ref={titleCardRef} className="mb-6 relative inline-flex items-center gap-1.5" style={{ padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
+            <div ref={titleCardRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.5rem, 1.5vw, 1.5rem)', padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
               {/* Backdrop blur matching search bar */}
               <div
                 className="absolute inset-0"
@@ -258,7 +258,7 @@ export function LandingPage() {
                 className="font-normal leading-none tracking-tight whitespace-nowrap relative flex-shrink-0 text-white"
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(3rem, 9vw, 5.5rem)',
+                  fontSize: 'clamp(3rem, 6vw, 5.5rem)',
                   letterSpacing: '-0.02em',
                 }}
               >
@@ -285,11 +285,11 @@ export function LandingPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full border-0 bg-transparent rounded-full focus:ring-0 focus:outline-none text-white placeholder:text-white/70 h-full"
                     style={{
-                      paddingLeft: 'clamp(1.5rem, 5vw, 2rem)',
-                      paddingRight: 'clamp(3.5rem, 8vw, 4.5rem)',
+                      paddingLeft: 'clamp(1rem, 3vw, 2rem)',
+                      paddingRight: 'clamp(2.5rem, 5vw, 4.5rem)',
                       paddingTop: 0,
                       paddingBottom: 0,
-                      fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                      fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)',
                       height: '100%',
                       display: 'flex',
                       alignItems: 'center',
@@ -301,9 +301,9 @@ export function LandingPage() {
                       searchResults.length > 0 ? 'arrow-swing-animation' : ''
                     }`}
                     style={{
-                      right: 'clamp(1.5rem, 5vw, 2rem)',
-                      width: 'clamp(1.25rem, 4vw, 1.5rem)',
-                      height: 'clamp(1.25rem, 4vw, 1.5rem)',
+                      right: 'clamp(1rem, 3vw, 2rem)',
+                      width: 'clamp(1rem, 3vw, 1.5rem)',
+                      height: 'clamp(1rem, 3vw, 1.5rem)',
                       transform: searchResults.length > 0 ? undefined : 'translateY(-50%)',
                       transformOrigin: 'center center',
                     }}
