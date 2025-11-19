@@ -185,14 +185,13 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
 
   return (
     <div
-      className={`fixed overflow-hidden ${className}`}
+      className={`absolute overflow-hidden w-full h-full ${className}`}
       style={{
         zIndex: 0,
-        // Extend to true edges including safe areas on iOS devices
-        top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-        left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-        right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         filter: `blur(${blurIntensity}px)`,
         WebkitFilter: `blur(${blurIntensity}px)`,
         willChange: 'filter',

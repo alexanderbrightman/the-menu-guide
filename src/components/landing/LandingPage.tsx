@@ -176,13 +176,13 @@ export function LandingPage() {
 
       {/* Menu Items Carousel - only behind hero section */}
       <div 
-        className="fixed" 
+        className="fixed inset-0" 
         style={{ 
           // Extend to true edges including safe areas on iOS devices
           top: 'calc(-1 * env(safe-area-inset-top, 0px))',
           left: 'calc(-1 * env(safe-area-inset-left, 0px))',
           right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
           zIndex: 1,
         }}
       >
