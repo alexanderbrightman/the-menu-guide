@@ -225,7 +225,7 @@ export function LandingPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 800px)' }}>
             {/* Title above search bar, centered */}
-            <div ref={titleCardRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.5rem, 1.5vw, 1.5rem)', padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
+            <div ref={titleCardRef} className="mb-6 relative inline-flex items-center" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', paddingTop: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingBottom: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingLeft: 'clamp(0.25rem, 0.75vw, 0.5rem)', paddingRight: 'clamp(1rem, 3vw, 1.5rem)', minWidth: 'fit-content', width: 'fit-content', maxWidth: '100%' }}>
               {/* Backdrop blur matching search bar */}
               <div
                 className="absolute inset-0"
