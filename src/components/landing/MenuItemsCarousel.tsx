@@ -89,15 +89,19 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
     fetchMenuItems()
   }, [])
 
-  // Calculate items needed per column (viewport height + 2 extra for seamless scrolling)
+  // Calculate items needed per column (viewport height + buffer for seamless scrolling)
   const itemsPerColumn = useMemo(() => {
     if (!viewportHeight || menuItems.length === 0) return 0
     // Estimate card height: image (aspect 3/2) + text content + tags
     // Image height varies with column width, plus ~80px for text/padding/tags
     // For responsive sizing, estimate based on viewport
     const estimatedCardHeight = 200 // Approximate height per card (matches public page layout)
-    const itemsNeeded = Math.ceil(viewportHeight / estimatedCardHeight) + 2
-    return Math.min(itemsNeeded, Math.max(5, Math.ceil(menuItems.length / columns)))
+    // Calculate enough items to fill viewport + large buffer to ensure items scroll completely off
+    // before reset. We need at least 2x viewport height worth of items for smooth scrolling
+    const viewportItems = Math.ceil(viewportHeight / estimatedCardHeight)
+    const itemsNeeded = viewportItems * 2 + 10 // 2x viewport + extra buffer
+    // Ensure we have at least enough items, but don't exceed available menu items
+    return Math.max(itemsNeeded, Math.max(15, Math.ceil(menuItems.length / columns)))
   }, [viewportHeight, menuItems.length, columns])
 
   // Inject keyframes styles into document head (must be called before any conditional returns)
@@ -147,7 +151,7 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
   const columnData = useMemo(() => {
     if (menuItems.length === 0 || itemsPerColumn === 0) return []
 
-    const baseDuration = 30 // Base animation duration in seconds
+    const baseDuration = 90 // Base animation duration in seconds (slower scroll to ensure items fully exit)
     const speedVariation = 5 // Variation in seconds
 
     return Array.from({ length: columns }, (_, colIndex) => {
@@ -157,8 +161,10 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
         const itemIndex = (colIndex * itemsPerColumn + i) % menuItems.length
         columnItems.push(menuItems[itemIndex])
       }
-      // Duplicate items many times to ensure seamless scrolling
-      // Duplicate 6 times to create a very long column that prevents any visible jumps
+      // Duplicate items 6 times to create seamless scrolling
+      // The animation moves -16.666% (one full set = 1/6) so items scroll completely off screen
+      // before resetting, and when it resets, the next identical set continues seamlessly
+      // Using 6 duplicates ensures enough content for smooth scrolling
       const duplicatedItems = [
         ...columnItems,
         ...columnItems,
@@ -185,26 +191,35 @@ export function MenuItemsCarousel({ className = '', blurIntensity = 1.5 }: MenuI
 
   return (
     <div
-      className={`absolute overflow-hidden w-full h-full ${className}`}
+      className={`absolute overflow-hidden ${className}`}
       style={{
         zIndex: 0,
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        // Extend to true edges including safe areas on iOS devices
+        top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+        left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+        right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+        width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+        height: 'calc(100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         filter: `blur(${blurIntensity}px)`,
         WebkitFilter: `blur(${blurIntensity}px)`,
         willChange: 'filter',
         transition: 'filter 0.1s ease-out',
       }}
     >
-      <div className="flex h-full w-full">
+      <div 
+        className="flex w-full"
+        style={{
+          height: 'calc(100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
         {columnData.map(({ items, duration, columnIndex }) => (
           <div
             key={columnIndex}
             className="flex-1 flex flex-col"
             style={{
               animation: `scroll-vertical-${columnIndex % 6} ${duration}s linear infinite`,
+              willChange: 'transform',
             }}
           >
             {items.map((item, itemIndex) => (
