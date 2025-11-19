@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp, Edit, Link2, Plus, Scan, Trash2, Upload, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Edit, Link2, Plus, Scan, Star, Trash2, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, MenuCategory, MenuItem, Profile, Tag as TagType } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
@@ -185,6 +185,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
   const [itemTags, setItemTags] = useState<number[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithRelations | null>(null)
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set())
 
   const { uploading, progress, uploadImage, resetProgress } = useImageUpload()
 
@@ -289,9 +290,42 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }, [user, setTransientMessage])
 
+  const fetchFavorites = useCallback(async () => {
+    if (!user) return
+    if (!supabase) return
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        return
+      }
+
+      const headers = {
+        Authorization: `Bearer ${session.access_token}`,
+      }
+
+      const response = await fetch('/api/favorites', {
+        headers,
+        cache: 'no-store',
+      })
+
+      const data = await response.json()
+
+      if (response.ok && Array.isArray(data.favoriteIds)) {
+        setFavoritedIds(new Set(data.favoriteIds))
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error)
+    }
+  }, [user])
+
   useEffect(() => {
     fetchMenuData()
-  }, [fetchMenuData])
+    fetchFavorites()
+  }, [fetchMenuData, fetchFavorites])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -327,8 +361,95 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }, [selectedItem])
 
+  const toggleFavorite = useCallback(async (itemId: string) => {
+    if (!user || !supabase) return
+
+    const isFavorited = favoritedIds.has(itemId)
+
+    // Optimistic update
+    setFavoritedIds((prev) => {
+      const newSet = new Set(prev)
+      if (isFavorited) {
+        newSet.delete(itemId)
+      } else {
+        newSet.add(itemId)
+      }
+      return newSet
+    })
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        // Revert on error
+        setFavoritedIds((prev) => {
+          const newSet = new Set(prev)
+          if (isFavorited) {
+            newSet.add(itemId)
+          } else {
+            newSet.delete(itemId)
+          }
+          return newSet
+        })
+        return
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      }
+
+      if (isFavorited) {
+        // Remove favorite
+        const response = await fetch(`/api/favorites?menu_item_id=${itemId}`, {
+          method: 'DELETE',
+          headers,
+        })
+
+        if (!response.ok) {
+          // Revert on error
+          setFavoritedIds((prev) => {
+            const newSet = new Set(prev)
+            newSet.add(itemId)
+            return newSet
+          })
+        }
+      } else {
+        // Add favorite
+        const response = await fetch('/api/favorites', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ menu_item_id: itemId }),
+        })
+
+        if (!response.ok) {
+          // Revert on error
+          setFavoritedIds((prev) => {
+            const newSet = new Set(prev)
+            newSet.delete(itemId)
+            return newSet
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      // Revert on error
+      setFavoritedIds((prev) => {
+        const newSet = new Set(prev)
+        if (isFavorited) {
+          newSet.add(itemId)
+        } else {
+          newSet.delete(itemId)
+        }
+        return newSet
+      })
+    }
+  }, [user, favoritedIds, supabase])
+
   const groupedItems = useMemo<CategoryMap>(() => {
-    return menuItems.reduce<CategoryMap>((acc, item) => {
+    const grouped = menuItems.reduce<CategoryMap>((acc, item) => {
       const key = item.category_id || 'uncategorized'
       if (!acc[key]) {
         acc[key] = []
@@ -336,7 +457,15 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       acc[key].push(mapItemCategory(item, categories))
       return acc
     }, {})
-  }, [menuItems, categories])
+
+    // Add favorites group
+    const favoritedItems = menuItems.filter((item) => favoritedIds.has(item.id))
+    if (favoritedItems.length > 0) {
+      grouped['favorites'] = favoritedItems.map((item) => mapItemCategory(item, categories))
+    }
+
+    return grouped
+  }, [menuItems, categories, favoritedIds])
 
   const uncategorizedItems = groupedItems['uncategorized'] || []
   const categorySections = useMemo(() => categories.map((category) => ({
@@ -801,8 +930,135 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               <div className="h-12 w-12 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
               <p className={`mt-4 text-sm ${secondaryTextClass}`}>Loading your menu...</p>
             </div>
-          ) : categorySections.length > 0 ? (
-            categorySections.map(({ category, items }) => {
+          ) : (
+            <>
+              {/* Our Favorites Section */}
+              {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
+                <section
+                  className={`rounded-2xl border transition ${
+                    isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
+                  }`}
+                >
+                  <div className="px-6 py-5 space-y-4">
+                    <button
+                      type="button"
+                      className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
+                      onClick={() => toggleCategory('favorites')}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          toggleCategory('favorites')
+                        }
+                      }}
+                    >
+                      <div>
+                        <h2
+                          className={`text-2xl font-semibold ${primaryTextClass}`}
+                          style={{ fontFamily: menuFontFamily }}
+                        >
+                          Our Favorites
+                        </h2>
+                        <p className={`text-sm mt-1 ${mutedTextClass}`}>
+                          {groupedItems['favorites'].length} item{groupedItems['favorites'].length === 1 ? '' : 's'}
+                        </p>
+                      </div>
+                      <span className="mt-1">
+                        {expandedCategories['favorites'] ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </span>
+                    </button>
+                  </div>
+
+                  {expandedCategories['favorites'] && (
+                    <div className="border-t border-white/10 px-6 py-6">
+                      {groupedItems['favorites'].length === 0 ? (
+                        <div className={`text-sm ${mutedTextClass}`}>
+                          No favorited items.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+                          {groupedItems['favorites'].map((item) => (
+                            <div
+                              key={item.id}
+                              className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                              onClick={() => setSelectedItem(item)}
+                            >
+                              {item.image_url && (
+                                <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                                  <Image
+                                    src={item.image_url}
+                                    alt={item.title}
+                                    fill
+                                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                                  />
+                                </div>
+                              )}
+                              <div className="flex-1 flex flex-col">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h3
+                                    className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                                    style={{ fontFamily: menuFontFamily }}
+                                  >
+                                    {item.title}
+                                  </h3>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleFavorite(item.id)
+                                    }}
+                                    className={`ml-2 p-1 rounded transition-colors ${
+                                      favoritedIds.has(item.id)
+                                        ? isDarkBackground
+                                          ? 'text-yellow-400 hover:text-yellow-300'
+                                          : 'text-yellow-600 hover:text-yellow-700'
+                                        : isDarkBackground
+                                          ? 'text-white/40 hover:text-white/60'
+                                          : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                                    aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Star
+                                      className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                                    />
+                                  </button>
+                                </div>
+                                <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={`${outlineButtonClass} flex-1`}
+                                    onClick={() => startEditItem(item)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={`${outlineButtonClass} flex-1`}
+                                    onClick={() => handleDeleteItem(item.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Regular Categories */}
+              {categorySections.length > 0 && (
+                categorySections.map(({ category, items }) => {
               const isOpen = expandedCategories[category.id]
               const itemCount = items.length
 
@@ -912,12 +1168,34 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 </div>
                               )}
                               <div className="flex-1 flex flex-col">
-                                <h3
-                                  className={`font-semibold text-base mb-3 ${primaryTextClass}`}
-                                  style={{ fontFamily: menuFontFamily }}
-                                >
-                                  {item.title}
-                                </h3>
+                                <div className="flex items-center justify-between mb-3">
+                                  <h3
+                                    className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                                    style={{ fontFamily: menuFontFamily }}
+                                  >
+                                    {item.title}
+                                  </h3>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleFavorite(item.id)
+                                    }}
+                                    className={`ml-2 p-1 rounded transition-colors ${
+                                      favoritedIds.has(item.id)
+                                        ? isDarkBackground
+                                          ? 'text-yellow-400 hover:text-yellow-300'
+                                          : 'text-yellow-600 hover:text-yellow-700'
+                                        : isDarkBackground
+                                          ? 'text-white/40 hover:text-white/60'
+                                          : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                                    aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Star
+                                      className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                                    />
+                                  </button>
+                                </div>
                                 <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                                   <Button
                                     size="sm"
@@ -946,9 +1224,12 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     </div>
                   )}
                 </section>
-              )
-            })
-          ) : uncategorizedItems.length > 0 ? (
+                  )
+                })
+              )}
+
+              {/* Uncategorized Section */}
+              {uncategorizedItems.length > 0 && (
             <section
               className={`rounded-2xl border ${
                 isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white'
@@ -996,12 +1277,34 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         </div>
                       )}
                       <div className="flex-1 flex flex-col">
-                        <h3
-                          className={`font-semibold text-base mb-3 ${primaryTextClass}`}
-                          style={{ fontFamily: menuFontFamily }}
-                        >
-                          {item.title}
-                        </h3>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3
+                            className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                            style={{ fontFamily: menuFontFamily }}
+                          >
+                            {item.title}
+                          </h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleFavorite(item.id)
+                            }}
+                            className={`ml-2 p-1 rounded transition-colors ${
+                              favoritedIds.has(item.id)
+                                ? isDarkBackground
+                                  ? 'text-yellow-400 hover:text-yellow-300'
+                                  : 'text-yellow-600 hover:text-yellow-700'
+                                : isDarkBackground
+                                  ? 'text-white/40 hover:text-white/60'
+                                  : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                            aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          >
+                            <Star
+                              className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                            />
+                          </button>
+                        </div>
                         <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
@@ -1028,28 +1331,32 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 </div>
               </div>
             </section>
-          ) : (
-            <div
-              className={`rounded-2xl border border-dashed py-16 text-center ${
-                isDarkBackground ? 'border-white/20 bg-white/5' : 'border-gray-300 bg-white/60'
-              }`}
-            >
-              <h2 className={`text-2xl font-semibold ${primaryTextClass}`}>
-                Organize your menu with categories
-              </h2>
-              <p className={`mt-2 text-sm ${mutedTextClass}`}>
-                Create a menu category to get started. Menu items appear here once created.
-              </p>
-              <Button
-                className={`mt-6 ${accentButtonClass}`}
-                onClick={openCreateCategory}
-              >
-                Add your first category
-              </Button>
-            </div>
-          )}
+              )}
 
-          {categorySections.length > 0 && uncategorizedItems.length > 0 && (
+              {/* Empty State */}
+              {categorySections.length === 0 && uncategorizedItems.length === 0 && (
+                <div
+                  className={`rounded-2xl border border-dashed py-16 text-center ${
+                    isDarkBackground ? 'border-white/20 bg-white/5' : 'border-gray-300 bg-white/60'
+                  }`}
+                >
+                  <h2 className={`text-2xl font-semibold ${primaryTextClass}`}>
+                    Organize your menu with categories
+                  </h2>
+                  <p className={`mt-2 text-sm ${mutedTextClass}`}>
+                    Create a menu category to get started. Menu items appear here once created.
+                  </p>
+                  <Button
+                    className={`mt-6 ${accentButtonClass}`}
+                    onClick={openCreateCategory}
+                  >
+                    Add your first category
+                  </Button>
+                </div>
+              )}
+
+              {/* Uncategorized section when there are categories */}
+              {categorySections.length > 0 && uncategorizedItems.length > 0 && (
             <section
               className={`rounded-2xl border transition ${
                 isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
@@ -1120,12 +1427,34 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                             </div>
                           )}
                           <div className="flex-1 flex flex-col">
-                            <h3
-                              className={`font-semibold text-base mb-3 ${primaryTextClass}`}
-                              style={{ fontFamily: menuFontFamily }}
-                            >
-                              {item.title}
-                            </h3>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3
+                                className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                                style={{ fontFamily: menuFontFamily }}
+                              >
+                                {item.title}
+                              </h3>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleFavorite(item.id)
+                                }}
+                                className={`ml-2 p-1 rounded transition-colors ${
+                                  favoritedIds.has(item.id)
+                                    ? isDarkBackground
+                                      ? 'text-yellow-400 hover:text-yellow-300'
+                                      : 'text-yellow-600 hover:text-yellow-700'
+                                    : isDarkBackground
+                                      ? 'text-white/40 hover:text-white/60'
+                                      : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                                aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+                              >
+                                <Star
+                                  className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                                />
+                              </button>
+                            </div>
                             <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 size="sm"
@@ -1154,6 +1483,8 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 </div>
               )}
             </section>
+              )}
+            </>
           )}
         </div>
       </div>

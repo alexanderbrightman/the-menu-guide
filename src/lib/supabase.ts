@@ -113,3 +113,9 @@ export interface MenuItemTag {
   menu_item_id: string
   tag_id: number
 }
+
+export interface UserFavorite {
+  user_id: string
+  menu_item_id: string
+  created_at: string
+}

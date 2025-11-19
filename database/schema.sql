@@ -49,6 +49,14 @@ create table menu_item_tags (
   primary key (menu_item_id, tag_id)
 );
 
+-- Create user_favorites table
+create table user_favorites (
+  user_id uuid references profiles (id) on delete cascade,
+  menu_item_id uuid references menu_items (id) on delete cascade,
+  created_at timestamp with time zone default now(),
+  primary key (user_id, menu_item_id)
+);
+
 -- Insert pre-populated tags
 insert into tags (name) values 
   ('gluten-free'),
@@ -66,6 +74,7 @@ alter table profiles enable row level security;
 alter table menu_categories enable row level security;
 alter table menu_items enable row level security;
 alter table menu_item_tags enable row level security;
+alter table user_favorites enable row level security;
 
 -- RLS Policies for profiles
 create policy "Users can manage their own profile"
@@ -126,6 +135,19 @@ using (
 create policy "Anyone can view tags"
 on tags for select using (true);
 
+-- RLS Policies for user_favorites
+create policy "Users can manage their own favorites"
+on user_favorites for all using (user_id = auth.uid());
+
+create policy "Public can view published favorites"
+on user_favorites for select
+using (
+  user_id in (
+    select id from profiles
+    where is_public = true and subscription_status = 'pro'
+  )
+);
+
 -- Create indexes for better performance
 create index idx_profiles_username on profiles(username);
 create index idx_profiles_is_public on profiles(is_public, subscription_status);
@@ -134,4 +156,6 @@ create index idx_menu_items_user_id on menu_items(user_id);
 create index idx_menu_items_category_id on menu_items(category_id);
 create index idx_menu_item_tags_menu_item_id on menu_item_tags(menu_item_id);
 create index idx_menu_item_tags_tag_id on menu_item_tags(tag_id);
+create index idx_user_favorites_user_id on user_favorites(user_id);
+create index idx_user_favorites_menu_item_id on user_favorites(menu_item_id);
 

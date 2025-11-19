@@ -71,6 +71,14 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .select('*')
     .order('name', { ascending: true })
 
+  // Fetch favorites for this restaurant owner
+  const { data: favorites } = await supabase
+    .from('user_favorites')
+    .select('menu_item_id')
+    .eq('user_id', profile.id)
+
+  const favoritedIds = favorites?.map((fav) => fav.menu_item_id) || []
+
   // Increment view count
   await supabase
     .from('profiles')
@@ -83,6 +91,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       categories={categories || []}
       menuItems={menuItems || []}
       tags={tags || []}
+      favoritedIds={favoritedIds}
     />
   )
 }

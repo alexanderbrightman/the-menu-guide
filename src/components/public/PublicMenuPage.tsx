@@ -20,6 +20,7 @@ interface PublicMenuPageProps {
   categories: MenuCategory[]
   menuItems: MenuItemWithTags[]
   tags: TagType[]
+  favoritedIds?: string[]
 }
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
@@ -188,12 +189,20 @@ const MenuItemCard = memo(({
 
 MenuItemCard.displayName = 'MenuItemCard'
 
-export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicMenuPageProps) {
+export function PublicMenuPage({ profile, categories, menuItems, tags, favoritedIds = [] }: PublicMenuPageProps) {
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  // Create a Set for efficient lookup
+  const favoritedIdsSet = useMemo(() => new Set(favoritedIds), [favoritedIds])
+
+  // Get favorited items
+  const favoritedItems = useMemo(() => {
+    return menuItems.filter((item) => favoritedIdsSet.has(item.id))
+  }, [menuItems, favoritedIdsSet])
 
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
@@ -276,9 +285,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     let filtered = menuItems
 
     // Filter by category first (faster to filter early)
-    if (deferredSelectedCategory !== 'all') {
+    if (deferredSelectedCategory === 'favorites') {
+      // Show only favorited items
+      filtered = filtered.filter(item => favoritedIdsSet.has(item.id))
+    } else if (deferredSelectedCategory !== 'all') {
       filtered = filtered.filter(item => item.category_id === deferredSelectedCategory)
     }
+    // When viewing "all", show all items (including favorites in their categories)
 
     // Filter by tags using Set for O(1) lookups instead of O(n) array includes
     if (selectedTagsSet.size > 0) {
@@ -296,7 +309,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
     }
 
     return filtered
-  }, [menuItems, deferredSelectedCategory, selectedTagsSet, itemTagIdSets])
+  }, [menuItems, deferredSelectedCategory, selectedTagsSet, itemTagIdSets, favoritedIdsSet])
 
   const toggleTag = useCallback((tagId: number) => {
     startTransition(() => {
@@ -401,7 +414,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                 alt={profile.display_name}
                 fill
                 className="object-cover"
-                sizes="100vw"
+                sizes="(max-width: 1024px) 100vw, 1024px"
                 priority
               />
             ) : (
@@ -485,6 +498,18 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
                   >
                     All Items
                   </Button>
+                  {favoritedItems.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCategoryChange('favorites')}
+                      className={getCategoryButtonClass(selectedCategory === 'favorites')}
+                      style={getCategoryButtonStyle(selectedCategory === 'favorites')}
+                      disabled={isPending}
+                    >
+                      Our Favorites
+                    </Button>
+                  )}
                   {categories.map((category) => (
                     <Button
                       key={category.id}
@@ -592,20 +617,31 @@ export function PublicMenuPage({ profile, categories, menuItems, tags }: PublicM
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
-              {filteredItems.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  onSelect={handleItemSelect}
-                  priceClass={primaryTextClass}
-                  descriptionClass={secondaryTextClass}
-                  isDarkBackground={isDarkBackground}
-                  headingFontFamily={menuFontFamily}
-                  showPrices={showPrices}
-                />
-              ))}
-            </div>
+            <>
+              {/* Show section title when viewing favorites */}
+              {selectedCategory === 'favorites' && (
+                <h3
+                  className={`text-xl font-semibold ${primaryTextClass}`}
+                  style={{ fontFamily: menuFontFamily }}
+                >
+                  Our Favorites
+                </h3>
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+                {filteredItems.map((item) => (
+                  <MenuItemCard
+                    key={item.id}
+                    item={item}
+                    onSelect={handleItemSelect}
+                    priceClass={primaryTextClass}
+                    descriptionClass={secondaryTextClass}
+                    isDarkBackground={isDarkBackground}
+                    headingFontFamily={menuFontFamily}
+                    showPrices={showPrices}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
 
