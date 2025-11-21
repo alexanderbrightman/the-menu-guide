@@ -248,13 +248,13 @@ export function LandingPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 900px)' }}>
             {/* Title with rotating menu item card */}
-            <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 mb-8 sm:mb-10 flex-wrap">
+            <div className="flex items-center justify-center gap-4 sm:gap-4 md:gap-6 lg:gap-8 mb-8 sm:mb-10 flex-wrap">
               {/* Rotating Menu Item Card - Scales proportionally with title */}
               <div 
                 className="relative flex-shrink-0"
                 style={{
-                  width: 'clamp(5rem, 8.8vw, 12rem)',
-                  minWidth: 'clamp(5rem, 8.8vw, 12rem)',
+                  width: 'clamp(7rem, 8.8vw, 12rem)',
+                  minWidth: 'clamp(7rem, 8.8vw, 12rem)',
                 }}
               >
                 {menuItems.length > 0 && menuItems[currentMenuItemIndex] ? (
@@ -364,7 +364,7 @@ export function LandingPage() {
                 className="font-normal leading-tight tracking-tight text-left text-gray-900"
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(2rem, 8.8vw, 6.05rem)',
+                  fontSize: 'clamp(3rem, 8.8vw, 6.05rem)',
                   letterSpacing: '-0.03em',
                   lineHeight: '1.1',
                 }}
