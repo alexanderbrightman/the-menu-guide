@@ -175,7 +175,22 @@ export function Dashboard() {
         fontFamily: menuFontFamily,
       }}
     >
-      <header className="border-b border-white/10 backdrop-blur-sm" style={{ backgroundColor: menuBackgroundColor }}>
+      {/* Safe area overlay - adapts to background color (dark or light) */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+        style={{
+          height: 'env(safe-area-inset-top, 0px)',
+          background: menuBackgroundColor, // Matches the page background
+        }}
+      />
+      
+      <header 
+        className="border-b border-white/10 backdrop-blur-sm" 
+        style={{ 
+          backgroundColor: menuBackgroundColor,
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
             <a

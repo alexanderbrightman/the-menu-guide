@@ -160,6 +160,15 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      {/* Safe area overlay - light color for light background */}
+      <div
+        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
+        style={{
+          height: 'env(safe-area-inset-top, 0px)',
+          background: '#E0D5CA', // Match the top of the header gradient
+        }}
+      />
+      
       {/* Warm white gradient background */}
       <div
         className="fixed inset-0 transition-colors duration-300"
@@ -181,33 +190,49 @@ export function LandingPage() {
         }}
       />
 
+      {/* Header bar with title and login button */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8"
+        style={{
+          background: 'linear-gradient(180deg, #E0D5CA 0%, #E4D9CE 15%, #E8DDD2 35%, #EDE3D8 55%, #F0EBE5 75%, #F2EDE7 90%, #F5F0EB 100%)',
+          paddingTop: 'max(env(safe-area-inset-top, 0px), clamp(1rem, 4vw, 1.5rem))',
+          paddingBottom: 'clamp(1rem, 4vw, 1.5rem)',
+          minHeight: 'clamp(4rem, 10vw, 6rem)',
+        }}
+      >
+        {/* Title in upper left */}
+        <h1
+          ref={titleCardRef}
+          className="font-normal leading-none tracking-tight text-gray-900"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+            letterSpacing: '-0.03em',
+          }}
+        >
+          The Menu Guide
+        </h1>
+        
+        {/* Login button */}
+        <Button
+          onClick={() => setShowAuthForm(true)}
+          variant="outline"
+          className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl text-sm font-medium transition-all duration-300 px-4 py-2"
+        >
+          Log In
+          <ArrowRight className="ml-2 h-3 w-3" />
+        </Button>
+      </div>
+
+
       {/* Hero Layer */}
-      <div ref={heroSectionRef} className="relative z-10 min-h-screen px-4 sm:px-6 lg:px-8">
-        {/* Top bar with title and login button */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 z-20">
-          {/* Title in upper left */}
-          <h1
-            ref={titleCardRef}
-            className="font-normal leading-none tracking-tight text-gray-900"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-              letterSpacing: '-0.03em',
-            }}
-          >
-            The Menu Guide
-          </h1>
-          
-          {/* Login button */}
-          <Button
-            onClick={() => setShowAuthForm(true)}
-            variant="outline"
-            className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl text-sm font-medium transition-all duration-300 px-4 py-2"
-          >
-            Log In
-            <ArrowRight className="ml-2 h-3 w-3" />
-          </Button>
-        </div>
+      <div 
+        ref={heroSectionRef} 
+        className="relative z-10 min-h-screen px-4 sm:px-6 lg:px-8"
+        style={{
+          paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + clamp(3rem, 8vw, 4.5rem)), clamp(3rem, 8vw, 4.5rem))',
+        }}
+      >
 
         {/* Search bar and images container - centered in viewport */}
         <div className="absolute top-1/2 left-1/2 w-full flex flex-col items-center" style={{ 
@@ -332,7 +357,7 @@ export function LandingPage() {
                       paddingRight: 'clamp(2.5rem, 6vw, 3rem)',
                       paddingTop: '0',
                       paddingBottom: '0',
-                      fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                      fontSize: 'clamp(1rem, 2vw, 1rem)',
                       height: '100%',
                       border: 'none !important',
                       outline: 'none !important',
