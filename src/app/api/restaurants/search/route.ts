@@ -31,15 +31,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Query public profiles matching the search term
+    // Query public profiles matching the search term by username
     // RLS policy ensures only is_public=true and subscription_status='pro' are returned
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select('username, display_name, avatar_url')
       .eq('is_public', true)
       .eq('subscription_status', 'pro')
-      .ilike('display_name', `%${sanitizedQuery}%`)
-      .order('display_name', { ascending: true })
+      .ilike('username', `%${sanitizedQuery}%`)
+      .order('username', { ascending: true })
       .limit(20)
 
     if (error) {

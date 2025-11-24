@@ -226,7 +226,7 @@ export function LandingPage() {
                   />
                   <Input
                     type="text"
-                    placeholder="Search restaurants..."
+                    placeholder="Search by username..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full border-0 bg-transparent rounded-2xl focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-full font-medium"
