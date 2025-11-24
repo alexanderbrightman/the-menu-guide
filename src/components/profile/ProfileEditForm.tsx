@@ -199,9 +199,11 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
       // Blur immediately and after a short delay to catch browser auto-focus
       blurFocusedInputs()
-      const timeoutId = setTimeout(blurFocusedInputs, 150)
+      const timeoutId1 = setTimeout(blurFocusedInputs, 150)
+      const timeoutId2 = setTimeout(blurFocusedInputs, 300)
 
-      // Also listen for focus events and blur immediately
+      // Listen for focus events only for a short period after dialog opens
+      // This prevents auto-focus but allows manual taps after ~500ms
       const handleFocus = (e: FocusEvent) => {
         const target = e.target as HTMLElement
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
@@ -212,8 +214,15 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
       document.addEventListener('focusin', handleFocus, true)
 
+      // Remove the focus listener after 500ms to allow manual focus
+      const removeListenerTimeout = setTimeout(() => {
+        document.removeEventListener('focusin', handleFocus, true)
+      }, 500)
+
       return () => {
-        clearTimeout(timeoutId)
+        clearTimeout(timeoutId1)
+        clearTimeout(timeoutId2)
+        clearTimeout(removeListenerTimeout)
         document.removeEventListener('focusin', handleFocus, true)
       }
     }
