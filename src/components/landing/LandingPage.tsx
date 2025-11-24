@@ -164,7 +164,7 @@ export function LandingPage() {
       <div
         className="fixed inset-0 transition-colors duration-300"
         style={{
-          background: `linear-gradient(180deg, #FDF8F3 0%, #FAF5F0 50%, #F7F0E8 100%)`,
+          background: `linear-gradient(180deg, #F5F0EB 0%, #F0EBE5 50%, #EBE5DE 100%)`,
           opacity: 1 - scrollProgress * 0.3, // Fade out as user scrolls
           zIndex: 1,
         }}
@@ -182,9 +182,9 @@ export function LandingPage() {
       />
 
       {/* Hero Layer */}
-      <div ref={heroSectionRef} className="relative z-10 flex flex-col min-h-screen px-4 sm:px-6 lg:px-8">
+      <div ref={heroSectionRef} className="relative z-10 min-h-screen px-4 sm:px-6 lg:px-8">
         {/* Top bar with title and login button */}
-        <div className="flex items-center justify-between pt-6 sm:pt-8 z-20">
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 z-20">
           {/* Title in upper left */}
           <h1
             ref={titleCardRef}
@@ -209,44 +209,171 @@ export function LandingPage() {
           </Button>
         </div>
 
-        {/* Main content centered - Search bar */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 900px)' }}>
-            {/* Search bar - modern design */}
-            <div className="relative w-full" style={{ maxWidth: '500px' }}>
+        {/* Search bar and images container - centered in viewport */}
+        <div className="absolute top-1/2 left-1/2 w-full flex flex-col items-center" style={{ 
+          width: 'min(calc(100% - clamp(2rem, 8vw, 4rem)), 500px)',
+          paddingLeft: 'clamp(1rem, 4vw, 2rem)',
+          paddingRight: 'clamp(1rem, 4vw, 2rem)',
+          transform: 'translate(-50%, calc(-50% - clamp(60px, 10vw, 90px)))'
+        }}>
+          {/* Meal images - positioned above search bar, slightly smaller than search bar */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10" style={{ width: '90%', maxWidth: '450px' }}>
+            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Image
+                src="/Breakfast.jpeg"
+                alt="Breakfast"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) calc((100vw - 2rem - 0.5rem) / 3), (max-width: 768px) calc((min(100vw - 4rem, 500px) - 0.75rem) / 3), calc((min(100vw - 4rem, 500px) - 1rem) / 3)"
+                priority
+              />
+            </div>
+            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Image
+                src="/Lunch.jpeg"
+                alt="Lunch"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) calc((100vw - 2rem - 0.5rem) / 3), (max-width: 768px) calc((min(100vw - 4rem, 500px) - 0.75rem) / 3), calc((min(100vw - 4rem, 500px) - 1rem) / 3)"
+                priority
+              />
+            </div>
+            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Image
+                src="/Dinner.jpeg"
+                alt="Dinner"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) calc((100vw - 2rem - 0.5rem) / 3), (max-width: 768px) calc((min(100vw - 4rem, 500px) - 0.75rem) / 3), calc((min(100vw - 4rem, 500px) - 1rem) / 3)"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Search bar - glassmorphism design */}
+          <div className="relative w-full">
+                {/* Rainbow border wrapper - appears on focus, positioned behind */}
                 <div 
-                  className="relative bg-white/80 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-lg shadow-gray-200/12 w-full flex items-center transition-all duration-300 hover:shadow-xl hover:shadow-gray-300/12 hover:border-gray-300/80 focus-within:shadow-xl focus-within:shadow-gray-300/12 focus-within:border-gray-400/80 h-11"
+                  id="rainbow-border-wrapper"
+                  className="absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 182, 193, 0.8) 0%, rgba(255, 218, 185, 0.8) 14%, rgba(255, 255, 182, 0.8) 28%, rgba(182, 255, 182, 0.8) 42%, rgba(185, 218, 255, 0.8) 57%, rgba(218, 185, 255, 0.8) 71%, rgba(255, 182, 218, 0.8) 85%, rgba(255, 182, 193, 0.8) 100%)',
+                    padding: '2px',
+                    borderRadius: '1rem',
+                    zIndex: 0,
+                    margin: '-2px',
+                  }}
                 >
+                  <div className="w-full h-full rounded-2xl bg-transparent"></div>
+                </div>
+                
+                {/* Search bar container - always visible */}
+                <div 
+                  id="search-bar-container"
+                  className="relative rounded-2xl w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl"
+                  style={{
+                    height: 'clamp(2.5rem, 6vw, 2.75rem)',
+                    paddingLeft: 'clamp(1rem, 3vw, 1.25rem)',
+                    paddingRight: 'clamp(1rem, 3vw, 1.25rem)',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)',
+                    boxShadow: `
+                      0 8px 32px 0 rgba(0, 0, 0, 0.08),
+                      0 2px 8px 0 rgba(0, 0, 0, 0.04),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                    `,
+                    border: 'none',
+                    zIndex: 1,
+                  }}
+                    onMouseEnter={(e) => {
+                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                      if (container) {
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
+                        container.style.boxShadow = `
+                          0 12px 40px 0 rgba(0, 0, 0, 0.12),
+                          0 4px 12px 0 rgba(0, 0, 0, 0.06),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
+                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                        `;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
+                      if (container && rainbowBorder && rainbowBorder.style.opacity !== '1') {
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
+                        container.style.boxShadow = `
+                          0 8px 32px 0 rgba(0, 0, 0, 0.08),
+                          0 2px 8px 0 rgba(0, 0, 0, 0.04),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                        `;
+                      }
+                    }}
+                  >
                   <Search 
-                    className="absolute left-5 text-gray-400 z-10 transition-colors duration-200"
+                    className="absolute text-gray-700 z-10 transition-all duration-300"
                     style={{
-                      width: 'clamp(1.125rem, 2.5vw, 1.375rem)',
-                      height: 'clamp(1.125rem, 2.5vw, 1.375rem)',
+                      left: 'clamp(1rem, 3vw, 1.25rem)',
+                      width: 'clamp(1rem, 2.5vw, 1.25rem)',
+                      height: 'clamp(1rem, 2.5vw, 1.25rem)',
                     }}
                   />
                   <Input
                     type="text"
-                    placeholder="Search by username..."
+                    name="search"
+                    autoComplete="off"
+                    placeholder="Explore menus..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full border-0 bg-transparent rounded-2xl focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-full font-medium"
+                    className="w-full !border-0 bg-transparent rounded-2xl !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
                     style={{
-                      paddingLeft: 'clamp(3rem, 8vw, 3.75rem)',
-                      paddingRight: 'clamp(3rem, 8vw, 3.75rem)',
+                      paddingLeft: 'clamp(2.5rem, 6vw, 3rem)',
+                      paddingRight: 'clamp(2.5rem, 6vw, 3rem)',
                       paddingTop: '0',
                       paddingBottom: '0',
-                      fontSize: 'clamp(1rem, 2.2vw, 1.0625rem)',
+                      fontSize: 'clamp(0.875rem, 2vw, 1rem)',
                       height: '100%',
+                      border: 'none !important',
+                      outline: 'none !important',
+                      boxShadow: 'none !important',
+                    }}
+                    onFocus={(e) => {
+                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
+                      if (container && rainbowBorder) {
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 100%)';
+                        container.style.boxShadow = `
+                          0 12px 40px 0 rgba(0, 0, 0, 0.12),
+                          0 4px 12px 0 rgba(0, 0, 0, 0.06)
+                        `;
+                        rainbowBorder.style.opacity = '1';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
+                      if (container && rainbowBorder) {
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
+                        container.style.boxShadow = `
+                          0 8px 32px 0 rgba(0, 0, 0, 0.08),
+                          0 2px 8px 0 rgba(0, 0, 0, 0.04),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                        `;
+                        rainbowBorder.style.opacity = '0';
+                      }
                     }}
                   />
                   <ArrowRight 
                     key={arrowAnimationKey}
-                    className={`absolute right-5 top-1/2 text-gray-500 z-10 transition-colors duration-300 ${
-                      searchResults.length > 0 ? 'arrow-swing-animation text-gray-700' : ''
+                    className={`absolute top-1/2 text-gray-700 z-10 transition-all duration-300 ${
+                      searchResults.length > 0 ? 'arrow-swing-animation text-gray-900' : ''
                     }`}
                     style={{
-                      width: 'clamp(1.125rem, 2.5vw, 1.375rem)',
-                      height: 'clamp(1.125rem, 2.5vw, 1.375rem)',
+                      right: 'clamp(1rem, 3vw, 1.25rem)',
+                      width: 'clamp(1rem, 2.5vw, 1.25rem)',
+                      height: 'clamp(1rem, 2.5vw, 1.25rem)',
                       transform: searchResults.length > 0 ? undefined : 'translateY(-50%)',
                       transformOrigin: 'center center',
                     }}
@@ -301,11 +428,10 @@ export function LandingPage() {
               </div>
             )}
             </div>
-          </div>
         </div>
 
         {/* Scroll indicator at bottom */}
-        <div className="flex flex-col items-center text-gray-700 pb-8 sm:pb-12">
+        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center text-gray-700 pb-8 sm:pb-12 z-20">
           <span className="text-xs sm:text-sm font-light mb-2">Scroll to learn more</span>
           <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 animate-bounce text-gray-700" />
         </div>
