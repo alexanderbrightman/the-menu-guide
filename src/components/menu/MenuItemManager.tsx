@@ -276,7 +276,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 ...item,
                 title: formData.title,
                 description: formData.description,
-                price: formData.price ? Number(formData.price) : null,
+                price: formData.price ? Number(formData.price) : undefined,
                 category_id: selectedCategory === 'none' ? undefined : selectedCategory,
               }
             : item
