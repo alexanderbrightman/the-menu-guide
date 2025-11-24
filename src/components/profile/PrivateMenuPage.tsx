@@ -446,7 +446,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         return newSet
       })
     }
-  }, [user, favoritedIds, supabase])
+  }, [user, favoritedIds])
 
   const groupedItems = useMemo<CategoryMap>(() => {
     const grouped = menuItems.reduce<CategoryMap>((acc, item) => {

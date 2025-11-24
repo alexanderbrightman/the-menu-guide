@@ -67,7 +67,7 @@ export function LandingPage() {
       } else {
         setSearchResults([])
       }
-    } catch (error) {
+    } catch (_error) {
       setSearchResults([])
     } finally {
       setIsSearching(false)

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeTextInput, sanitizeUrl, sanitizePrice, sanitizeUUID, sanitizeInteger, sanitizeIntegerArray } from '@/lib/sanitize'
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
-import { checkRateLimit, getRateLimitHeaders, PHOTO_UPLOAD_RATE_LIMIT, STANDARD_RATE_LIMIT, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
+import { checkRateLimit, getRateLimitHeaders, PHOTO_UPLOAD_RATE_LIMIT, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
 
 // Maximum request body size (1MB)
 const MAX_REQUEST_SIZE = 1024 * 1024
