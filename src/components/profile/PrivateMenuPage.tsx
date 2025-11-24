@@ -694,8 +694,8 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   ...item,
                   title: itemForm.title,
                   description: itemForm.description,
-                  price: itemForm.price ? Number(itemForm.price) : null,
-                  category_id: itemCategory === 'none' ? null : itemCategory,
+                  price: itemForm.price ? Number(itemForm.price) : undefined,
+                  category_id: itemCategory === 'none' ? undefined : itemCategory,
                 }
               : item
           )
