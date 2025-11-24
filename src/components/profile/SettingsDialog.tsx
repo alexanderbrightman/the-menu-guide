@@ -36,7 +36,6 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
   // Sync isPublic and showPrices state with profile data
   useEffect(() => {
     if (profile) {
-      console.log('Profile changed, updating isPublic to:', profile.is_public)
       setIsPublic(profile.is_public ?? false)
       setShowPrices(profile.show_prices !== false) // default to true if undefined
     }
@@ -70,7 +69,6 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('Profile update successful, new show_prices:', checked)
         setMessage(checked ? 'Prices are now visible on your menu' : 'Prices are now hidden on your menu')
         
         // Immediately update the local state
@@ -124,7 +122,6 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('Profile update successful, new is_public:', checked)
         setMessage(checked ? 'Menu is now public and visible to customers!' : 'Menu is now private.')
         
         // Immediately update the local state
@@ -199,20 +196,16 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
           Settings
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[800px] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Account Settings
-          </DialogTitle>
+      <DialogContent className="sm:max-w-lg p-6 overflow-hidden">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="text-xl font-semibold text-center">Account Settings</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-1 py-2">
-          <div className="space-y-6 pb-4">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
             {/* Menu Visibility Settings */}
             <div className="space-y-4">
               {/* Show Prices Toggle */}
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-gray-600" />
@@ -235,13 +228,13 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
               </div>
 
               {/* Menu is Public Toggle */}
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     {isPublic ? (
-                      <Eye className="h-4 w-4 text-green-600" />
+                      <Eye className="h-4 w-4 text-gray-600" />
                     ) : (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="h-4 w-4 text-gray-600" />
                     )}
                     <span className="font-medium">
                       {isPublic ? 'Menu is Public' : 'Menu is Private'}
@@ -271,17 +264,17 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
               )}
 
               {message && (
-                <div className={`p-3 text-sm rounded-md ${
+                <div className={`rounded-md p-3 text-sm ${
                   message.includes('error') || message.includes('Error') || message.includes('Failed')
-                    ? 'text-red-600 bg-red-50' 
-                    : 'text-green-600 bg-green-50'
+                    ? 'bg-red-50 text-red-600' 
+                    : 'bg-green-50 text-green-600'
                 }`}>
                   {message}
                 </div>
               )}
             </div>
 
-            <div className="border-t pt-6">
+            <div className="border-t pt-4">
               {/* Subscription Details */}
               {hasPremiumAccess ? (
                 <>
@@ -294,7 +287,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
             </div>
 
             {/* Delete Account Section */}
-            <div className="border-t pt-6 space-y-4">
+            <div className="border-t pt-4 space-y-4">
               <div className="flex items-center gap-2">
                 <Trash2 className="h-4 w-4 text-orange-600" />
                 <h3 className="text-base font-semibold text-orange-800">Delete All Menu Items</h3>
@@ -348,13 +341,12 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                 {dangerMessage}
               </div>
             )}
-          </div>
-        </div>
 
-        <div className="flex-shrink-0 flex justify-end pt-3 bg-white">
-          <Button variant="outline" size="sm" onClick={() => setShowSettings(false)}>
-            Close
-          </Button>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowSettings(false)}>
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

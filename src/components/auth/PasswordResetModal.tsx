@@ -37,8 +37,6 @@ export function PasswordResetModal({ onClose }: { onClose: () => void }) {
         setMessage(error.message || 'Failed to send reset email. Please check your email address and try again.')
         setSuccess(false)
       } else {
-        console.log('Password reset email sent successfully to:', email)
-        console.log('Redirect URL:', redirectUrl)
         setMessage('Password reset email sent! Check your inbox (and spam folder) for instructions.')
         setSuccess(true)
       }
@@ -52,8 +50,8 @@ export function PasswordResetModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="rounded-xl shadow-xl border border-gray-200 max-w-sm w-full bg-white">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 max-w-sm w-full bg-white/90 backdrop-blur-md">
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start">
             <div>

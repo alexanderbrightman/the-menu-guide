@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown, Check, Loader2 } from 'lucide-react'
+import { X, ArrowRight, ChevronDown, Check, Loader2, Search } from 'lucide-react'
 
 // Helper function to get border color for allergen tags
 const getAllergenBorderColor = (tagName: string): string => {
@@ -31,13 +31,6 @@ interface Restaurant {
   avatar_url?: string
 }
 
-interface MenuItem {
-  id: string
-  image_url: string
-  title?: string
-  description?: string
-  menu_item_tags?: { tags: { id: number; name: string } }[]
-}
 
 export function LandingPage() {
   const router = useRouter()
@@ -51,9 +44,6 @@ export function LandingPage() {
   const heroSectionRef = useRef<HTMLDivElement>(null)
   const [arrowAnimationKey, setArrowAnimationKey] = useState(0)
   const titleCardRef = useRef<HTMLHeadingElement>(null)
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [currentMenuItemIndex, setCurrentMenuItemIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
 
   const performSearch = useCallback(async (query: string) => {
     if (!query || query.trim().length < 1) {
@@ -106,45 +96,6 @@ export function LandingPage() {
     router.push(`/menu/${username}`)
   }
 
-  // Fetch menu items for the rotating card
-  useEffect(() => {
-    const fetchMenuItems = async () => {
-      try {
-        const response = await fetch('/api/menu-items/public')
-        if (response.ok) {
-          const data = await response.json()
-          const items = data.items || []
-          // Shuffle items for randomness
-          const shuffled = [...items].sort(() => Math.random() - 0.5)
-          setMenuItems(shuffled)
-        }
-      } catch (error) {
-        console.error('Error fetching menu items:', error)
-      }
-    }
-
-    fetchMenuItems()
-  }, [])
-
-  // Rotate menu items every 10 seconds with smooth animation
-  useEffect(() => {
-    if (menuItems.length === 0) return
-
-    const interval = setInterval(() => {
-      setIsAnimating(true)
-      
-      // Wait for fade out animation to complete, then change item
-      setTimeout(() => {
-        setCurrentMenuItemIndex((prev) => (prev + 1) % menuItems.length)
-        // Small delay before fade in to ensure smooth transition
-        setTimeout(() => {
-          setIsAnimating(false)
-        }, 20)
-      }, 500) // Match transition duration
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [menuItems.length])
 
   // Track scroll progress for blur and color transition with optimized performance
   useEffect(() => {
@@ -232,188 +183,80 @@ export function LandingPage() {
 
       {/* Hero Layer */}
       <div ref={heroSectionRef} className="relative z-10 flex flex-col min-h-screen px-4 sm:px-6 lg:px-8">
-        {/* Top right login button */}
-        <div className="absolute top-6 sm:top-8 right-4 sm:right-8 z-20">
+        {/* Top bar with title and login button */}
+        <div className="flex items-center justify-between pt-6 sm:pt-8 z-20">
+          {/* Title in upper left */}
+          <h1
+            ref={titleCardRef}
+            className="font-normal leading-none tracking-tight text-gray-900"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              letterSpacing: '-0.03em',
+            }}
+          >
+            The Menu Guide
+          </h1>
+          
+          {/* Login button */}
           <Button
             onClick={() => setShowAuthForm(true)}
             variant="outline"
-            className="border border-gray-300 text-gray-900 hover:bg-gray-100 bg-white rounded-lg text-sm font-medium transition-all duration-200 px-4 py-2"
+            className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl text-sm font-medium transition-all duration-300 px-4 py-2"
           >
             Log In
             <ArrowRight className="ml-2 h-3 w-3" />
           </Button>
         </div>
 
-        {/* Main content centered - Title and Search bar */}
+        {/* Main content centered - Search bar */}
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full mx-auto px-4 flex flex-col items-center" style={{ maxWidth: 'min(95vw, 900px)' }}>
-            {/* Title with rotating menu item card */}
-            <div className="flex items-center justify-center gap-4 sm:gap-4 md:gap-6 lg:gap-8 mb-8 sm:mb-10 flex-wrap">
-              {/* Rotating Menu Item Card - Scales proportionally with title */}
-              <div 
-                className="relative flex-shrink-0"
-                style={{
-                  width: 'clamp(7rem, 8.8vw, 12rem)',
-                  minWidth: 'clamp(7rem, 8.8vw, 12rem)',
-                }}
-              >
-                {menuItems.length > 0 && menuItems[currentMenuItemIndex] ? (
-                  <div
-                    style={{
-                      opacity: isAnimating ? 0 : 1,
-                      transform: isAnimating ? 'translateY(8px)' : 'translateY(0px)',
-                      transition: 'opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                      willChange: 'opacity, transform',
-                    }}
-                  >
-                    {/* Image */}
-                    {menuItems[currentMenuItemIndex].image_url && (
-                      <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
-                        <Image
-                          src={menuItems[currentMenuItemIndex].image_url}
-                          alt={menuItems[currentMenuItemIndex].title || 'Menu item'}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 160px, 256px"
-                          quality={85}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Content */}
-                    <div>
-                      {/* Title */}
-                      {menuItems[currentMenuItemIndex].title && (
-                        <div className="flex items-center justify-between mb-0.5">
-                          <h3 
-                            className="font-semibold text-gray-900"
-                            style={{
-                              fontSize: 'clamp(0.75rem, 1.1vw, 1rem)',
-                            }}
-                          >
-                            {menuItems[currentMenuItemIndex].title}
-                          </h3>
-                        </div>
-                      )}
-                      
-                      {/* Description */}
-                      {menuItems[currentMenuItemIndex].description && (
-                        <p 
-                          className="mb-2 line-clamp-2 text-gray-700"
-                          style={{
-                            fontSize: 'clamp(0.625rem, 0.9vw, 0.875rem)',
-                          }}
-                        >
-                          {menuItems[currentMenuItemIndex].description}
-                        </p>
-                      )}
-                      
-                      {/* Tags */}
-                      {menuItems[currentMenuItemIndex].menu_item_tags && 
-                       menuItems[currentMenuItemIndex].menu_item_tags.length > 0 && (
-                        <div className="flex flex-wrap gap-0.5">
-                          {menuItems[currentMenuItemIndex].menu_item_tags.map((itemTag, index) => {
-                            const tagName = itemTag.tags.name
-                            const borderColor = getAllergenBorderColor(tagName)
-                            return (
-                              <Badge 
-                                key={index} 
-                                variant="outline" 
-                                className="bg-transparent"
-                                style={{
-                                  fontSize: 'clamp(0.25rem, 0.45vw, 0.375rem)',
-                                  padding: 'clamp(0.125rem, 0.2vw, 0.25rem) clamp(0.25rem, 0.4vw, 0.375rem)',
-                                  lineHeight: '1',
-                                  borderWidth: '0.5px',
-                                  borderColor: borderColor || 'rgba(0, 0, 0, 0.2)',
-                                  color: borderColor || '#1f2937',
-                                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                                }}
-                              >
-                                {tagName}
-                              </Badge>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2 bg-gray-100 flex items-center justify-center">
-                    <Image
-                      src="/output-onlinepngtools.png"
-                      alt="The Menu Guide Logo"
-                      width={60}
-                      height={60}
-                      className="opacity-50"
-                      style={{
-                        width: '40%',
-                        height: '40%',
-                        objectFit: 'contain',
-                        filter: 'brightness(0)',
-                        WebkitFilter: 'brightness(0)',
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Title */}
-              <h1
-                ref={titleCardRef}
-                className="font-normal leading-tight tracking-tight text-left text-gray-900"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(3rem, 8.8vw, 6.05rem)',
-                  letterSpacing: '-0.03em',
-                  lineHeight: '1.1',
-                }}
-              >
-                <span className="block">The</span>
-                <span className="block">Menu</span>
-                <span className="block">Guide</span>
-              </h1>
-            </div>
-
-            {/* Search bar - cleaner design */}
+            {/* Search bar - modern design */}
             <div className="relative w-full" style={{ maxWidth: '500px' }}>
                 <div 
-                  className="relative bg-white border border-gray-300 rounded-full shadow-sm w-full flex items-center transition-all duration-200 hover:border-gray-400 h-9"
+                  className="relative bg-white/80 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-lg shadow-gray-200/12 w-full flex items-center transition-all duration-300 hover:shadow-xl hover:shadow-gray-300/12 hover:border-gray-300/80 focus-within:shadow-xl focus-within:shadow-gray-300/12 focus-within:border-gray-400/80 h-11"
                 >
+                  <Search 
+                    className="absolute left-5 text-gray-400 z-10 transition-colors duration-200"
+                    style={{
+                      width: 'clamp(1.125rem, 2.5vw, 1.375rem)',
+                      height: 'clamp(1.125rem, 2.5vw, 1.375rem)',
+                    }}
+                  />
                   <Input
                     type="text"
                     placeholder="Search restaurants..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full border-0 bg-transparent rounded-full focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-500 h-full"
+                    className="w-full border-0 bg-transparent rounded-2xl focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-full font-medium"
                     style={{
-                      paddingLeft: 'clamp(1rem, 3vw, 1.5rem)',
-                      paddingRight: 'clamp(2.5rem, 5vw, 3.5rem)',
+                      paddingLeft: 'clamp(3rem, 8vw, 3.75rem)',
+                      paddingRight: 'clamp(3rem, 8vw, 3.75rem)',
                       paddingTop: '0',
                       paddingBottom: '0',
-                      fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                      fontSize: 'clamp(1rem, 2.2vw, 1.0625rem)',
                       height: '100%',
                     }}
                   />
                   <ArrowRight 
                     key={arrowAnimationKey}
-                    className={`absolute top-1/2 text-gray-600 z-10 transition-transform ${
-                      searchResults.length > 0 ? 'arrow-swing-animation' : ''
+                    className={`absolute right-5 top-1/2 text-gray-500 z-10 transition-colors duration-300 ${
+                      searchResults.length > 0 ? 'arrow-swing-animation text-gray-700' : ''
                     }`}
                     style={{
-                      right: 'clamp(1rem, 3vw, 1.5rem)',
-                      width: 'clamp(1rem, 2.5vw, 1.25rem)',
-                      height: 'clamp(1rem, 2.5vw, 1.25rem)',
+                      width: 'clamp(1.125rem, 2.5vw, 1.375rem)',
+                      height: 'clamp(1.125rem, 2.5vw, 1.375rem)',
                       transform: searchResults.length > 0 ? undefined : 'translateY(-50%)',
                       transformOrigin: 'center center',
                     }}
                   />
                 </div>
 
-            {/* Search results dropdown - cleaner design */}
+            {/* Search results dropdown - glassmorphism design */}
             {searchQuery.trim().length > 0 && (
               <div 
-                className="absolute top-full left-0 right-0 mt-3 rounded-lg shadow-lg border border-gray-200 bg-white max-h-96 overflow-y-auto z-30"
+                className="absolute top-full left-0 right-0 mt-3 rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 bg-white/80 backdrop-blur-md max-h-96 overflow-y-auto z-30"
               >
                 {isSearching ? (
                   <div className="p-8 text-center text-gray-900">
@@ -426,24 +269,27 @@ export function LandingPage() {
                       <button
                         key={restaurant.username}
                         onClick={() => handleRestaurantClick(restaurant.username)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-3"
+                        className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-4"
                       >
                         {restaurant.avatar_url ? (
                           <Image
                             src={restaurant.avatar_url}
                             alt={restaurant.display_name}
-                            width={40}
-                            height={40}
-                            className="rounded-full object-cover"
+                            width={56}
+                            height={56}
+                            className="rounded-full object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-900 font-medium text-sm">
+                          <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <span className="text-gray-900 font-medium text-base">
                               {restaurant.display_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
-                        <span className="text-gray-900 font-medium">{restaurant.display_name}</span>
+                        <div className="flex flex-col">
+                          <span className="text-gray-900 font-medium">{restaurant.display_name}</span>
+                          <span className="text-gray-600 text-sm">@{restaurant.username}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -751,7 +597,7 @@ export function LandingPage() {
             <Button
               onClick={() => setShowAuthForm(true)}
               variant="outline"
-              className="border border-gray-300 text-gray-900 hover:bg-gray-100 bg-white rounded-lg text-sm sm:text-base md:text-lg font-medium transition-all duration-200 px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4"
+              className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 text-sm sm:text-base md:text-lg font-medium transition-all duration-300 px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4"
             >
               Start building your menu!
             </Button>
@@ -775,7 +621,7 @@ export function LandingPage() {
       {showAuthForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div 
-            className="shadow-xl border border-gray-200 bg-white max-w-sm w-full max-h-[85vh] overflow-hidden rounded-xl"
+            className="shadow-xl shadow-gray-300/12 border border-gray-200/60 bg-white/90 backdrop-blur-md max-w-sm w-full max-h-[85vh] overflow-hidden rounded-2xl"
           >
             <div className="p-6 pb-4">
               <div className="flex justify-between items-start">

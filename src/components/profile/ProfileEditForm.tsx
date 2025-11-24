@@ -184,7 +184,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted, usernameStatus:', usernameStatus, 'loading:', loading)
     setLoading(true)
     setMessage('')
 
@@ -321,8 +320,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             if (deleteError) {
               console.warn('Error deleting old avatar from storage:', deleteError)
               // Continue anyway - new upload can proceed
-            } else {
-              console.log('Old avatar deleted from storage')
             }
           }
         } catch (deleteError) {
@@ -390,7 +387,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               <Label
                 htmlFor="avatar-upload"
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow transition hover:bg-white"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white/90 backdrop-blur-md px-4 py-2 text-sm font-medium text-gray-700 shadow-lg shadow-gray-200/12 transition hover:bg-white hover:shadow-xl hover:shadow-gray-300/12"
               >
                 <Upload className="h-4 w-4" />
                 Change menu header photo
@@ -547,7 +544,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             <Button 
               type="submit" 
               disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
-              onClick={() => console.log('Button clicked, disabled:', loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid')}
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>

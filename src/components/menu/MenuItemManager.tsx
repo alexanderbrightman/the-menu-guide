@@ -187,53 +187,62 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         return
       }
 
-      let imageUrl = formData.image_url
+      // Close dialog immediately for better UX
+      setShowCreateDialog(false)
+      resetForm()
+      resetProgress()
 
-      // Upload image if file is selected using optimized upload
-      if (imageFile && user) {
-        try {
-          const result = await uploadImage(imageFile, user.id, 'menu_items')
-          imageUrl = result.url
-        } catch (error) {
-          console.error('Image upload failed:', error)
-          setMessage('Error uploading image. Please try again.')
-          resetProgress()
-          return
+      // Start background save and upload
+      const savePromise = (async () => {
+        let imageUrl = formData.image_url
+
+        // Upload image in background if file is selected
+        if (imageFile && user) {
+          try {
+            const result = await uploadImage(imageFile, user.id, 'menu_items')
+            imageUrl = result.url
+          } catch (error) {
+            console.error('Image upload failed:', error)
+            setMessage('Error uploading image. Menu item saved but image upload failed.')
+            // Continue with save even if image upload fails
+          }
         }
-      }
 
-      const response = await fetch('/api/menu-items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          image_url: imageUrl,
-          category_id: selectedCategory === 'none' ? null : selectedCategory || null,
-          tag_ids: selectedTags
-        }),
+        const response = await fetch('/api/menu-items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            ...formData,
+            image_url: imageUrl,
+            category_id: selectedCategory === 'none' ? null : selectedCategory || null,
+            tag_ids: selectedTags
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          // Add new item at the beginning
+          setItems(prevItems => [data.item, ...prevItems])
+          setMessage('Menu item created successfully!')
+          setTimeout(() => setMessage(''), 3000)
+          onDataChange?.()
+        } else {
+          setMessage(`Error: ${data.error}`)
+        }
+      })()
+
+      // Don't await - let it run in background
+      savePromise.catch(error => {
+        console.error('Error creating menu item:', error)
+        setMessage('Error creating menu item')
       })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setItems([data.item, ...items])
-        resetForm()
-        resetProgress()
-        setShowCreateDialog(false)
-        setMessage('Menu item created successfully!')
-        setTimeout(() => setMessage(''), 3000)
-        onDataChange?.()
-      } else {
-        setMessage(`Error: ${data.error}`)
-        resetProgress()
-      }
     } catch (error) {
       console.error('Error creating menu item:', error)
       setMessage('Error creating menu item')
-      resetProgress()
     }
   }
 
@@ -254,53 +263,90 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         return
       }
 
-      let imageUrl = formData.image_url
+      // Close dialog immediately for better UX
+      const currentItem = editingItem
+      setEditingItem(null)
+      resetForm()
+      
+      // Optimistically update UI
+      setItems(prevItems => 
+        prevItems.map(item => 
+          item.id === currentItem.id 
+            ? {
+                ...item,
+                title: formData.title,
+                description: formData.description,
+                price: formData.price ? Number(formData.price) : null,
+                category_id: selectedCategory === 'none' ? null : selectedCategory,
+              }
+            : item
+        )
+      )
 
-      // Upload image if file is selected using optimized upload
-      if (imageFile && user) {
-        try {
-          const result = await uploadImage(imageFile, user.id, 'menu_items')
-          imageUrl = result.url
-        } catch (error) {
-          console.error('Image upload failed:', error)
-          setMessage('Error uploading image. Please try again.')
-          resetProgress()
-          return
+      // Start background save
+      const savePromise = (async () => {
+        let imageUrl = formData.image_url
+
+        // Upload image in background if file is selected
+        if (imageFile && user) {
+          try {
+            const result = await uploadImage(imageFile, user.id, 'menu_items')
+            imageUrl = result.url
+          } catch (error) {
+            console.error('Image upload failed:', error)
+            setMessage('Error uploading image. Menu item saved but image upload failed.')
+            // Continue with save even if image upload fails
+          }
         }
-      }
 
-      const response = await fetch('/api/menu-items', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          id: editingItem.id,
-          ...formData,
-          image_url: imageUrl,
-          category_id: selectedCategory === 'none' ? null : selectedCategory || null,
-          tag_ids: selectedTags
-        }),
-      })
+        const response = await fetch('/api/menu-items', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            id: currentItem.id,
+            ...formData,
+            image_url: imageUrl,
+            category_id: selectedCategory === 'none' ? null : selectedCategory || null,
+            tag_ids: selectedTags
+          }),
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (response.ok) {
-        setItems(items.map(item => 
-          item.id === editingItem.id ? { ...item, ...data.item } : item
-        ))
-        // Delay to prevent race conditions
-        setTimeout(() => {
-          setEditingItem(null)
-          resetForm()
+        if (response.ok) {
+          // Update with server response (includes complete data with tags/categories)
+          setItems(prevItems => prevItems.map(item => 
+            item.id === currentItem.id ? { ...item, ...data.item } : item
+          ))
           setMessage('Menu item updated successfully!')
           setTimeout(() => setMessage(''), 3000)
           onDataChange?.()
-        }, 100)
-      } else {
-        setMessage(`Error: ${data.error}`)
-      }
+        } else {
+          // Revert optimistic update on error
+          setItems(prevItems => 
+            prevItems.map(item => 
+              item.id === currentItem.id ? currentItem : item
+            )
+          )
+          setMessage(`Error: ${data.error}`)
+        }
+      })()
+
+      // Don't await - let it run in background
+      savePromise.catch(error => {
+        console.error('Error updating menu item:', error)
+        setMessage('Error updating menu item')
+        // Revert optimistic update on error
+        setItems(prevItems => 
+          prevItems.map(item => 
+            item.id === currentItem.id ? currentItem : item
+          )
+        )
+      })
+
     } catch (error) {
       console.error('Error updating menu item:', error)
       setMessage('Error updating menu item')

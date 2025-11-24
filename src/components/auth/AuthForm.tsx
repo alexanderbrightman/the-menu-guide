@@ -174,10 +174,10 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
     <div className="w-full">
       <Tabs defaultValue="signin" className="w-full">
         <TabsList 
-          className="grid w-full grid-cols-2 bg-gray-100 border border-gray-200"
+          className="grid w-full grid-cols-2 bg-gray-100/80 backdrop-blur-sm border border-gray-200/60 rounded-xl"
         >
-          <TabsTrigger value="signin" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">Sign In</TabsTrigger>
-          <TabsTrigger value="signup" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">Sign Up</TabsTrigger>
+          <TabsTrigger value="signin" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl">Sign In</TabsTrigger>
+          <TabsTrigger value="signup" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl">Sign Up</TabsTrigger>
         </TabsList>
         
         <TabsContent value="signin">
@@ -189,7 +189,7 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500"
+                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
                 required
               />
             </div>
@@ -200,13 +200,13 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500"
+                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
                 required
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full border border-gray-300 text-gray-900 hover:bg-gray-100 bg-white"
+              className="w-full border border-gray-200/60 text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign In'}
@@ -234,7 +234,7 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500"
+                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
                 required
               />
             </div>
@@ -246,7 +246,7 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className={`pr-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 ${
+                  className={`pr-10 bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl ${
                     usernameStatus === 'taken' || usernameStatus === 'invalid' 
                       ? 'border-red-500 focus:border-red-500' 
                       : usernameStatus === 'available' 
@@ -290,7 +290,7 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500"
+                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
                 required
               />
             </div>
@@ -301,13 +301,13 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500"
+                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
                 required
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full border border-gray-300 text-gray-900 hover:bg-gray-100 bg-white"
+              className="w-full border border-gray-200/60 text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
               disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
             >
               {loading ? 'Signing up...' : 'Sign Up'}
@@ -317,7 +317,7 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
         
         {message && (
           <div 
-            className="mt-4 p-3 text-sm text-center rounded-md text-gray-900 border border-gray-200 bg-gray-50"
+            className="mt-4 p-3 text-sm text-center rounded-xl text-gray-900 border border-gray-200/60 bg-gray-50/80 backdrop-blur-sm"
           >
             {message}
           </div>

@@ -176,56 +176,45 @@ export function SubscriptionDetailsCard() {
             {error}
           </AlertDescription>
         </Alert>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchSubscriptionDetails}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={async () => {
-              if (!supabase) return
-              setLoading(true)
-              setError('')
+        <Button
+          variant="default"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={async () => {
+            if (!supabase) return
+            setLoading(true)
+            setError('')
 
-              try {
-                const token = await getSessionToken()
-                if (token) {
-                  const response = await fetch('/api/sync-stripe-subscription', {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                  })
-                  const data = await response.json()
-                  if (response.ok) {
-                    alert('Successfully synced with your Stripe subscription! Refreshing...')
-                    window.location.reload()
-                  } else {
-                    setError(data.error || 'Failed to sync with Stripe')
-                  }
+            try {
+              const token = await getSessionToken()
+              if (token) {
+                const response = await fetch('/api/sync-stripe-subscription', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                })
+                const data = await response.json()
+                if (response.ok) {
+                  alert('Successfully synced with your Stripe subscription! Refreshing...')
+                  window.location.reload()
+                } else {
+                  setError(data.error || 'Failed to sync with Stripe')
                 }
-              } catch (error) {
-                console.error('Error syncing subscription:', error)
-                handleAuthError(error, 'syncStripeSubscription')
-                setError('An error occurred while syncing your subscription')
-              } finally {
-                setLoading(false)
               }
-            }}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Sync with Stripe
-          </Button>
-        </div>
+            } catch (error) {
+              console.error('Error syncing subscription:', error)
+              handleAuthError(error, 'syncStripeSubscription')
+              setError('An error occurred while syncing your subscription')
+            } finally {
+              setLoading(false)
+            }
+          }}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Sync with Stripe
+        </Button>
       </div>
     )
   }

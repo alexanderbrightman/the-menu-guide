@@ -126,5 +126,4 @@ The application is fully responsive and works great on:
 4. Submit a pull request
 
 ## 📄 License
-
 This project is licensed under the MIT License.

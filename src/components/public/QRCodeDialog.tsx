@@ -75,7 +75,7 @@ export function QRCodeDialog({ profile, isOpen, onClose }: QRCodeDialogProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center px-6 pb-6">
-              <div className="bg-white p-6 rounded-lg border-2 border-gray-200 w-fit mx-auto">
+              <div className="bg-white/90 backdrop-blur-md p-6 rounded-xl border-2 border-gray-200/60 shadow-lg shadow-gray-200/12 w-fit mx-auto">
                 {qrCodeDataUrl ? (
                   <Image 
                     src={qrCodeDataUrl} 

@@ -199,7 +199,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
                 {filePreview && (
                   <div className="space-y-3">
                     <div className="relative w-full max-h-64">
-                      <div className="relative w-full h-64 rounded-lg border border-gray-200 overflow-hidden bg-white">
+                      <div className="relative w-full h-64 rounded-xl border border-gray-200/60 overflow-hidden bg-white/80 backdrop-blur-sm">
                         <Image
                           src={filePreview}
                           alt="Menu preview"
@@ -213,7 +213,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 bg-white/90 hover:bg-white"
+                        className="absolute top-2 right-2 bg-white/90 backdrop-blur-md hover:bg-white shadow-lg shadow-gray-200/12 rounded-lg"
                         onClick={handleRemoveFile}
                       >
                         <X className="h-4 w-4" />

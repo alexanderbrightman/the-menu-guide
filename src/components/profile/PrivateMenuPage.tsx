@@ -681,57 +681,117 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         return
       }
 
-      let imageUrl = itemForm.image_url
+      // Close the sheet immediately for better UX
+      const currentItem = editingItem
+      closeItemSheet(false)
+      
+      // Optimistically update the UI with form data (for edits only)
+      if (currentItem) {
+        setMenuItems(prevItems => 
+          prevItems.map(item => 
+            item.id === currentItem.id 
+              ? {
+                  ...item,
+                  title: itemForm.title,
+                  description: itemForm.description,
+                  price: itemForm.price ? Number(itemForm.price) : null,
+                  category_id: itemCategory === 'none' ? null : itemCategory,
+                }
+              : item
+          )
+        )
+      }
 
-      if (imageFile) {
-        try {
-          const result = await uploadImage(imageFile, user.id, 'menu_items')
-          imageUrl = result.url
-        } catch (error) {
-          console.error('Image upload failed:', error)
-          setTransientMessage('Error uploading image')
-          resetProgress()
-          return
+      // Start background upload and save process
+      const savePromise = (async () => {
+        let imageUrl = itemForm.image_url
+
+        // Upload image in background if file is selected
+        if (imageFile) {
+          try {
+            const result = await uploadImage(imageFile, user.id, 'menu_items')
+            imageUrl = result.url
+          } catch (error) {
+            console.error('Image upload failed:', error)
+            setTransientMessage('Error uploading image. The menu item was saved but image upload failed.')
+            // Continue with save even if image upload fails
+          }
         }
-      }
 
-      const payload = {
-        ...itemForm,
-        price: itemForm.price ? Number(itemForm.price) : null,
-        image_url: imageUrl,
-        category_id: itemCategory === 'none' ? null : itemCategory,
-        tag_ids: itemTags,
-      }
+        const payload = {
+          ...itemForm,
+          price: itemForm.price ? Number(itemForm.price) : null,
+          image_url: imageUrl,
+          category_id: itemCategory === 'none' ? null : itemCategory,
+          tag_ids: itemTags,
+        }
 
-      const response = await fetch('/api/menu-items', {
-        method: editingItem ? 'PATCH' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(
-          editingItem
-            ? {
-                id: editingItem.id,
-                ...payload,
-              }
-            : payload
-        ),
+        const response = await fetch('/api/menu-items', {
+          method: currentItem ? 'PATCH' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(
+            currentItem
+              ? {
+                  id: currentItem.id,
+                  ...payload,
+                }
+              : payload
+          ),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          // Update the menu items with the server response (includes complete data)
+          setMenuItems(prevItems => {
+            if (currentItem) {
+              // Update existing item
+              return prevItems.map(item => 
+                item.id === currentItem.id ? {
+                  ...item,
+                  ...data.item,
+                  // Ensure tags and category are preserved
+                  menu_item_tags: data.item.menu_item_tags || item.menu_item_tags,
+                  menu_categories: data.item.menu_categories || item.menu_categories,
+                } : item
+              )
+            } else {
+              // Add new item at the beginning
+              return [data.item, ...prevItems]
+            }
+          })
+          
+          setTransientMessage(
+            currentItem ? 'Menu item updated successfully' : 'Menu item created successfully'
+          )
+          
+          // Refresh data in background to ensure consistency (silent, no loading indicator)
+          fetchMenuData(false)
+        } else {
+          // Revert optimistic update on error
+          if (currentItem) {
+            setMenuItems(prevItems => 
+              prevItems.map(item => 
+                item.id === currentItem.id ? currentItem : item
+              )
+            )
+          }
+          setTransientMessage(`Error: ${data.error || 'Unable to save menu item'}`)
+        }
+      })()
+
+      // Don't await - let it run in background
+      // Optionally show a toast notification when complete
+      savePromise.catch(error => {
+        console.error('Error saving menu item:', error)
+        setTransientMessage('Error saving menu item')
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setTransientMessage(
-          editingItem ? 'Menu item updated successfully' : 'Menu item created successfully'
-        )
-        closeItemSheet(false)
-        await fetchMenuData()
-      } else {
-        setTransientMessage(`Error: ${data.error || 'Unable to save menu item'}`)
-      }
     } catch (error) {
-      console.error('Error saving menu item:', error)
+      console.error('Error in menu item save:', error)
       setTransientMessage('Error saving menu item')
     }
   }
@@ -998,7 +1058,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 </div>
                               )}
                               <div className="flex-1 flex flex-col">
-                                <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center justify-between mb-2">
                                   <h3
                                     className={`font-semibold text-base flex-1 ${primaryTextClass}`}
                                     style={{ fontFamily: menuFontFamily }}
@@ -1010,7 +1070,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                       e.stopPropagation()
                                       toggleFavorite(item.id)
                                     }}
-                                    className={`ml-2 p-1 rounded transition-colors ${
+                                    className={`p-1 rounded transition-colors ${
                                       favoritedIds.has(item.id)
                                         ? isDarkBackground
                                           ? 'text-yellow-400 hover:text-yellow-300'
@@ -1026,24 +1086,22 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                     />
                                   </button>
                                 </div>
-                                <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                   <Button
-                                    size="sm"
+                                    size="icon-sm"
                                     variant="outline"
-                                    className={`${outlineButtonClass} flex-1`}
+                                    className={outlineButtonClass}
                                     onClick={() => startEditItem(item)}
                                   >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                   <Button
-                                    size="sm"
+                                    size="icon-sm"
                                     variant="outline"
-                                    className={`${outlineButtonClass} flex-1`}
+                                    className={outlineButtonClass}
                                     onClick={() => handleDeleteItem(item.id)}
                                   >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </div>
@@ -1168,7 +1226,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 </div>
                               )}
                               <div className="flex-1 flex flex-col">
-                                <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center justify-between mb-2">
                                   <h3
                                     className={`font-semibold text-base flex-1 ${primaryTextClass}`}
                                     style={{ fontFamily: menuFontFamily }}
@@ -1180,7 +1238,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                       e.stopPropagation()
                                       toggleFavorite(item.id)
                                     }}
-                                    className={`ml-2 p-1 rounded transition-colors ${
+                                    className={`p-1 rounded transition-colors ${
                                       favoritedIds.has(item.id)
                                         ? isDarkBackground
                                           ? 'text-yellow-400 hover:text-yellow-300'
@@ -1196,24 +1254,22 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                     />
                                   </button>
                                 </div>
-                                <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                   <Button
-                                    size="sm"
+                                    size="icon-sm"
                                     variant="outline"
-                                    className={`${outlineButtonClass} flex-1`}
+                                    className={outlineButtonClass}
                                     onClick={() => startEditItem(item)}
                                   >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                   <Button
-                                    size="sm"
+                                    size="icon-sm"
                                     variant="outline"
-                                    className={`${outlineButtonClass} flex-1`}
+                                    className={outlineButtonClass}
                                     onClick={() => handleDeleteItem(item.id)}
                                   >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </div>
@@ -1277,7 +1333,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         </div>
                       )}
                       <div className="flex-1 flex flex-col">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-2">
                           <h3
                             className={`font-semibold text-base flex-1 ${primaryTextClass}`}
                             style={{ fontFamily: menuFontFamily }}
@@ -1289,7 +1345,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                               e.stopPropagation()
                               toggleFavorite(item.id)
                             }}
-                            className={`ml-2 p-1 rounded transition-colors ${
+                            className={`p-1 rounded transition-colors ${
                               favoritedIds.has(item.id)
                                 ? isDarkBackground
                                   ? 'text-yellow-400 hover:text-yellow-300'
@@ -1305,24 +1361,22 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                             />
                           </button>
                         </div>
-                        <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
-                            size="sm"
+                            size="icon-sm"
                             variant="outline"
-                            className={`${outlineButtonClass} flex-1`}
+                            className={outlineButtonClass}
                             onClick={() => startEditItem(item)}
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
-                            size="sm"
+                            size="icon-sm"
                             variant="outline"
-                            className={`${outlineButtonClass} flex-1`}
+                            className={outlineButtonClass}
                             onClick={() => handleDeleteItem(item.id)}
                           >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -1427,7 +1481,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                             </div>
                           )}
                           <div className="flex-1 flex flex-col">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center justify-between mb-2">
                               <h3
                                 className={`font-semibold text-base flex-1 ${primaryTextClass}`}
                                 style={{ fontFamily: menuFontFamily }}
@@ -1439,7 +1493,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                   e.stopPropagation()
                                   toggleFavorite(item.id)
                                 }}
-                                className={`ml-2 p-1 rounded transition-colors ${
+                                className={`p-1 rounded transition-colors ${
                                   favoritedIds.has(item.id)
                                     ? isDarkBackground
                                       ? 'text-yellow-400 hover:text-yellow-300'
@@ -1455,24 +1509,22 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 />
                               </button>
                             </div>
-                            <div className="mt-auto flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                               <Button
-                                size="sm"
+                                size="icon-sm"
                                 variant="outline"
-                                className={`${outlineButtonClass} flex-1`}
+                                className={outlineButtonClass}
                                 onClick={() => startEditItem(item)}
                               >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
+                                <Edit className="h-4 w-4" />
                               </Button>
                               <Button
-                                size="sm"
+                                size="icon-sm"
                                 variant="outline"
-                                className={`${outlineButtonClass} flex-1`}
+                                className={outlineButtonClass}
                                 onClick={() => handleDeleteItem(item.id)}
                               >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>

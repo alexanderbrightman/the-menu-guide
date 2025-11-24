@@ -220,7 +220,7 @@ export function Dashboard() {
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-3">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="bg-white/80 backdrop-blur-md p-4 rounded-xl shadow-lg shadow-gray-200/12 border border-gray-200/60">
                   <Image
                     src={qrCodeUrl}
                     alt="Menu QR Code"

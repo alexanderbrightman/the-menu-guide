@@ -667,7 +667,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className="relative bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -679,7 +679,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             {/* Close Button */}
             <button
               onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors shadow-lg z-10"
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/90 backdrop-blur-md hover:bg-white transition-colors shadow-lg shadow-gray-200/12 z-10"
               aria-label="Close"
             >
               <X className="h-5 w-5 text-gray-700" />
