@@ -182,6 +182,43 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     return () => clearTimeout(timeoutId)
   }, [formData.username, validateUsername])
 
+  // Prevent auto-focus on mobile devices when dialog opens
+  useEffect(() => {
+    // Check if we're on a mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                     ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+    
+    if (isMobile) {
+      // Function to blur focused inputs
+      const blurFocusedInputs = () => {
+        const activeElement = document.activeElement as HTMLElement
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+          activeElement.blur()
+        }
+      }
+
+      // Blur immediately and after a short delay to catch browser auto-focus
+      blurFocusedInputs()
+      const timeoutId = setTimeout(blurFocusedInputs, 150)
+
+      // Also listen for focus events and blur immediately
+      const handleFocus = (e: FocusEvent) => {
+        const target = e.target as HTMLElement
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+          // Small delay to allow the focus to complete, then blur
+          setTimeout(() => target.blur(), 10)
+        }
+      }
+
+      document.addEventListener('focusin', handleFocus, true)
+
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('focusin', handleFocus, true)
+      }
+    }
+  }, []) // Run once when component mounts (when dialog opens)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)

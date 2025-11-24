@@ -174,10 +174,10 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
     <div className="w-full">
       <Tabs defaultValue="signin" className="w-full">
         <TabsList 
-          className="grid w-full grid-cols-2 bg-gray-100/80 backdrop-blur-sm border border-gray-200/60 rounded-xl"
+          className="grid w-full grid-cols-2 bg-gray-100/80 backdrop-blur-sm border border-gray-200/60 rounded-xl p-1"
         >
-          <TabsTrigger value="signin" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl">Sign In</TabsTrigger>
-          <TabsTrigger value="signup" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl">Sign Up</TabsTrigger>
+          <TabsTrigger value="signin" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl h-full flex items-center justify-center">Sign In</TabsTrigger>
+          <TabsTrigger value="signup" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl h-full flex items-center justify-center">Sign Up</TabsTrigger>
         </TabsList>
         
         <TabsContent value="signin">
