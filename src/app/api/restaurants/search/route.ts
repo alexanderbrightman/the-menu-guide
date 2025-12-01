@@ -39,8 +39,7 @@ export async function GET(request: NextRequest) {
       .eq('is_public', true)
       .eq('subscription_status', 'pro')
       .ilike('username', `%${sanitizedQuery}%`)
-      .order('username', { ascending: true })
-      .limit(20)
+      .limit(50) // Get more results to sort properly
 
     if (error) {
       console.error('Error searching restaurants:', error)
@@ -50,8 +49,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Sort results to prioritize usernames that start with the search query
+    const searchLower = sanitizedQuery.toLowerCase()
+    const sortedRestaurants = (profiles || []).sort((a, b) => {
+      const aUsername = a.username.toLowerCase()
+      const bUsername = b.username.toLowerCase()
+      
+      const aStartsWith = aUsername.startsWith(searchLower)
+      const bStartsWith = bUsername.startsWith(searchLower)
+      
+      // If one starts with the query and the other doesn't, prioritize the one that starts with it
+      if (aStartsWith && !bStartsWith) return -1
+      if (!aStartsWith && bStartsWith) return 1
+      
+      // If both start with the query or both don't, sort alphabetically
+      return aUsername.localeCompare(bUsername)
+    }).slice(0, 20) // Limit to 20 results after sorting
+
     return NextResponse.json(
-      { restaurants: profiles || [] },
+      { restaurants: sortedRestaurants },
       { headers: getSecurityHeaders() }
     )
   } catch (error) {

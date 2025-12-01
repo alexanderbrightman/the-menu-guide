@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import QRCode from 'qrcode'
-import { validateApiPremiumAccess, PREMIUM_API_HEADERS, createPremiumErrorResponse } from '@/lib/premium-validation'
+import { validateApiPremiumAccess, PREMIUM_API_HEADERS, createPremiumErrorResponse, checkAndGetExpiredSubscriptionUpdate } from '@/lib/premium-validation'
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rate-limiting'
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,12 +25,27 @@ export async function GET(request: NextRequest) {
     // Get the user's profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('username, subscription_status, is_public')
+      .select('username, subscription_status, is_public, subscription_current_period_end')
       .eq('id', user.id)
       .single()
 
     if (profileError || !profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404, headers: getSecurityHeaders() })
+    }
+
+    // Check if subscription is expired and update if needed
+    const expiryCheck = checkAndGetExpiredSubscriptionUpdate(profile)
+    if (expiryCheck.needsUpdate && expiryCheck.updateData) {
+      // Update expired subscription status immediately
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      await supabaseAdmin
+        .from('profiles')
+        .update(expiryCheck.updateData)
+        .eq('id', user.id)
+      console.log(`[QR Code] Updated expired subscription for user ${user.id}`)
     }
 
     console.log('QR Code for user:', user.id, 'Username:', profile.username)

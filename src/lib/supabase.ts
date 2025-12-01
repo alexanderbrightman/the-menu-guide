@@ -23,50 +23,52 @@ const supabaseClient = (supabaseUrl.includes('placeholder') || supabaseAnonKey.i
 
 // Add global error handler for unhandled Supabase auth errors
 if (supabaseClient && typeof window !== 'undefined') {
+  // Helper to check if an error is a refresh token error
+  const isRefreshTokenError = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') return false
+    
+    const errorMessage = String('message' in error ? error.message : '').toLowerCase()
+    const errorName = String('name' in error ? error.name : '').toLowerCase()
+    const errorString = String(error).toLowerCase()
+    const errorCode = 'code' in error ? String(error.code || '').toLowerCase() : ''
+    
+    return (
+      errorName === 'authapierror' ||
+      errorMessage.includes('refresh token') ||
+      errorMessage.includes('refresh_token') ||
+      errorMessage.includes('invalid refresh token') ||
+      errorMessage.includes('refresh token not found') ||
+      errorMessage.includes('refresh token: refresh token not found') ||
+      errorString.includes('refresh token') ||
+      errorString.includes('refresh_token') ||
+      errorString.includes('invalid refresh token') ||
+      errorString.includes('refresh token not found') ||
+      (errorName === 'authapierror' && (errorMessage.includes('not found') || errorMessage.includes('refresh'))) ||
+      errorCode === 'pgrst301' // PostgREST auth error code
+    )
+  }
+  
   // Catch unhandled promise rejections from Supabase (like refresh token errors)
+  // This is the primary source of refresh token errors appearing in console
   window.addEventListener('unhandledrejection', (event) => {
-    const error = event.reason
-    if (error && typeof error === 'object') {
-      const errorMessage = String(error.message || '').toLowerCase()
-      const errorName = String(error.name || '').toLowerCase()
-      const errorString = String(error).toLowerCase()
-      const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code || '').toLowerCase() : ''
+    if (isRefreshTokenError(event.reason)) {
+      // Suppress refresh token errors - they're handled gracefully
+      event.preventDefault()
       
-      // Check if it's a refresh token error - comprehensive check including all variations
-      const isRefreshTokenError = 
-        errorName === 'authapierror' ||
-        errorMessage.includes('refresh token') ||
-        errorMessage.includes('refresh_token') ||
-        errorMessage.includes('invalid refresh token') ||
-        errorMessage.includes('refresh token not found') ||
-        errorMessage.includes('refresh token: refresh token not found') ||
-        errorString.includes('refresh token') ||
-        errorString.includes('refresh_token') ||
-        errorString.includes('invalid refresh token') ||
-        errorString.includes('refresh token not found') ||
-        (errorName === 'authapierror' && (errorMessage.includes('not found') || errorMessage.includes('refresh'))) ||
-        errorCode === 'pgrst301' // PostgREST auth error code
+      // Clear invalid session and localStorage silently
+      supabaseClient.auth.signOut().catch(() => {
+        // Ignore sign out errors - session may already be cleared
+      })
       
-      if (isRefreshTokenError) {
-        // Suppress refresh token errors - they're handled gracefully
-        event.preventDefault()
-        console.log('Refresh token error handled gracefully, clearing invalid session')
-        
-        // Clear invalid session and localStorage
-        supabaseClient.auth.signOut().catch(() => {
-          // Ignore sign out errors - session may already be cleared
+      // Clear Supabase-related localStorage items
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-')) {
+            localStorage.removeItem(key)
+          }
         })
-        
-        // Clear Supabase-related localStorage items
-        try {
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('sb-')) {
-              localStorage.removeItem(key)
-            }
-          })
-        } catch {
-          // Ignore localStorage errors
-        }
+      } catch {
+        // Ignore localStorage errors
       }
     }
   })
@@ -88,6 +90,7 @@ export interface Profile {
   menu_font?: string
   menu_background_color?: string
   show_prices?: boolean
+  show_display_name?: boolean
   stripe_customer_id?: string
   stripe_subscription_id?: string
   subscription_current_period_end?: string

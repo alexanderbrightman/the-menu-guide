@@ -22,27 +22,28 @@ export function validatePremiumAccess(profile: Profile | Partial<Profile> | null
     }
   }
 
-  // Check subscription status
-  if (profile.subscription_status !== 'pro') {
-    return {
-      isValid: false,
-      error: `This ${feature} requires a Premium subscription. Please upgrade to access this feature.`,
-      statusCode: 403
-    }
-  }
-
-  // Check if subscription has expired based on end date
+  // FIRST: Check if subscription has expired based on end date (regardless of status)
+  // This is critical - even if status says 'pro', if it's expired, deny access
   if (profile.subscription_current_period_end) {
     const endDate = new Date(profile.subscription_current_period_end)
     const now = new Date()
     
-    // If subscription has expired, deny access
+    // If subscription has expired, deny access immediately
     if (endDate < now) {
       return {
         isValid: false,
         error: `Your Premium subscription expired on ${endDate.toLocaleDateString()}. Please renew to access ${feature}.`,
         statusCode: 403
       }
+    }
+  }
+
+  // THEN: Check subscription status
+  if (profile.subscription_status !== 'pro') {
+    return {
+      isValid: false,
+      error: `This ${feature} requires a Premium subscription. Please upgrade to access this feature.`,
+      statusCode: 403
     }
   }
 
@@ -211,4 +212,41 @@ export function createPremiumErrorResponse(error: string, statusCode: number = 4
     statusCode,
     timestamp: new Date().toISOString()
   }
+}
+
+/**
+ * Checks if a subscription is expired and returns update data if needed
+ * This can be used to automatically update expired subscriptions in the database
+ * @param profile - User profile object
+ * @returns Object with isExpired flag and update data if expired
+ */
+export function checkAndGetExpiredSubscriptionUpdate(profile: Profile | Partial<Profile> | null): {
+  isExpired: boolean
+  needsUpdate: boolean
+  updateData?: Partial<Profile>
+} {
+  if (!profile || profile.subscription_status !== 'pro') {
+    return { isExpired: false, needsUpdate: false }
+  }
+
+  if (!profile.subscription_current_period_end) {
+    return { isExpired: false, needsUpdate: false }
+  }
+
+  const endDate = new Date(profile.subscription_current_period_end)
+  const now = new Date()
+  const isExpired = endDate < now
+
+  if (isExpired) {
+    return {
+      isExpired: true,
+      needsUpdate: true,
+      updateData: {
+        subscription_status: 'canceled',
+        is_public: false
+      }
+    }
+  }
+
+  return { isExpired: false, needsUpdate: false }
 }

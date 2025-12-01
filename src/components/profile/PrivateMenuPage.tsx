@@ -867,110 +867,111 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
   const uncategorizedOpen = expandedCategories['uncategorized']
 
+  // Helper to get border color based on background
+  const getBorderColor = () => {
+    return isDarkBackground ? 'border-white' : 'border-black'
+  }
+
   return (
     <section
-      className="w-full py-12"
+      className="w-full py-4 sm:py-6 md:py-8"
       style={{
         backgroundColor: menuBackgroundColor,
         color: contrastColor,
         fontFamily: menuFontFamily,
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="space-y-8">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <header className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               {profileData?.avatar_url && (
                 <Image
                   src={profileData.avatar_url}
                   alt={profileData.display_name || 'Menu photo'}
                   width={120}
                   height={120}
-                  className="rounded-full object-cover h-24 w-24 border border-white/40 shadow-lg"
+                  className="object-cover h-20 w-20 sm:h-24 sm:w-24"
                 />
               )}
               <h1
                 className={`font-bold leading-tight ${primaryTextClass}`}
-                style={{ fontSize: '42px', fontFamily: menuFontFamily }}
+                style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontFamily: menuFontFamily }}
               >
                 {profileData?.display_name || 'Your Restaurant'}
               </h1>
             </div>
 
-            {profileData?.bio && (
-              <p
-                className={`max-w-2xl text-base sm:text-lg ${secondaryTextClass}`}
-                style={{ fontFamily: menuFontFamily }}
-              >
-                {profileData.bio}
-              </p>
-            )}
-
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 w-full px-4">
               {user && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`${outlineButtonClass} flex items-center gap-2`}
+                  className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
                   onClick={handleOpenScanMenu}
                 >
                   <Scan className="h-4 w-4" />
-                  Scan Menu
+                  <span className="hidden sm:inline">Scan Menu</span>
+                  <span className="sm:hidden">Scan</span>
                 </Button>
               )}
               {onEditProfile && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`${outlineButtonClass} flex items-center gap-2`}
+                  className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
                   onClick={onEditProfile}
                 >
                   <Edit className="h-4 w-4" />
-                  Edit Profile
+                  <span className="hidden sm:inline">Edit Profile</span>
+                  <span className="sm:hidden">Edit</span>
                 </Button>
               )}
-              <SettingsDialog triggerClassName={`${outlineButtonClass} flex items-center gap-2`} />
+              <SettingsDialog triggerClassName={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`} />
               {usernameLink && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`${outlineButtonClass} flex items-center gap-2`}
+                  className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
                   onClick={() => window.open(usernameLink, '_blank')}
                 >
                   <Link2 className="h-4 w-4" />
-                  View Public Page
+                  <span className="hidden sm:inline">View Menu</span>
+                  <span className="sm:hidden">Menu</span>
                 </Button>
               )}
               <Button
                 variant="outline"
                 size="sm"
-                className={`${outlineButtonClass} flex items-center gap-2`}
+                className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
                 onClick={openCreateCategory}
               >
                 <Plus className="h-4 w-4" />
-                New Category
+                <span className="hidden sm:inline">New Category</span>
+                <span className="sm:hidden">Category</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className={`${outlineButtonClass} flex items-center gap-2`}
+                className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
                 onClick={startCreateItem}
               >
                 <Plus className="h-4 w-4" />
-                New Item
+                <span className="hidden sm:inline">New Item</span>
+                <span className="sm:hidden">Item</span>
               </Button>
             </div>
 
             {message && (
               <div
-                className={`max-w-2xl rounded-md border px-4 py-2 text-sm ${
+                className={`max-w-2xl border px-3 sm:px-4 py-2 text-xs sm:text-sm ${getBorderColor()} ${
                   message.toLowerCase().includes('error')
                     ? isDarkBackground
-                      ? 'border-red-400 text-red-200'
-                      : 'border-red-500 text-red-700 bg-red-50/80'
+                      ? 'bg-red-900/30 text-red-200'
+                      : 'bg-red-50 text-red-700'
                     : isDarkBackground
-                      ? 'border-emerald-300 text-emerald-200'
-                      : 'border-emerald-500 text-emerald-700 bg-emerald-50/80'
+                      ? 'bg-emerald-900/30 text-emerald-200'
+                      : 'bg-emerald-50 text-emerald-700'
                 }`}
                 role="status"
               >
@@ -980,26 +981,26 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           </div>
         </header>
 
-        <div className="mt-12 space-y-8">
+        <div className="mt-6 sm:mt-8 md:mt-12 space-y-4 sm:space-y-6 md:space-y-8">
           {loading ? (
             <div
-              className={`flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 py-20 ${
+              className={`flex flex-col items-center justify-center border border-dashed ${getBorderColor()} py-12 sm:py-16 md:py-20 ${
                 isDarkBackground ? 'bg-white/5' : 'bg-white/60'
               }`}
             >
-              <div className="h-12 w-12 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-              <p className={`mt-4 text-sm ${secondaryTextClass}`}>Loading your menu...</p>
+              <div className={`h-8 w-8 sm:h-12 sm:w-12 animate-spin border ${getBorderColor()} border-t-transparent`}></div>
+              <p className={`mt-3 sm:mt-4 text-xs sm:text-sm ${secondaryTextClass}`}>Loading your menu...</p>
             </div>
           ) : (
             <>
               {/* Our Favorites Section */}
               {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
                 <section
-                  className={`rounded-2xl border transition ${
-                    isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
+                  className={`border ${getBorderColor()} ${
+                    isDarkBackground ? 'bg-white/5' : 'bg-white/80'
                   }`}
                 >
-                  <div className="px-6 py-5 space-y-4">
+                  <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
                     <button
                       type="button"
                       className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
@@ -1013,96 +1014,92 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     >
                       <div>
                         <h2
-                          className={`text-2xl font-semibold ${primaryTextClass}`}
+                          className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
                           style={{ fontFamily: menuFontFamily }}
                         >
                           Our Favorites
                         </h2>
-                        <p className={`text-sm mt-1 ${mutedTextClass}`}>
+                        <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
                           {groupedItems['favorites'].length} item{groupedItems['favorites'].length === 1 ? '' : 's'}
                         </p>
                       </div>
                       <span className="mt-1">
                         {expandedCategories['favorites'] ? (
-                          <ChevronUp className="h-5 w-5" />
+                          <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
                         ) : (
-                          <ChevronDown className="h-5 w-5" />
+                          <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
                         )}
                       </span>
                     </button>
                   </div>
 
                   {expandedCategories['favorites'] && (
-                    <div className="border-t border-white/10 px-6 py-6">
+                    <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
                       {groupedItems['favorites'].length === 0 ? (
-                        <div className={`text-sm ${mutedTextClass}`}>
+                        <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
                           No favorited items.
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                           {groupedItems['favorites'].map((item) => (
                             <div
                               key={item.id}
-                              className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                              className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
+                                isDarkBackground ? 'bg-white/5' : 'bg-white'
+                              }`}
                               onClick={() => setSelectedItem(item)}
                             >
                               {item.image_url && (
-                                <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                                <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
                                   <Image
                                     src={item.image_url}
                                     alt={item.title}
                                     fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                    className="object-cover"
                                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                                   />
                                 </div>
                               )}
-                              <div className="flex-1 flex flex-col">
-                                <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1 flex flex-col p-2 sm:p-3">
+                                <div className="mb-2">
                                   <h3
-                                    className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                                    className={`font-semibold text-xs sm:text-sm md:text-base ${primaryTextClass}`}
                                     style={{ fontFamily: menuFontFamily }}
                                   >
                                     {item.title}
                                   </h3>
+                                </div>
+                                <div className="flex items-center justify-between gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       toggleFavorite(item.id)
                                     }}
-                                    className={`p-1 rounded transition-colors ${
-                                      favoritedIds.has(item.id)
-                                        ? isDarkBackground
-                                          ? 'text-yellow-400 hover:text-yellow-300'
-                                          : 'text-yellow-600 hover:text-yellow-700'
-                                        : isDarkBackground
-                                          ? 'text-white/40 hover:text-white/60'
-                                          : 'text-slate-400 hover:text-slate-600'
-                                    }`}
+                                    className={`p-1 transition-colors ${primaryTextClass} hover:opacity-70`}
                                     aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
                                     <Star
-                                      className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                                      className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
                                     />
                                   </button>
-                                </div>
-                                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <Button
-                                    size="icon-sm"
-                                    variant="outline"
-                                    className={outlineButtonClass}
-                                    onClick={() => startEditItem(item)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon-sm"
-                                    variant="outline"
-                                    className={outlineButtonClass}
-                                    onClick={() => handleDeleteItem(item.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex gap-1 sm:gap-2">
+                                    <Button
+                                      size="icon-sm"
+                                      variant="outline"
+                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
+                                      onClick={() => startEditItem(item)}
+                                    >
+                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon-sm"
+                                      variant="outline"
+                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
+                                      onClick={() => handleDeleteItem(item.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1123,11 +1120,11 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               return (
                 <section
                   key={category.id}
-                  className={`rounded-2xl border transition ${
-                    isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
+                  className={`border ${getBorderColor()} ${
+                    isDarkBackground ? 'bg-white/5' : 'bg-white/80'
                   }`}
                 >
-                  <div className="px-6 py-5 space-y-4">
+                  <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
                     <button
                       type="button"
                       className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
@@ -1141,136 +1138,132 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     >
                       <div>
                         <h2
-                          className={`text-2xl font-semibold ${primaryTextClass}`}
+                          className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
                           style={{ fontFamily: menuFontFamily }}
                         >
                           {category.name}
                         </h2>
-                        <p className={`text-sm mt-1 ${mutedTextClass}`}>
+                        <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
                           {itemCount} item{itemCount === 1 ? '' : 's'}
                         </p>
                       </div>
                       <span className="mt-1">
                         {isOpen ? (
-                          <ChevronUp className="h-5 w-5" />
+                          <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
                         ) : (
-                          <ChevronDown className="h-5 w-5" />
+                          <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
                         )}
                       </span>
                     </button>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-4">
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1`}
+                        className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
                         onClick={(event) => {
                           event.stopPropagation()
                           startCreateItem()
                           setItemCategory(category.id)
                         }}
                       >
-                        <Plus className="h-4 w-4" />
-                        Item
+                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm">Item</span>
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1`}
+                        className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
                         onClick={(event) => {
                           event.stopPropagation()
                           openEditCategory(category)
                         }}
                       >
-                        <Edit className="h-4 w-4" />
-                        Edit
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm">Edit</span>
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1`}
+                        className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleDeleteCategory(category.id)
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm">Delete</span>
                       </Button>
                     </div>
                   </div>
 
                   {isOpen && (
-                    <div className="border-t border-white/10 px-6 py-6">
+                    <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
                       {itemCount === 0 ? (
-                        <div className={`text-sm ${mutedTextClass}`}>
+                        <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
                           No menu items yet. Use the New Item button to add your first dish.
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                           {items.map((item) => (
                             <div
                               key={item.id}
-                              className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                              className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
+                                isDarkBackground ? 'bg-white/5' : 'bg-white'
+                              }`}
                               onClick={() => setSelectedItem(item)}
                             >
                               {item.image_url && (
-                                <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                                <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
                                   <Image
                                     src={item.image_url}
                                     alt={item.title}
                                     fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                    className="object-cover"
                                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                                   />
                                 </div>
                               )}
-                              <div className="flex-1 flex flex-col">
-                                <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1 flex flex-col p-2 sm:p-3">
+                                <div className="mb-2">
                                   <h3
-                                    className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                                    className={`font-semibold text-xs sm:text-sm md:text-base ${primaryTextClass}`}
                                     style={{ fontFamily: menuFontFamily }}
                                   >
                                     {item.title}
                                   </h3>
+                                </div>
+                                <div className="flex items-center justify-between gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       toggleFavorite(item.id)
                                     }}
-                                    className={`p-1 rounded transition-colors ${
-                                      favoritedIds.has(item.id)
-                                        ? isDarkBackground
-                                          ? 'text-yellow-400 hover:text-yellow-300'
-                                          : 'text-yellow-600 hover:text-yellow-700'
-                                        : isDarkBackground
-                                          ? 'text-white/40 hover:text-white/60'
-                                          : 'text-slate-400 hover:text-slate-600'
-                                    }`}
+                                    className={`p-1 transition-colors ${primaryTextClass} hover:opacity-70`}
                                     aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
                                     <Star
-                                      className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                                      className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
                                     />
                                   </button>
-                                </div>
-                                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <Button
-                                    size="icon-sm"
-                                    variant="outline"
-                                    className={outlineButtonClass}
-                                    onClick={() => startEditItem(item)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon-sm"
-                                    variant="outline"
-                                    className={outlineButtonClass}
-                                    onClick={() => handleDeleteItem(item.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex gap-1 sm:gap-2">
+                                    <Button
+                                      size="icon-sm"
+                                      variant="outline"
+                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
+                                      onClick={() => startEditItem(item)}
+                                    >
+                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon-sm"
+                                      variant="outline"
+                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
+                                      onClick={() => handleDeleteItem(item.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1285,57 +1278,59 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               )}
 
               {/* Uncategorized Section */}
-              {uncategorizedItems.length > 0 && (
+              {uncategorizedItems.length > 0 && categorySections.length === 0 && (
             <section
-              className={`rounded-2xl border ${
-                isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white'
+              className={`border ${getBorderColor()} ${
+                isDarkBackground ? 'bg-white/5' : 'bg-white'
               }`}
             >
-              <div className="px-6 py-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 mb-6">
+              <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 md:gap-5 mb-4 sm:mb-5 md:mb-6">
                   <div>
                     <h2
-                      className={`text-2xl font-semibold ${primaryTextClass}`}
+                      className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
                       style={{ fontFamily: menuFontFamily }}
                     >
                       Menu Items
                     </h2>
-                    <p className={`text-sm mt-1 ${mutedTextClass}`}>
+                    <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
                       Organize with categories whenever you are ready.
                     </p>
                   </div>
                   <Button
                     variant="outline"
-                    className={outlineButtonClass}
+                    className={`${outlineButtonClass} border ${getBorderColor()}`}
                     onClick={startCreateItem}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
+                    <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="text-xs sm:text-sm">Add Item</span>
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                   {uncategorizedItems.map((item) => (
                     <div
                       key={item.id}
-                      className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                      className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
+                        isDarkBackground ? 'bg-white/5' : 'bg-white'
+                      }`}
                       onClick={() => setSelectedItem(item)}
                     >
                       {item.image_url && (
-                        <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                        <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
                           <Image
                             src={item.image_url}
                             alt={item.title}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="object-cover"
                             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                           />
                         </div>
                       )}
-                      <div className="flex-1 flex flex-col">
+                      <div className="flex-1 flex flex-col p-2 sm:p-3">
                         <div className="flex items-center justify-between mb-2">
                           <h3
-                            className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                            className={`font-semibold text-xs sm:text-sm md:text-base flex-1 ${primaryTextClass}`}
                             style={{ fontFamily: menuFontFamily }}
                           >
                             {item.title}
@@ -1345,7 +1340,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                               e.stopPropagation()
                               toggleFavorite(item.id)
                             }}
-                            className={`p-1 rounded transition-colors ${
+                            className={`p-1 transition-colors ${
                               favoritedIds.has(item.id)
                                 ? isDarkBackground
                                   ? 'text-yellow-400 hover:text-yellow-300'
@@ -1357,26 +1352,26 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                             aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
                           >
                             <Star
-                              className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                              className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
                             />
                           </button>
                         </div>
-                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="icon-sm"
                             variant="outline"
-                            className={outlineButtonClass}
+                            className={`${outlineButtonClass} border ${getBorderColor()}`}
                             onClick={() => startEditItem(item)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                           <Button
                             size="icon-sm"
                             variant="outline"
-                            className={outlineButtonClass}
+                            className={`${outlineButtonClass} border ${getBorderColor()}`}
                             onClick={() => handleDeleteItem(item.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
@@ -1390,18 +1385,18 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               {/* Empty State */}
               {categorySections.length === 0 && uncategorizedItems.length === 0 && (
                 <div
-                  className={`rounded-2xl border border-dashed py-16 text-center ${
-                    isDarkBackground ? 'border-white/20 bg-white/5' : 'border-gray-300 bg-white/60'
+                  className={`border border-dashed ${getBorderColor()} py-12 sm:py-14 md:py-16 text-center ${
+                    isDarkBackground ? 'bg-white/5' : 'bg-white/60'
                   }`}
                 >
-                  <h2 className={`text-2xl font-semibold ${primaryTextClass}`}>
+                  <h2 className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}>
                     Organize your menu with categories
                   </h2>
-                  <p className={`mt-2 text-sm ${mutedTextClass}`}>
+                  <p className={`mt-2 text-xs sm:text-sm ${mutedTextClass}`}>
                     Create a menu category to get started. Menu items appear here once created.
                   </p>
                   <Button
-                    className={`mt-6 ${accentButtonClass}`}
+                    className={`mt-4 sm:mt-6 ${accentButtonClass} border ${getBorderColor()}`}
                     onClick={openCreateCategory}
                   >
                     Add your first category
@@ -1412,14 +1407,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               {/* Uncategorized section when there are categories */}
               {categorySections.length > 0 && uncategorizedItems.length > 0 && (
             <section
-              className={`rounded-2xl border transition ${
-                isDarkBackground ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white/80'
+              className={`border ${getBorderColor()} ${
+                isDarkBackground ? 'bg-white/5' : 'bg-white/80'
               }`}
             >
               <div
                 role="button"
                 tabIndex={0}
-                className={`w-full px-6 py-5 flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
+                className={`w-full px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
                 onClick={() =>
                   setExpandedCategories((prev) => ({
                     ...prev,
@@ -1438,52 +1433,54 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               >
                 <div>
                   <h2
-                    className={`text-2xl font-semibold ${primaryTextClass}`}
+                    className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
                     style={{ fontFamily: menuFontFamily }}
                   >
                     Uncategorized
                   </h2>
-                  <p className={`text-sm mt-1 ${mutedTextClass}`}>
+                  <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
                     {uncategorizedItems.length} item
                     {uncategorizedItems.length === 1 ? '' : 's'}
                   </p>
                 </div>
                 {uncategorizedOpen ? (
-                  <ChevronUp className="h-5 w-5" />
+                  <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                  <ChevronDown className="h-5 w-5" />
+                  <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
                 )}
               </div>
 
               {uncategorizedOpen && (
-                <div className="border-t border-white/10 px-6 py-6 space-y-6">
+                <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
                   {uncategorizedItems.length === 0 ? (
-                    <div className={`text-sm ${mutedTextClass}`}>
+                    <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
                       No uncategorized items.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                       {uncategorizedItems.map((item) => (
                         <div
                           key={item.id}
-                          className="group relative flex flex-col cursor-pointer hover:scale-105 transform transition-transform duration-300"
+                          className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
+                            isDarkBackground ? 'bg-white/5' : 'bg-white'
+                          }`}
                           onClick={() => setSelectedItem(item)}
                         >
                           {item.image_url && (
-                            <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+                            <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
                               <Image
                                 src={item.image_url}
                                 alt={item.title}
                                 fill
-                                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                className="object-cover"
                                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                               />
                             </div>
                           )}
-                          <div className="flex-1 flex flex-col">
+                          <div className="flex-1 flex flex-col p-2 sm:p-3">
                             <div className="flex items-center justify-between mb-2">
                               <h3
-                                className={`font-semibold text-base flex-1 ${primaryTextClass}`}
+                                className={`font-semibold text-xs sm:text-sm md:text-base flex-1 ${primaryTextClass}`}
                                 style={{ fontFamily: menuFontFamily }}
                               >
                                 {item.title}
@@ -1493,7 +1490,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                   e.stopPropagation()
                                   toggleFavorite(item.id)
                                 }}
-                                className={`p-1 rounded transition-colors ${
+                                className={`p-1 transition-colors ${
                                   favoritedIds.has(item.id)
                                     ? isDarkBackground
                                       ? 'text-yellow-400 hover:text-yellow-300'
@@ -1505,26 +1502,26 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                                 aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
                               >
                                 <Star
-                                  className={`h-4 w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
+                                  className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
                                 />
                               </button>
                             </div>
-                            <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 size="icon-sm"
                                 variant="outline"
-                                className={outlineButtonClass}
+                                className={`${outlineButtonClass} border ${getBorderColor()}`}
                                 onClick={() => startEditItem(item)}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                               <Button
                                 size="icon-sm"
                                 variant="outline"
-                                className={outlineButtonClass}
+                                className={`${outlineButtonClass} border ${getBorderColor()}`}
                                 onClick={() => handleDeleteItem(item.id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </div>
@@ -1548,36 +1545,35 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         }
       }}>
         <DialogContent
-          className={`sm:max-w-md ${isDarkBackground ? 'border-white/15' : 'border-slate-200'}`}
+          className={`sm:max-w-md border ${getBorderColor()}`}
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
           }}
         >
-          <DialogHeader>
-            <DialogTitle>{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
-            <DialogDescription>
+          <DialogHeader className="pb-0">
+            <DialogTitle className="text-base sm:text-lg">{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm pb-0">
               {editingCategory
                 ? 'Update the category name. Menu items remain in the category.'
                 : 'Create a category to group menu items.'}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCategorySubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="category-name">Category name</Label>
-              <Input
-                id="category-name"
-                value={categoryName}
-                onChange={(event) => setCategoryName(event.target.value)}
-                placeholder="e.g. Starters"
-                required
-              />
-            </div>
+          <form onSubmit={handleCategorySubmit} className="pt-0 space-y-2 sm:space-y-3">
+            <Input
+              id="category-name"
+              value={categoryName}
+              onChange={(event) => setCategoryName(event.target.value)}
+              placeholder="e.g. Starters"
+              required
+              className="border"
+              style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
+            />
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
-                className={outlineButtonClass}
+                className={`${outlineButtonClass} border ${getBorderColor()}`}
                 onClick={() => {
                   setIsCategoryDialogOpen(false)
                   resetCategoryDialog()
@@ -1585,7 +1581,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" className={accentButtonClass}>
+              <Button type="submit" className={`${accentButtonClass} border ${getBorderColor()}`}>
                 {editingCategory ? 'Save changes' : 'Create category'}
               </Button>
             </div>
@@ -1596,20 +1592,20 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
         <SheetContent
           side="right"
-          className={`!w-full sm:!w-3/4 sm:max-w-lg overflow-hidden ${isDarkBackground ? 'border-white/15' : 'border-slate-200'}`}
+          className={`!w-full sm:!w-3/4 sm:max-w-lg overflow-hidden border-l ${getBorderColor()}`}
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
           }}
         >
-          <SheetHeader className="px-6 pt-6 pb-4">
-            <SheetTitle className="text-xl sm:text-lg" style={{ color: contrastColor }}>
+          <SheetHeader className="px-3 sm:px-4 md:px-6 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 border-b" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
+            <SheetTitle className="text-base sm:text-lg md:text-xl" style={{ color: contrastColor }}>
               {editingItem ? 'Edit Menu Item' : 'Create Menu Item'}
             </SheetTitle>
           </SheetHeader>
-          <form onSubmit={upsertMenuItem} className="flex flex-col gap-6 px-6 pb-8 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto">
-            <div className="space-y-3">
-              <Label htmlFor="item-title" className="text-base font-medium">Title</Label>
+          <form onSubmit={upsertMenuItem} className="flex flex-col gap-4 sm:gap-5 md:gap-6 px-3 sm:px-4 md:px-6 pb-6 sm:pb-8 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto">
+            <div className="space-y-2 sm:space-y-3">
+              <Label htmlFor="item-title" className="text-sm sm:text-base font-medium">Title</Label>
               <Input
                 id="item-title"
                 value={itemForm.title}
@@ -1618,12 +1614,13 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 }
                 placeholder="e.g. Truffle Fries"
                 required
-                className="h-12 text-base"
+                className="h-10 sm:h-12 text-sm sm:text-base border"
+                style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
               />
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="item-description" className="text-base font-medium">Description</Label>
+            <div className="space-y-2 sm:space-y-3">
+              <Label htmlFor="item-description" className="text-sm sm:text-base font-medium">Description</Label>
               <Textarea
                 id="item-description"
                 value={itemForm.description}
@@ -1632,13 +1629,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 }
                 placeholder="Describe the dish and highlight key details."
                 rows={5}
-                className="text-base min-h-[120px]"
+                className="text-sm sm:text-base min-h-[100px] sm:min-h-[120px] border"
+                style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label htmlFor="item-price" className="text-base font-medium">Price</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="item-price" className="text-sm sm:text-base font-medium">Price</Label>
                 <Input
                   id="item-price"
                   type="number"
@@ -1649,14 +1647,15 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     setItemForm((prev) => ({ ...prev, price: event.target.value }))
                   }
                   placeholder="12.50"
-                  className="h-12 text-base"
+                  className="h-10 sm:h-12 text-sm sm:text-base border"
+                  style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="item-category" className="text-base font-medium">Category</Label>
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="item-category" className="text-sm sm:text-base font-medium">Category</Label>
                 <Select value={itemCategory} onValueChange={setItemCategory}>
-                  <SelectTrigger id="item-category" className="h-12 text-base">
+                  <SelectTrigger id="item-category" className="h-10 sm:h-12 text-sm sm:text-base border" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
                     <SelectValue placeholder="Assign a category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1671,10 +1670,10 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Dietary tags</Label>
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="text-sm sm:text-base font-medium">Dietary tags</Label>
               {tags.length === 0 ? (
-                <p className={`text-sm ${mutedTextClass}`}>
+                <p className={`text-xs sm:text-sm ${mutedTextClass}`}>
                   Create tags in the Tags manager to categorize dietary preferences.
                 </p>
               ) : (
@@ -1687,9 +1686,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className={`flex items-center gap-2 border ${
-                          isSelected ? 'border-primary' : 'border-slate-300'
-                        }`}
+                        className={`flex items-center gap-2 border ${getBorderColor()}`}
                         style={{
                           backgroundColor: isSelected
                             ? isDarkBackground ? 'rgba(255,255,255,0.12)' : 'rgba(17,24,39,0.08)'
@@ -1706,9 +1703,9 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               )}
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="item-image" className="text-base font-medium">Menu photo</Label>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="space-y-2 sm:space-y-3">
+              <Label htmlFor="item-image" className="text-sm sm:text-base font-medium">Menu photo</Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                 <Input
                   id="item-image"
                   type="file"
@@ -1719,13 +1716,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                       setImageFile(file)
                     }
                   }}
-                  className="h-12 text-base file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:cursor-pointer"
+                  className="h-10 sm:h-12 text-xs sm:text-sm border"
+                  style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
                 />
                 {itemForm.image_url && !imageFile && (
                   <Button
                     type="button"
                     variant="outline"
-                    className={`${outlineButtonClass} h-12 px-4`}
+                    className={`${outlineButtonClass} h-10 sm:h-12 px-3 sm:px-4 border ${getBorderColor()}`}
                     onClick={() =>
                       setItemForm((prev) => ({
                         ...prev,
@@ -1738,21 +1736,21 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 )}
               </div>
               {uploading && (
-                <div className={`text-sm ${mutedTextClass}`}>
+                <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
                   {progress.message} ({Math.round(progress.progress)}%)
                 </div>
               )}
             </div>
 
-            <div className="flex flex-col gap-3 pt-4 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-              <Button type="submit" className={`${accentButtonClass} flex items-center justify-center gap-2 h-12 text-base font-medium`}>
-                <Upload className="h-5 w-5" />
+            <div className="flex flex-col gap-2 sm:gap-3 pt-3 sm:pt-4">
+              <Button type="submit" className={`${accentButtonClass} flex items-center justify-center gap-2 h-10 sm:h-12 text-sm sm:text-base font-medium border ${getBorderColor()}`}>
+                <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
                 {editingItem ? 'Save menu item' : 'Create menu item'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className={`${outlineButtonClass} h-12 text-base font-medium`}
+                className={`${outlineButtonClass} h-10 sm:h-12 text-sm sm:text-base font-medium border ${getBorderColor()}`}
                 onClick={() => closeItemSheet(false)}
               >
                 Cancel
@@ -1765,7 +1763,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       {/* Menu Item Details Popup */}
       {selectedItem && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
           style={{
             width: '100vw',
             overflow: 'auto',
@@ -1773,33 +1771,34 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className="relative rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            className="relative border shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            style={{
+              backgroundColor: menuBackgroundColor,
+              color: contrastColor,
+              borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="menu-item-heading"
-            style={{
-              backgroundColor: menuBackgroundColor,
-              color: contrastColor,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
           >
             {/* Close Button */}
             <button
               onClick={() => setSelectedItem(null)}
-              className={`absolute top-4 right-4 p-2 rounded-full transition-colors shadow-lg z-10 ${
+              className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-2 border ${getBorderColor()} transition-colors z-10 ${
                 isDarkBackground 
                   ? 'bg-white/20 hover:bg-white/30 text-white' 
                   : 'bg-white/80 hover:bg-white text-gray-700'
               }`}
               aria-label="Close"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
             {/* Content */}
-            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-8">
-              <div className="relative h-64 w-full bg-gray-100 md:h-full md:min-h-[24rem]">
+            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+              <div className={`relative h-48 sm:h-64 w-full md:h-full md:min-h-[24rem] border-b md:border-b-0 md:border-r ${getBorderColor()}`}>
                 {selectedItem.image_url ? (
                   <Image 
                     src={selectedItem.image_url} 
@@ -1809,19 +1808,19 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     sizes="(min-width: 1024px) 40vw, 90vw"
                   />
                 ) : (
-                  <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass}`}>
+                  <div className={`flex h-full w-full items-center justify-center text-xs sm:text-sm ${mutedTextClass}`}>
                     Photo coming soon
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col gap-4 p-6 md:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
+              <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 lg:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
                 {/* Title */}
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col gap-2">
                     <h2
                       id="menu-item-heading"
-                      className={`text-3xl font-bold ${primaryTextClass}`}
+                      className={`text-xl sm:text-2xl md:text-3xl font-bold ${primaryTextClass}`}
                       style={{ fontFamily: menuFontFamily }}
                     >
                       {selectedItem.title}
@@ -1829,10 +1828,11 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     {selectedItem.menu_categories && (
                       <Badge 
                         variant="secondary" 
-                        className="self-start"
+                        className="self-start border"
                         style={{
                           backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                           color: contrastColor,
+                          borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
                         }}
                       >
                         {selectedItem.menu_categories.name}
@@ -1840,7 +1840,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     )}
                   </div>
                   {typeof selectedItem.price === 'number' && (
-                    <div className={`text-xl font-semibold ${primaryTextClass}`}>
+                    <div className={`text-lg sm:text-xl font-semibold ${primaryTextClass}`}>
                       ${selectedItem.price.toFixed(2)}
                     </div>
                   )}
@@ -1849,7 +1849,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 {/* Description */}
                 {selectedItem.description && (
                   <div>
-                    <p className={`text-base leading-relaxed ${secondaryTextClass}`}>
+                    <p className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}>
                       {selectedItem.description}
                     </p>
                   </div>
@@ -1863,7 +1863,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="text-xs bg-transparent"
+                          className="text-xs border"
                           style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
                         >
                           {itemTag.tags.name}

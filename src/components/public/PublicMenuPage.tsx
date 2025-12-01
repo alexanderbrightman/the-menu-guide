@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ChevronDown, X, Filter } from 'lucide-react'
+import { ChevronDown, X, Filter, Info } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 
 interface MenuItemWithTags extends MenuItem {
@@ -129,6 +129,7 @@ const MenuItemCard = memo(({
   isDarkBackground,
   headingFontFamily,
   showPrices,
+  getBorderColor,
 }: {
   item: MenuItemWithTags
   onSelect: (item: MenuItemWithTags) => void
@@ -137,52 +138,45 @@ const MenuItemCard = memo(({
   isDarkBackground: boolean
   headingFontFamily: string
   showPrices: boolean
+  getBorderColor: () => string
 }) => (
   <div 
-    className="cursor-pointer hover:scale-105 transform transition-transform duration-300"
+    className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
+      isDarkBackground ? 'bg-white/5' : 'bg-white'
+    }`}
     onClick={() => onSelect(item)}
   >
     {item.image_url && (
-      <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-2">
+      <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
         <Image
           src={item.image_url}
           alt={item.title}
           fill
-          className="object-cover transition-transform duration-300 hover:scale-110"
-          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover"
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
         />
       </div>
     )}
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <h3 className="font-semibold text-base" style={{ fontFamily: headingFontFamily }}>{item.title}</h3>
+    <div className="flex-1 flex flex-col p-2 sm:p-3">
+      <div className="mb-2">
+        <h3 
+          className={`font-semibold text-xs sm:text-sm md:text-base ${priceClass}`}
+          style={{ fontFamily: headingFontFamily }}
+        >
+          {item.title}
+        </h3>
         {showPrices && item.price && (
-          <div className={`font-semibold text-xs whitespace-nowrap ml-2 ${priceClass}`}>
+          <div className={`font-semibold text-xs mt-1 ${priceClass}`}>
             ${item.price.toFixed(2)}
           </div>
         )}
       </div>
-      
       {item.description && (
-        <p className={`text-xs mb-2 line-clamp-2 ${descriptionClass}`}>
+        <p className={`text-xs line-clamp-2 ${descriptionClass}`}>
           {item.description}
         </p>
       )}
-      
-      {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {item.menu_item_tags.map((itemTag, index) => (
-            <Badge 
-              key={index} 
-              variant="outline" 
-              className="text-xs bg-transparent"
-              style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
-            >
-              {itemTag.tags.name}
-            </Badge>
-          ))}
-        </div>
-      )}
+      {/* Allergen tags removed from cards - only show in modal */}
     </div>
   </div>
 ))
@@ -192,9 +186,9 @@ MenuItemCard.displayName = 'MenuItemCard'
 export function PublicMenuPage({ profile, categories, menuItems, tags, favoritedIds = [] }: PublicMenuPageProps) {
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
 
   // Create a Set for efficient lookup
   const favoritedIdsSet = useMemo(() => new Set(favoritedIds), [favoritedIds])
@@ -214,14 +208,19 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     [menuFont]
   )
 
-  const primaryTextClass = isDarkBackground ? 'text-white' : 'text-gray-900'
-  const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-gray-600'
-  const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-gray-500'
-  const subtleTextClass = isDarkBackground ? 'text-gray-100/70' : 'text-gray-700'
+  const primaryTextClass = isDarkBackground ? 'text-white' : 'text-slate-900'
+  const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-slate-600'
+  const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
+  const subtleTextClass = isDarkBackground ? 'text-gray-100/70' : 'text-slate-700'
   const dividerBorderClass = isDarkBackground ? 'border-white/10' : 'border-gray-200'
 
   const iconMutedClass = isDarkBackground ? 'text-gray-200/60' : 'text-gray-400'
   const linkAccentClass = isDarkBackground ? 'text-blue-200 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'
+
+  // Helper to get border color based on background (matching private page)
+  const getBorderColor = () => {
+    return isDarkBackground ? 'border-white' : 'border-black'
+  }
 
   const themeStyle = useMemo(() => ({
     backgroundColor: menuBackgroundColor,
@@ -236,7 +235,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     (isSelected: boolean) => {
       const emphasis = isSelected ? 'font-semibold shadow-sm' : 'font-medium'
       const hoverState = isDarkBackground ? 'hover:bg-white/12 text-white' : 'hover:bg-gray-100 text-gray-900'
-      return `${baseCategoryButtonClass} cursor-pointer border rounded-md ${emphasis} ${hoverState}`
+      return `${baseCategoryButtonClass} cursor-pointer border rounded-none ${emphasis} ${hoverState}`
     },
     [isDarkBackground, baseCategoryButtonClass]
   )
@@ -407,7 +406,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       {/* Large Header Photo */}
       <header className="relative max-w-screen-2xl mx-auto w-full">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="relative h-[20vh] w-full overflow-hidden rounded-lg bg-gray-100">
+          <div 
+            className="relative h-[20vh] w-full overflow-hidden"
+            style={{ backgroundColor: menuBackgroundColor }}
+          >
             {profile.avatar_url ? (
               <Image 
                 src={profile.avatar_url} 
@@ -430,44 +432,16 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
         </div>
         
         {/* Restaurant Name - Large Title Below Photo */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-          <h1
-            className={`font-bold text-center whitespace-nowrap ${primaryTextClass}`}
-            style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
-          >
-            {profile.display_name}
-          </h1>
-          
-          {profile.bio && (
-            <div className="mt-1 text-center">
-              <div className={`text-sm inline-block ${subtleTextClass}`}>
-                {profile.bio.length > 100 && !isBioExpanded ? (
-                  <>
-                    {profile.bio.substring(0, 100)}...
-                    <button
-                      onClick={() => setIsBioExpanded(true)}
-                      className={`ml-1 inline-flex items-center ${linkAccentClass}`}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {profile.bio}
-                    {profile.bio.length > 100 && isBioExpanded && (
-                      <button
-                        onClick={() => setIsBioExpanded(false)}
-                        className={`ml-1 inline-flex items-center ${linkAccentClass}`}
-                      >
-                        <ChevronDown className="h-3 w-3 rotate-180" />
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        {profile.show_display_name !== false && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+            <h1
+              className={`font-bold text-center whitespace-nowrap ${primaryTextClass}`}
+              style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
+            >
+              {profile.display_name}
+            </h1>
+          </div>
+        )}
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -538,7 +512,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                         key={tag.id}
                         variant="outline"
                         size="sm"
-                        className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors ${
+                        className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-none ${
                           isSelected ? 'font-semibold shadow-sm' : 'font-medium'
                         } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
                         onClick={() => toggleTag(tag.id)}
@@ -560,7 +534,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     variant="outline"
                     size="sm"
                     onClick={clearFilters}
-                    className={`py-[3.74px] px-[7.48px] text-[9.9px]`}
+                    className={`py-[3.74px] px-[7.48px] text-[9.9px] rounded-none`}
                     style={isDarkBackground ? {
                       borderColor: 'rgba(255,255,255,0.35)',
                       color: '#ffffff',
@@ -584,10 +558,21 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             >
               Menu
             </h2>
-            <div className={`text-xs ${mutedTextClass}`}>
-              {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
-              {hasActiveFilters && ' (filtered)'}
-            </div>
+            {profile.bio && (
+              <button
+                onClick={() => setIsInfoModalOpen(true)}
+                className="border rounded-full flex items-center justify-center text-xs font-medium"
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                  color: isDarkBackground ? '#ffffff' : '#000000'
+                }}
+                aria-label="Show restaurant information"
+              >
+                i
+              </button>
+            )}
           </div>
 
           {filteredItems.length === 0 ? (
@@ -627,7 +612,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   Our Favorites
                 </h3>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                 {filteredItems.map((item) => (
                   <MenuItemCard
                     key={item.id}
@@ -638,6 +623,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     isDarkBackground={isDarkBackground}
                     headingFontFamily={menuFontFamily}
                     showPrices={showPrices}
+                    getBorderColor={getBorderColor}
                   />
                 ))}
               </div>
@@ -659,7 +645,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       {/* Expanded Menu Item Modal */}
       {selectedItem && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 full-vh-mobile"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
           style={{
             width: '100vw',
             overflow: 'auto',
@@ -667,27 +653,39 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            className={`relative border shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ${getBorderColor()}`}
+            style={{
+              backgroundColor: menuBackgroundColor,
+              color: contrastColor,
+              borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="public-menu-item-heading"
-            style={{
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
           >
             {/* Close Button */}
             <button
               onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/90 backdrop-blur-md hover:bg-white transition-colors shadow-lg shadow-gray-200/12 z-10"
+              className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 border ${getBorderColor()} transition-colors z-10 ${
+                isDarkBackground 
+                  ? 'bg-white/20 hover:bg-white/30 text-white' 
+                  : 'bg-white/80 hover:bg-white text-gray-700'
+              }`}
               aria-label="Close"
             >
-              <X className="h-5 w-5 text-gray-700" />
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
             </button>
 
             {/* Content */}
-            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-8">
-              <div className="relative h-64 w-full bg-gray-100 md:h-full md:min-h-[24rem]">
+            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+              <div 
+                className="relative h-48 sm:h-64 w-full md:h-full md:min-h-[24rem] border-b md:border-b-0 md:border-r"
+                style={{
+                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'
+                }}
+              >
                 {selectedItem.image_url ? (
                   <Image 
                     src={selectedItem.image_url} 
@@ -697,31 +695,39 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     sizes="(min-width: 1024px) 40vw, 90vw"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+                  <div className={`flex h-full w-full items-center justify-center text-xs sm:text-sm ${mutedTextClass}`}>
                     Photo coming soon
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col gap-4 p-6 md:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
+              <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 lg:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
                 {/* Title and Price */}
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col gap-2">
                     <h2
                       id="public-menu-item-heading"
-                      className="text-3xl font-bold text-gray-900"
+                      className={`text-xl sm:text-2xl md:text-3xl font-bold ${primaryTextClass}`}
                       style={{ fontFamily: menuFontFamily }}
                     >
                       {selectedItem.title}
                     </h2>
                     {selectedItem.menu_categories && (
-                      <Badge variant="secondary" className="self-start">
+                      <Badge 
+                        variant="secondary" 
+                        className="self-start border"
+                        style={{
+                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          color: contrastColor,
+                          borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                        }}
+                      >
                         {selectedItem.menu_categories.name}
                       </Badge>
                     )}
                   </div>
                   {showPrices && typeof selectedItem.price === 'number' && (
-                    <div className="text-xl font-semibold text-gray-900">
+                    <div className={`text-lg sm:text-xl font-semibold ${primaryTextClass}`}>
                       ${selectedItem.price.toFixed(2)}
                     </div>
                   )}
@@ -730,7 +736,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 {/* Description */}
                 {selectedItem.description && (
                   <div>
-                    <p className="text-base leading-relaxed text-gray-700">
+                    <p className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}>
                       {selectedItem.description}
                     </p>
                   </div>
@@ -744,8 +750,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                         <Badge 
                           key={index} 
                           variant="outline" 
-                          className="text-xs bg-transparent cursor-pointer hover:opacity-80 transition-opacity"
-                          style={buildTagStyles(itemTag.tags.name, { isDarkBackground: false })}
+                          className="text-xs border cursor-pointer hover:opacity-80 transition-opacity"
+                          style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
                           onClick={(e) => {
                             e.stopPropagation()
                             handleTagClickFromModal(itemTag.tags.id)
@@ -755,6 +761,76 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                         </Badge>
                       ))}
                     </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Info Modal */}
+      {isInfoModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+          style={{
+            width: '100vw',
+            overflow: 'auto',
+          }}
+          onClick={() => setIsInfoModalOpen(false)}
+        >
+          <div 
+            className={`relative border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ${getBorderColor()}`}
+            style={{
+              backgroundColor: menuBackgroundColor,
+              color: contrastColor,
+              borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restaurant-info-heading"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsInfoModalOpen(false)}
+              className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 border ${getBorderColor()} transition-colors z-10 ${
+                isDarkBackground 
+                  ? 'bg-white/20 hover:bg-white/30 text-white' 
+                  : 'bg-white/80 hover:bg-white text-gray-700'
+              }`}
+              aria-label="Close"
+            >
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
+            </button>
+
+            {/* Content */}
+            <div className="flex flex-col">
+              {/* Header Image */}
+              {profile.avatar_url && (
+                <div className="relative h-48 sm:h-64 w-full overflow-hidden">
+                  <Image 
+                    src={profile.avatar_url} 
+                    alt={profile.display_name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 768px"
+                  />
+                </div>
+              )}
+
+              {/* Info Content */}
+              <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 overflow-y-auto max-h-[calc(90vh-12rem)]">
+                {/* Bio */}
+                {profile.bio && (
+                  <div className="text-center">
+                    <p 
+                      className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}
+                      style={{ whiteSpace: 'pre-line' }}
+                    >
+                      {profile.bio}
+                    </p>
                   </div>
                 )}
               </div>
