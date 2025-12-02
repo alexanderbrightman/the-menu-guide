@@ -3,3 +3,5 @@
 alter table profiles 
 add column if not exists show_display_name boolean default true;
 
+
+

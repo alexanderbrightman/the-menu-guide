@@ -193,15 +193,12 @@ export function Dashboard() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
-            <a
-              href="https://themenuguide.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-2xl font-semibold hover:opacity-80 transition-opacity cursor-pointer"
+            <h1
+              className="text-2xl font-semibold"
               style={{ color: contrastColor, fontFamily: menuFontFamily }}
             >
               The Menu Guide
-            </a>
+            </h1>
             <div className="flex items-center space-x-4">
               <Button
                 variant="outline"

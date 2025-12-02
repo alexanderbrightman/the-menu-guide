@@ -704,7 +704,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
       // Start background upload and save process
       const savePromise = (async () => {
-        let imageUrl = itemForm.image_url
+        let imageUrl: string | null = null
 
         // Upload image in background if file is selected
         if (imageFile) {
@@ -716,12 +716,17 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
             setTransientMessage('Error uploading image. The menu item was saved but image upload failed.')
             // Continue with save even if image upload fails
           }
+        } else if (itemForm.image_url && itemForm.image_url.trim()) {
+          // Use existing image URL if provided and not empty
+          imageUrl = itemForm.image_url.trim()
         }
+        // If no image file and no existing URL, imageUrl stays null
 
         const payload = {
-          ...itemForm,
+          title: itemForm.title,
+          description: itemForm.description || null,
           price: itemForm.price ? Number(itemForm.price) : null,
-          image_url: imageUrl,
+          image_url: imageUrl, // Will be null if no image, or a valid URL string
           category_id: itemCategory === 'none' ? null : itemCategory,
           tag_ids: itemTags,
         }

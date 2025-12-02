@@ -230,8 +230,6 @@ export async function PUT(request: NextRequest) {
     const cacheKey = getProfileCacheKey(user.id)
     setCachedResponse(cacheKey, null, 0) // Clear cache
 
-    console.log('Profile updated successfully:', { id: user.id, ...updateData })
-
     return NextResponse.json(
       { profile },
       {

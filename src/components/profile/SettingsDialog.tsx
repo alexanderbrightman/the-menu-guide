@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Settings, Eye, EyeOff, Trash2, AlertTriangle, Check, DollarSign } from 'lucide-react'
+import { Settings, Eye, EyeOff, Trash2, AlertTriangle, Check, DollarSign, User } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { SubscriptionDetailsCard } from './SubscriptionDetailsCard'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 import { validatePremiumAccess } from '@/lib/premium-validation'
@@ -28,18 +30,168 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
   const [message, setMessage] = useState('')
   const [deleteItemsLoading, setDeleteItemsLoading] = useState(false)
   const [dangerMessage, setDangerMessage] = useState('')
+  const [username, setUsername] = useState(profile?.username || '')
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
+    profile?.username ? 'available' : 'idle'
+  )
+  const [usernameMessage, setUsernameMessage] = useState('')
+  const [usernameLoading, setUsernameLoading] = useState(false)
 
   // Check premium access using the enhanced validation
   const premiumValidation = validatePremiumAccess(profile, 'menu visibility')
   const hasPremiumAccess = premiumValidation.isValid
 
-  // Sync isPublic and showPrices state with profile data
+  // Sync isPublic, showPrices, and username state with profile data
   useEffect(() => {
     if (profile) {
       setIsPublic(profile.is_public ?? false)
       setShowPrices(profile.show_prices !== false) // default to true if undefined
+      setUsername(profile.username || '')
+      if (profile.username) {
+        setUsernameStatus('available')
+        setUsernameMessage('✓ This is your current username')
+      }
     }
   }, [profile])
+
+  // Username validation
+  const validateUsername = async (usernameValue: string) => {
+    if (!usernameValue.trim()) {
+      setUsernameStatus('idle')
+      setUsernameMessage('')
+      return
+    }
+
+    // Basic validation
+    if (usernameValue.length < 3) {
+      setUsernameStatus('invalid')
+      setUsernameMessage('Username must be at least 3 characters')
+      return
+    }
+
+    if (usernameValue.length > 20) {
+      setUsernameStatus('invalid')
+      setUsernameMessage('Username must be less than 20 characters')
+      return
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(usernameValue)) {
+      setUsernameStatus('invalid')
+      setUsernameMessage('Username can only contain letters, numbers, hyphens, and underscores')
+      return
+    }
+
+    // If username hasn't changed from current profile, it's available
+    if (usernameValue === profile?.username) {
+      setUsernameStatus('available')
+      setUsernameMessage('✓ This is your current username')
+      return
+    }
+
+    setUsernameStatus('checking')
+    setUsernameMessage('Checking availability...')
+
+    try {
+      if (!supabase) {
+        setUsernameStatus('idle')
+        setUsernameMessage('')
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const response = await fetch('/api/validate-username', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ username: usernameValue.trim() })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.available) {
+          setUsernameStatus('available')
+          setUsernameMessage('✓ Username is available')
+        } else {
+          setUsernameStatus('taken')
+          setUsernameMessage(`✗ ${result.message}`)
+        }
+      } else {
+        setUsernameStatus('idle')
+        setUsernameMessage('')
+      }
+    } catch (error) {
+      console.error('Username validation error:', error)
+      setUsernameStatus('idle')
+      setUsernameMessage('')
+    }
+  }
+
+  // Debounce username validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      validateUsername(username)
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [username, profile?.username])
+
+  const handleUpdateUsername = async () => {
+    if (!user || !supabase) return
+
+    // Check username status before proceeding
+    if (usernameStatus === 'taken') {
+      setMessage('Username is already taken. Please choose a different one.')
+      return
+    }
+
+    if (usernameStatus === 'invalid') {
+      setMessage('Please fix the username validation errors before saving.')
+      return
+    }
+
+    if (usernameStatus === 'checking') {
+      setMessage('Please wait for username validation to complete.')
+      return
+    }
+
+    if (usernameStatus !== 'available' && username !== profile?.username) {
+      setMessage('Please enter a valid username.')
+      return
+    }
+
+    setUsernameLoading(true)
+    setMessage('')
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        throw new Error('Not authenticated')
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ username: username.trim() })
+        .eq('id', user.id)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      setMessage('Username updated successfully!')
+      await refreshProfile()
+      
+      setTimeout(() => {
+        setMessage('')
+      }, 3000)
+    } catch (error) {
+      console.error('Error updating username:', error)
+      setMessage(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
+      setUsernameLoading(false)
+    }
+  }
 
   const handleToggleShowPrices = async (checked: boolean) => {
     if (!user || !supabase) return
@@ -203,6 +355,60 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Edit Username */}
+            <div className="space-y-3 border-b border-black pb-4">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-600" />
+                <h3 className="text-sm font-semibold">Edit Restaurant Username</h3>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm">Username</Label>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className={`pr-10 border border-black ${
+                      usernameStatus === 'taken' || usernameStatus === 'invalid'
+                        ? 'border-red-600 focus:border-red-600'
+                        : usernameStatus === 'available'
+                        ? 'border-green-600 focus:border-green-600'
+                        : ''
+                    }`}
+                  />
+                  {usernameStatus === 'checking' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin border border-blue-600 border-t-transparent"></div>
+                    </div>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✓</div>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">✗</div>
+                  )}
+                </div>
+                {usernameMessage && (
+                  <p className={`text-xs ${
+                    usernameStatus === 'available'
+                      ? 'text-green-600'
+                      : usernameStatus === 'taken' || usernameStatus === 'invalid'
+                      ? 'text-red-600'
+                      : 'text-gray-600'
+                  }`}>
+                    {usernameMessage}
+                  </p>
+                )}
+                <Button
+                  onClick={handleUpdateUsername}
+                  disabled={usernameLoading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid' || username === profile?.username}
+                  className="w-full border border-black"
+                >
+                  {usernameLoading ? 'Updating...' : 'Update Username'}
+                </Button>
+              </div>
+            </div>
+
             {/* Menu Visibility Settings */}
             <div className="space-y-4">
               {/* Show Prices Toggle */}

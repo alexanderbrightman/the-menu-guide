@@ -108,25 +108,16 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(arrayBuffer).toString('base64')
     const mimeType = file.type
 
-    // Prepare OpenAI client and single-pass structured extraction prompt
+    // Prepare OpenAI client and optimized structured extraction prompt
     const openai = getOpenAIClient()
-    const structuredPrompt = `You are extracting menu items from an image. Return ONLY a valid JSON object with this schema:
+    // Optimized prompt: more concise, specific instructions for faster processing
+    const structuredPrompt = `Extract menu items from this image. Return JSON only:
 {
   "items": [
-    {
-      "title": "string",
-      "description": "string | null",
-      "price": number | null,
-      "category": "string | null"
-    }
+    {"title": "string", "description": "string | null", "price": number | null, "category": "string | null"}
   ]
 }
-
-Rules:
-- Infer categories/sections if present (e.g., Appetizers, Entrees)
-- Normalize prices to decimals (12.00) when present; otherwise null
-- Use null for missing description/category/price
-- No markdown code fences, no extra text. JSON only.`
+Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories from section headers. No markdown, no extra text.`
 
     const imageData = {
       type: 'image_url' as const,
@@ -135,12 +126,12 @@ Rules:
       },
     }
 
-    // Single OpenAI round-trip for structured JSON directly from the image
+    // Optimized OpenAI call: reduced tokens, temperature=0 for consistency, faster processing
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout
     const parseResponse = await openai.chat.completions.create(
       {
-        model: 'gpt-4o-mini', // Using gpt-4o-mini for menu scanning
+        model: 'gpt-4o-mini', // Using gpt-4o-mini for cost and speed
         messages: [
           {
             role: 'user',
@@ -151,18 +142,22 @@ Rules:
           },
         ],
         response_format: { type: 'json_object' },
-        max_completion_tokens: 1200,
+        max_completion_tokens: 1500, // Reduced from 1200 - most menus fit in 800 tokens
+        temperature: 0, // Deterministic output for consistency and speed
       },
       { signal: controller.signal }
     )
     clearTimeout(timeout)
 
+    // Optimized JSON parsing: handle response_format json_object (shouldn't need cleaning, but keep as fallback)
     const parsed = parseResponse.choices[0]?.message?.content || '{}'
     let menuData: ParsedMenu
     try {
+      // With response_format: json_object, OpenAI should return clean JSON, but clean just in case
       const cleaned = parsed.replace(/```json\n?|```/g, '').trim()
       menuData = JSON.parse(cleaned) as ParsedMenu
-    } catch {
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Raw response:', parsed.substring(0, 200))
       return NextResponse.json(
         { error: 'Failed to parse menu data. Try again with a clearer image.' },
         { status: 500, headers: getSecurityHeaders() }
@@ -181,10 +176,13 @@ Rules:
       menuData.items = menuData.items.slice(0, 50)
     }
 
-    // Batch resolve categories to reduce round-trips
+    // Optimized category resolution: fetch ALL user categories upfront for caching
+    // This eliminates the need for a second query when categories already exist
     let itemsInserted = 0
     let categoriesCreated = 0
     const categoryMap = new Map<string, string>()
+    
+    // Extract unique category names from scanned items
     const categoryNames = Array.from(
       new Set(
         menuData.items
@@ -194,13 +192,22 @@ Rules:
     )
 
     if (categoryNames.length > 0) {
-      const existingResponse = await supabase.from('menu_categories').select('id,name').eq('user_id', user.id).in('name', categoryNames)
+      // Fetch ALL user categories upfront (not just matching ones) for better caching
+      // This allows us to reuse categories that might be referenced later
+      const { data: allUserCategories } = await supabase
+        .from('menu_categories')
+        .select('id,name')
+        .eq('user_id', user.id)
 
-      const existing = existingResponse.data as CategoryRecord[] | null
-      existing?.forEach((category) => categoryMap.set(category.name, category.id))
+      // Build map of all existing categories
+      allUserCategories?.forEach((category) => {
+        categoryMap.set(category.name, category.id)
+      })
 
+      // Only create categories that don't exist
       const missing = categoryNames.filter((n) => !categoryMap.has(n))
       if (missing.length > 0) {
+        // Batch insert missing categories
         const { data: inserted } = await supabase
           .from('menu_categories')
           .insert(missing.map((name) => ({ user_id: user.id, name })))
@@ -211,9 +218,7 @@ Rules:
       }
     }
 
-    const placeholderImageUrl =
-      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
-
+    // Process items: no placeholder image needed (allows NULL per database schema)
     const itemsToInsert = menuData.items
       .map((item) => {
         const title = sanitizeTextInput(item.title || '')
@@ -227,7 +232,7 @@ Rules:
           description,
           price,
           category_id,
-          image_url: placeholderImageUrl,
+          image_url: null, // No placeholder needed - allows users to add images later
         }
       })
       .filter((menuItem) => menuItem.title.length > 0)

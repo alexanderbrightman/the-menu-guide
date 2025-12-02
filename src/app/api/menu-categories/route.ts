@@ -276,27 +276,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Category ID is required and must be valid' }, { status: 400, headers: getSecurityHeaders() })
     }
 
-    // First check if category has menu items
-    const { data: menuItems, error: itemsError } = await supabase
+    // Before deleting the category, move all menu items to uncategorized (set category_id to null)
+    const { error: updateError } = await supabase
       .from('menu_items')
-      .select('id')
+      .update({ category_id: null })
       .eq('category_id', sanitizedCategoryId)
-      .limit(1)
+      .eq('user_id', user.id) // Ensure we only update items belonging to this user
 
-    if (itemsError) {
-      console.error('Error checking menu items:', itemsError)
-      return NextResponse.json({ error: 'An error occurred while checking menu items' }, { status: 500, headers: getSecurityHeaders() })
+    if (updateError) {
+      console.error('Error updating menu items:', updateError)
+      return NextResponse.json({ error: 'An error occurred while moving menu items to uncategorized' }, { status: 500, headers: getSecurityHeaders() })
     }
 
-    if (menuItems && menuItems.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Cannot delete category with existing menu items. Please move or delete the items first.',
-        },
-        { status: 400, headers: getSecurityHeaders() }
-      )
-    }
-
+    // Now delete the category (database foreign key constraint will handle any remaining references)
     const { error } = await supabase.from('menu_categories').delete().eq('id', sanitizedCategoryId).eq('user_id', user.id)
 
     if (error) {

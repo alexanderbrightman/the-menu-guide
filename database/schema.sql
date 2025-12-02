@@ -29,7 +29,7 @@ create table menu_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles (id) on delete cascade,
   category_id uuid references menu_categories (id) on delete set null,
-  image_url text not null,
+  image_url text,
   title text not null,
   description text,
   price numeric(10,2),

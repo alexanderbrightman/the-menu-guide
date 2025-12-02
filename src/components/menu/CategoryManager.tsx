@@ -114,7 +114,7 @@ export function CategoryManager({ onDataChange }: CategoryManagerProps) {
   }
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return
+    if (!confirm('Delete this category? Menu items will become uncategorized.')) return
     if (!supabase) {
       setMessage('Error: Supabase client not available')
       return

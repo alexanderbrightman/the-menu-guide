@@ -31,43 +31,70 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Query public profiles matching the search term by username
-    // RLS policy ensures only is_public=true and subscription_status='pro' are returned
-    const { data: profiles, error } = await supabase
+    // Optimized search: Use two queries - one for exact/starts-with matches, one for contains
+    // This prioritizes better matches and reduces sorting overhead
+    
+    // First, get profiles that start with the query (higher priority)
+    const { data: startsWithProfiles, error: startsWithError } = await supabase
+      .from('profiles')
+      .select('username, display_name, avatar_url')
+      .eq('is_public', true)
+      .eq('subscription_status', 'pro')
+      .ilike('username', `${sanitizedQuery}%`)
+      .limit(20)
+      .order('username', { ascending: true })
+
+    if (startsWithError) {
+      console.error('Error searching restaurants (starts with):', startsWithError)
+    }
+
+    // If we have enough results from starts-with, return them
+    if (startsWithProfiles && startsWithProfiles.length >= 20) {
+      return NextResponse.json(
+        { restaurants: startsWithProfiles.slice(0, 20) },
+        { headers: getSecurityHeaders() }
+      )
+    }
+
+    // Otherwise, get additional results that contain the query
+    const { data: containsProfiles, error: containsError } = await supabase
       .from('profiles')
       .select('username, display_name, avatar_url')
       .eq('is_public', true)
       .eq('subscription_status', 'pro')
       .ilike('username', `%${sanitizedQuery}%`)
-      .limit(50) // Get more results to sort properly
+      .not('username', 'ilike', `${sanitizedQuery}%`) // Exclude ones we already got
+      .limit(20 - (startsWithProfiles?.length || 0))
+      .order('username', { ascending: true })
 
-    if (error) {
-      console.error('Error searching restaurants:', error)
+    if (containsError) {
+      console.error('Error searching restaurants (contains):', containsError)
+      // If starts-with worked, return those results even if contains failed
+      if (startsWithProfiles) {
+        return NextResponse.json(
+          { restaurants: startsWithProfiles },
+          { headers: getSecurityHeaders() }
+        )
+      }
       return NextResponse.json(
-        { error: 'An error occurred while searching restaurants', details: error.message },
+        { error: 'An error occurred while searching restaurants', details: containsError.message },
         { status: 500, headers: getSecurityHeaders() }
       )
     }
 
-    // Sort results to prioritize usernames that start with the search query
-    const searchLower = sanitizedQuery.toLowerCase()
-    const sortedRestaurants = (profiles || []).sort((a, b) => {
-      const aUsername = a.username.toLowerCase()
-      const bUsername = b.username.toLowerCase()
-      
-      const aStartsWith = aUsername.startsWith(searchLower)
-      const bStartsWith = bUsername.startsWith(searchLower)
-      
-      // If one starts with the query and the other doesn't, prioritize the one that starts with it
-      if (aStartsWith && !bStartsWith) return -1
-      if (!aStartsWith && bStartsWith) return 1
-      
-      // If both start with the query or both don't, sort alphabetically
-      return aUsername.localeCompare(bUsername)
-    }).slice(0, 20) // Limit to 20 results after sorting
+    // Combine results: starts-with first, then contains
+    const allProfiles = [
+      ...(startsWithProfiles || []),
+      ...(containsProfiles || [])
+    ]
+
+    // Remove duplicates (in case of any overlap)
+    const uniqueProfiles = Array.from(
+      new Map(allProfiles.map(profile => [profile.username, profile])).values()
+    ).slice(0, 20)
 
     return NextResponse.json(
-      { restaurants: sortedRestaurants },
+      { restaurants: uniqueProfiles },
       { headers: getSecurityHeaders() }
     )
   } catch (error) {

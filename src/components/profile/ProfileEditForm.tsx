@@ -62,19 +62,14 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const [formData, setFormData] = useState({
     display_name: profile?.display_name || '',
     bio: profile?.bio || '',
-    username: profile?.username || '',
+    instagram_url: profile?.instagram_url || '',
+    website_url: profile?.website_url || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
     menu_background_color: profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR,
     show_display_name: profile?.show_display_name !== false // default to true
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
-    profile?.username ? 'available' : 'idle'
-  )
-  const [usernameMessage, setUsernameMessage] = useState(
-    profile?.username ? '✓ This is your current username' : ''
-  )
 
   const handleResetTheme = useCallback(() => {
     setFormData(prev => ({
@@ -84,106 +79,20 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     }))
   }, [DEFAULT_MENU_FONT, DEFAULT_MENU_BACKGROUND_COLOR])
 
-  // Debounced username validation
-  const validateUsername = useCallback(async (username: string) => {
-    if (!username.trim()) {
-      setUsernameStatus('idle')
-      setUsernameMessage('')
-      return
-    }
-
-    // Basic validation
-    if (username.length < 3) {
-      setUsernameStatus('invalid')
-      setUsernameMessage('Username must be at least 3 characters')
-      return
-    }
-
-    if (username.length > 20) {
-      setUsernameStatus('invalid')
-      setUsernameMessage('Username must be less than 20 characters')
-      return
-    }
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      setUsernameStatus('invalid')
-      setUsernameMessage('Username can only contain letters, numbers, hyphens, and underscores')
-      return
-    }
-
-    // If username hasn't changed from current profile, it's available
-    if (username === profile?.username) {
-      setUsernameStatus('available')
-      setUsernameMessage('✓ This is your current username')
-      return
-    }
-
-    setUsernameStatus('checking')
-    setUsernameMessage('Checking availability...')
-
-    try {
-      if (!supabase) {
-        setUsernameStatus('idle')
-        setUsernameMessage('')
-        return
-      }
-
-      const response = await fetch('/api/validate-username', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ username: username.trim() })
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.available) {
-          setUsernameStatus('available')
-          setUsernameMessage('✓ Username is available')
-        } else {
-          setUsernameStatus('taken')
-          setUsernameMessage(`✗ ${result.message}`)
-        }
-      } else {
-        setUsernameStatus('idle')
-        setUsernameMessage('')
-      }
-    } catch (error) {
-      console.error('Username validation error:', error)
-      setUsernameStatus('idle')
-      setUsernameMessage('')
-    }
-  }, [profile?.username])
-
   // Update form data when profile changes
   useEffect(() => {
     if (profile) {
       setFormData({
         display_name: profile.display_name || '',
         bio: profile.bio || '',
-        username: profile.username || '',
+        instagram_url: profile.instagram_url || '',
+        website_url: profile.website_url || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
         menu_background_color: profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR,
         show_display_name: profile.show_display_name !== false // default to true
       })
-      // Immediately validate if username is the same
-      if (profile.username) {
-        setUsernameStatus('available')
-        setUsernameMessage('✓ This is your current username')
-      }
     }
   }, [profile])
-
-  // Debounce username validation
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      validateUsername(formData.username)
-    }, 500) // 500ms delay
-
-    return () => clearTimeout(timeoutId)
-  }, [formData.username, validateUsername])
 
   // Prevent auto-focus on mobile devices when dialog opens
   useEffect(() => {
@@ -257,31 +166,20 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         return
       }
 
-      if (!formData.username.trim()) {
+      // Validate URLs if provided
+      const instagramUrl = formData.instagram_url.trim()
+      const websiteUrl = formData.website_url.trim()
+      
+      if (instagramUrl && !instagramUrl.match(/^https?:\/\//)) {
         clearTimeout(timeoutId)
-        setMessage('Username is required')
+        setMessage('Instagram URL must start with http:// or https://')
         setLoading(false)
         return
       }
 
-      // Check username status before submitting
-      if (usernameStatus === 'taken') {
+      if (websiteUrl && !websiteUrl.match(/^https?:\/\//)) {
         clearTimeout(timeoutId)
-        setMessage('Username is already taken. Please choose a different one.')
-        setLoading(false)
-        return
-      }
-
-      if (usernameStatus === 'invalid') {
-        clearTimeout(timeoutId)
-        setMessage('Please fix the username validation errors before saving.')
-        setLoading(false)
-        return
-      }
-
-      if (usernameStatus === 'checking') {
-        clearTimeout(timeoutId)
-        setMessage('Please wait for username validation to complete.')
+        setMessage('Website URL must start with http:// or https://')
         setLoading(false)
         return
       }
@@ -292,7 +190,8 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         .update({
           display_name: formData.display_name.trim(),
           bio: formData.bio.trim(),
-          username: formData.username.trim(),
+          instagram_url: instagramUrl || null,
+          website_url: websiteUrl || null,
           menu_font: formData.menu_font,
           menu_background_color: formData.menu_background_color,
           show_display_name: formData.show_display_name
@@ -476,50 +375,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                 </Label>
               </div>
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="username" className="text-xs sm:text-sm">Username</Label>
-              <div className="relative">
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className={`pr-10 border h-9 sm:h-10 text-sm sm:text-base ${
-                    usernameStatus === 'taken' || usernameStatus === 'invalid'
-                      ? 'border-red-600 focus:border-red-600'
-                      : usernameStatus === 'available'
-                      ? 'border-green-600 focus:border-green-600'
-                      : 'border-black'
-                  }`}
-                  required
-                />
-                {usernameStatus === 'checking' && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="h-3 w-3 sm:h-4 sm:w-4 animate-spin border border-blue-600 border-t-transparent"></div>
-                  </div>
-                )}
-                {usernameStatus === 'available' && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✓</div>
-                )}
-                {usernameStatus === 'taken' && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">✗</div>
-                )}
-              </div>
-            </div>
-
-            {usernameMessage && (
-              <p
-                className={`text-xs sm:text-sm ${
-                  usernameStatus === 'available'
-                    ? 'text-green-600'
-                    : usernameStatus === 'taken' || usernameStatus === 'invalid'
-                    ? 'text-red-600'
-                    : 'text-gray-600'
-                }`}
-              >
-                {usernameMessage}
-              </p>
-            )}
           </div>
 
           {/* Preview */}
@@ -588,6 +443,33 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             />
           </div>
 
+          {/* Social Links */}
+          <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="instagram_url" className="text-xs sm:text-sm">Instagram URL (optional)</Label>
+              <Input
+                id="instagram_url"
+                type="url"
+                value={formData.instagram_url}
+                onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
+                placeholder="https://instagram.com/yourrestaurant"
+                className="border border-black h-9 sm:h-10 text-sm sm:text-base"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="website_url" className="text-xs sm:text-sm">Website URL (optional)</Label>
+              <Input
+                id="website_url"
+                type="url"
+                value={formData.website_url}
+                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                placeholder="https://yourrestaurant.com"
+                className="border border-black h-9 sm:h-10 text-sm sm:text-base"
+              />
+            </div>
+          </div>
+
           {message && (
             <div
               className={`border p-2 sm:p-3 text-xs sm:text-sm ${
@@ -607,7 +489,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             <Button 
               type="submit" 
               className="border border-black"
-              disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
+              disabled={loading}
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>

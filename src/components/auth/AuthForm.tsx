@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => void; onForgotPassword?: () => void }) {
+  const [activeForm, setActiveForm] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -172,157 +172,178 @@ export function AuthForm({ onSuccess, onForgotPassword }: { onSuccess?: () => vo
 
   return (
     <div className="w-full">
-      <Tabs defaultValue="signin" className="w-full">
-        <TabsList 
-          className="grid w-full grid-cols-2 bg-gray-100/80 backdrop-blur-sm border border-gray-200/60 rounded-xl p-1"
-        >
-          <TabsTrigger value="signin" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl h-full flex items-center justify-center">Sign In</TabsTrigger>
-          <TabsTrigger value="signup" className="text-gray-700 data-[state=active]:bg-white/80 data-[state=active]:backdrop-blur-md data-[state=active]:text-gray-900 rounded-xl h-full flex items-center justify-center">Sign Up</TabsTrigger>
-        </TabsList>
+      {/* Button selector */}
+      <div className="flex gap-3 mb-6">
+        <div className="flex-1 min-w-0">
+          <Button
+            type="button"
+            onClick={() => setActiveForm('signin')}
+            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${
+              activeForm === 'signin' ? 'border-2 border-black' : 'border border-black/30'
+            }`}
+          >
+            Sign In
+          </Button>
+        </div>
         
-        <TabsContent value="signin">
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="signin-email" className="text-gray-900">Email</Label>
+        {/* Sign Up button */}
+        <div className="flex-1 min-w-0">
+          <Button
+            type="button"
+            onClick={() => setActiveForm('signup')}
+            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${
+              activeForm === 'signup' ? 'border-2 border-black' : 'border border-black/30'
+            }`}
+          >
+            Sign Up
+          </Button>
+        </div>
+      </div>
+
+      {/* Sign In Form */}
+      {activeForm === 'signin' && (
+        <form onSubmit={handleSignIn} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="signin-email" className="text-gray-900">Email</Label>
+            <Input
+              id="signin-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="signin-password" className="text-gray-900">Password</Label>
+            <Input
+              id="signin-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              required
+            />
+          </div>
+          <Button 
+            type="submit" 
+            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+            disabled={loading}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+          {onForgotPassword && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={onForgotPassword}
+                className="text-sm text-gray-700 hover:text-gray-900 underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+        </form>
+      )}
+
+      {/* Sign Up Form */}
+      {activeForm === 'signup' && (
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="signup-email" className="text-gray-900">Email</Label>
+            <Input
+              id="signup-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="signup-username" className="text-gray-900">Username</Label>
+            <div className="relative">
               <Input
-                id="signin-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
+                id="signup-username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={`pr-10 bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none ${
+                  usernameStatus === 'taken' || usernameStatus === 'invalid' 
+                    ? 'border-red-500 focus:border-red-500' 
+                    : usernameStatus === 'available' 
+                    ? 'border-green-500 focus:border-green-500' 
+                    : ''
+                }`}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="signin-password" className="text-gray-900">Password</Label>
-              <Input
-                id="signin-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
-                required
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full border border-gray-200/60 text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-            {onForgotPassword && (
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={onForgotPassword}
-                  className="text-sm text-gray-700 hover:text-gray-900 underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
-          </form>
-        </TabsContent>
-        
-        <TabsContent value="signup">
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="signup-email" className="text-gray-900">Email</Label>
-              <Input
-                id="signup-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="signup-username" className="text-gray-900">Username</Label>
-              <div className="relative">
-                <Input
-                  id="signup-username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={`pr-10 bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl ${
-                    usernameStatus === 'taken' || usernameStatus === 'invalid' 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : usernameStatus === 'available' 
-                      ? 'border-green-500 focus:border-green-500' 
-                      : ''
-                  }`}
-                  required
-                />
-                {usernameStatus === 'checking' && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                  </div>
-                )}
-                {usernameStatus === 'available' && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="text-green-600">✓</div>
-                  </div>
-                )}
-                {usernameStatus === 'taken' && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="text-red-600">✗</div>
-                  </div>
-                )}
-              </div>
-              {usernameMessage && (
-                <p className={`text-sm ${
-                  usernameStatus === 'available' 
-                    ? 'text-green-600' 
-                    : usernameStatus === 'taken' || usernameStatus === 'invalid'
-                    ? 'text-red-600'
-                    : 'text-gray-600'
-                }`}>
-                  {usernameMessage}
-                </p>
+              {usernameStatus === 'checking' && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                </div>
+              )}
+              {usernameStatus === 'available' && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="text-green-600">✓</div>
+                </div>
+              )}
+              {usernameStatus === 'taken' && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="text-red-600">✗</div>
+                </div>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="signup-display-name" className="text-gray-900">Restaurant Name</Label>
-              <Input
-                id="signup-display-name"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="signup-password" className="text-gray-900">Password</Label>
-              <Input
-                id="signup-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/60 text-gray-900 placeholder:text-gray-500 focus:border-gray-400/80 rounded-xl"
-                required
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full border border-gray-200/60 text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
-              disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
-            >
-              {loading ? 'Signing up...' : 'Sign Up'}
-            </Button>
-          </form>
-        </TabsContent>
-        
-        {message && (
-          <div 
-            className="mt-4 p-3 text-sm text-center rounded-xl text-gray-900 border border-gray-200/60 bg-gray-50/80 backdrop-blur-sm"
-          >
-            {message}
+            {usernameMessage && (
+              <p className={`text-sm ${
+                usernameStatus === 'available' 
+                  ? 'text-green-600' 
+                  : usernameStatus === 'taken' || usernameStatus === 'invalid'
+                  ? 'text-red-600'
+                  : 'text-gray-600'
+              }`}>
+                {usernameMessage}
+              </p>
+            )}
           </div>
-        )}
-      </Tabs>
+          <div className="space-y-2">
+            <Label htmlFor="signup-display-name" className="text-gray-900">Restaurant Name</Label>
+            <Input
+              id="signup-display-name"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="signup-password" className="text-gray-900">Password</Label>
+            <Input
+              id="signup-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              required
+            />
+          </div>
+          <Button 
+            type="submit" 
+            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+            disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
+          >
+            {loading ? 'Signing up...' : 'Sign Up'}
+          </Button>
+        </form>
+      )}
+      
+      {message && (
+        <div 
+          className="mt-4 p-3 text-sm text-center rounded-none text-gray-900 border border-black bg-gray-50/80 backdrop-blur-sm"
+        >
+          {message}
+        </div>
+      )}
     </div>
   )
 }

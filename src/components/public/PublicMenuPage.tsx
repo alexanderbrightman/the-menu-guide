@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ChevronDown, X, Filter, Info } from 'lucide-react'
+import { ChevronDown, X, Filter, Info, Instagram, Globe } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 
 interface MenuItemWithTags extends MenuItem {
@@ -807,9 +807,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
             {/* Content */}
             <div className="flex flex-col">
-              {/* Header Image */}
+              {/* Header Image - smaller size */}
               {profile.avatar_url && (
-                <div className="relative h-48 sm:h-64 w-full overflow-hidden">
+                <div className="relative h-32 sm:h-40 w-full overflow-hidden border-b" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
                   <Image 
                     src={profile.avatar_url} 
                     alt={profile.display_name}
@@ -820,8 +820,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 </div>
               )}
 
-              {/* Info Content */}
-              <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 overflow-y-auto max-h-[calc(90vh-12rem)]">
+              {/* Info Content - increased padding to maintain card size */}
+              <div className="flex flex-col gap-3 sm:gap-4 p-6 sm:p-8 md:p-10 overflow-y-auto max-h-[calc(90vh-12rem)]">
                 {/* Bio */}
                 {profile.bio && (
                   <div className="text-center">
@@ -831,6 +831,34 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     >
                       {profile.bio}
                     </p>
+                  </div>
+                )}
+
+                {/* Social Links */}
+                {(profile.instagram_url || profile.website_url) && (
+                  <div className="flex justify-center items-center gap-4 pt-2">
+                    {profile.instagram_url && (
+                      <a
+                        href={profile.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`transition-opacity hover:opacity-70 ${secondaryTextClass}`}
+                        aria-label="Instagram"
+                      >
+                        <Instagram className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </a>
+                    )}
+                    {profile.website_url && (
+                      <a
+                        href={profile.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`transition-opacity hover:opacity-70 ${secondaryTextClass}`}
+                        aria-label="Website"
+                      >
+                        <Globe className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </a>
+                    )}
                   </div>
                 )}
               </div>

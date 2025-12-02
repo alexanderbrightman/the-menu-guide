@@ -80,10 +80,10 @@ export function LandingPage() {
       clearTimeout(debounceTimerRef.current)
     }
 
-    // Set new timer for debounced search
+    // Reduced debounce from 300ms to 150ms for faster response
     debounceTimerRef.current = setTimeout(() => {
       performSearch(searchQuery)
-    }, 300)
+    }, 150)
 
     return () => {
       if (debounceTimerRef.current) {
@@ -160,15 +160,6 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Safe area overlay - light color for light background */}
-      <div
-        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
-        style={{
-          height: 'env(safe-area-inset-top, 0px)',
-          background: '#E0D5CA', // Match the top of the header gradient
-        }}
-      />
-      
       {/* Warm white gradient background */}
       <div
         className="fixed inset-0 transition-colors duration-300"
@@ -194,7 +185,7 @@ export function LandingPage() {
       <div 
         className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8"
         style={{
-          background: 'linear-gradient(180deg, #E0D5CA 0%, #E4D9CE 15%, #E8DDD2 35%, #EDE3D8 55%, #F0EBE5 75%, #F2EDE7 90%, #F5F0EB 100%)',
+          background: 'transparent',
           paddingTop: 'max(env(safe-area-inset-top, 0px), clamp(1rem, 4vw, 1.5rem))',
           paddingBottom: 'clamp(1rem, 4vw, 1.5rem)',
           minHeight: 'clamp(4rem, 10vw, 6rem)',
@@ -217,7 +208,7 @@ export function LandingPage() {
         <Button
           onClick={() => setShowAuthForm(true)}
           variant="outline"
-          className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl text-sm font-medium transition-all duration-300 px-4 py-2"
+          className="border border-black text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-none text-sm font-medium transition-all duration-300 px-4 py-2"
         >
           Log In
           <ArrowRight className="ml-2 h-3 w-3" />
@@ -243,7 +234,7 @@ export function LandingPage() {
         }}>
           {/* Meal images - positioned above search bar, slightly smaller than search bar */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10" style={{ width: '90%', maxWidth: '450px' }}>
-            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+            <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
                 src="/Breakfast.jpeg"
                 alt="Breakfast"
@@ -253,7 +244,7 @@ export function LandingPage() {
                 priority
               />
             </div>
-            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+            <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
                 src="/Lunch.jpeg"
                 alt="Lunch"
@@ -263,7 +254,7 @@ export function LandingPage() {
                 priority
               />
             </div>
-            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+            <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
                 src="/Dinner.jpeg"
                 alt="Dinner"
@@ -275,27 +266,26 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* Search bar - glassmorphism design */}
+          {/* Search bar - squared off design */}
           <div className="relative w-full">
                 {/* Rainbow border wrapper - appears on focus, positioned behind */}
                 <div 
                   id="rainbow-border-wrapper"
-                  className="absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 pointer-events-none"
+                  className="absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none"
                   style={{
                     background: 'linear-gradient(135deg, rgba(255, 182, 193, 0.8) 0%, rgba(255, 218, 185, 0.8) 14%, rgba(255, 255, 182, 0.8) 28%, rgba(182, 255, 182, 0.8) 42%, rgba(185, 218, 255, 0.8) 57%, rgba(218, 185, 255, 0.8) 71%, rgba(255, 182, 218, 0.8) 85%, rgba(255, 182, 193, 0.8) 100%)',
                     padding: '2px',
-                    borderRadius: '1rem',
                     zIndex: 0,
                     margin: '-2px',
                   }}
                 >
-                  <div className="w-full h-full rounded-2xl bg-transparent"></div>
+                  <div className="w-full h-full bg-transparent"></div>
                 </div>
                 
                 {/* Search bar container - always visible */}
                 <div 
                   id="search-bar-container"
-                  className="relative rounded-2xl w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl"
+                  className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black"
                   style={{
                     height: 'clamp(2.5rem, 6vw, 2.75rem)',
                     paddingLeft: 'clamp(1rem, 3vw, 1.25rem)',
@@ -307,7 +297,6 @@ export function LandingPage() {
                       inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
                       inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
                     `,
-                    border: 'none',
                     zIndex: 1,
                   }}
                     onMouseEnter={(e) => {
@@ -351,7 +340,7 @@ export function LandingPage() {
                     placeholder="Explore menus..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full !border-0 bg-transparent rounded-2xl !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
+                    className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
                     style={{
                       paddingLeft: 'clamp(2.5rem, 6vw, 3rem)',
                       paddingRight: 'clamp(2.5rem, 6vw, 3rem)',
@@ -405,10 +394,10 @@ export function LandingPage() {
                   />
                 </div>
 
-            {/* Search results dropdown - glassmorphism design */}
+            {/* Search results dropdown - squared off design */}
             {searchQuery.trim().length > 0 && (
               <div 
-                className="absolute top-full left-0 right-0 mt-3 rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 bg-white/80 backdrop-blur-md max-h-96 overflow-y-auto z-30"
+                className="absolute top-full left-0 right-0 mt-3 shadow-xl shadow-gray-300/12 border border-black bg-white/80 backdrop-blur-md max-h-96 overflow-y-auto z-30"
               >
                 {isSearching ? (
                   <div className="p-8 text-center text-gray-900">
@@ -429,10 +418,10 @@ export function LandingPage() {
                             alt={restaurant.display_name}
                             width={56}
                             height={56}
-                            className="rounded-full object-cover flex-shrink-0"
+                            className="object-cover flex-shrink-0 border border-black"
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <div className="w-14 h-14 bg-gray-200 flex items-center justify-center flex-shrink-0 border border-black">
                             <span className="text-gray-900 font-medium text-base">
                               {restaurant.display_name.charAt(0).toUpperCase()}
                             </span>
@@ -478,8 +467,8 @@ export function LandingPage() {
           {/* Example menu cards grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-10 sm:mb-14 md:mb-16">
             {/* Duck Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
+            <div className="group cursor-pointer border border-black bg-white">
+              <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
                 <Image 
                   src="/duck_homepg.png" 
                   alt="Hudson Duck with White Asparagus"
@@ -488,7 +477,7 @@ export function LandingPage() {
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
-              <div>
+              <div className="p-3">
                 <div className="flex items-start justify-between mb-2 gap-2">
                   <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Hudson Duck with White Asparagus</h3>
                   <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
@@ -501,7 +490,7 @@ export function LandingPage() {
                 <div className="flex flex-wrap gap-1.5">
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
                     }}
@@ -510,7 +499,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
                     }}
@@ -522,8 +511,8 @@ export function LandingPage() {
             </div>
 
             {/* Lobster Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
+            <div className="group cursor-pointer border border-black bg-white">
+              <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
                 <Image 
                   src="/lobster_homepg.png" 
                   alt="Lobster Thermidor"
@@ -532,7 +521,7 @@ export function LandingPage() {
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
-              <div>
+              <div className="p-3">
                 <div className="flex items-start justify-between mb-2 gap-2">
                   <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Lobster Thermidor</h3>
                   <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
@@ -545,7 +534,7 @@ export function LandingPage() {
                 <div className="flex flex-wrap gap-1.5">
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
                     }}
@@ -554,7 +543,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
                     }}
@@ -563,7 +552,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('pescatarian')
                     }}
@@ -575,8 +564,8 @@ export function LandingPage() {
             </div>
 
             {/* Scallops Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
+            <div className="group cursor-pointer border border-black bg-white">
+              <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
                 <Image 
                   src="/scallop_homepg.png" 
                   alt="Scallops with Apple Fennel Salad"
@@ -585,7 +574,7 @@ export function LandingPage() {
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
-              <div>
+              <div className="p-3">
                 <div className="flex items-start justify-between mb-2 gap-2">
                   <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Scallops with Apple Fennel Salad</h3>
                   <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
@@ -598,7 +587,7 @@ export function LandingPage() {
                 <div className="flex flex-wrap gap-1.5">
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
                     }}
@@ -607,7 +596,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
                     }}
@@ -616,7 +605,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('pescatarian')
                     }}
@@ -628,8 +617,8 @@ export function LandingPage() {
             </div>
 
             {/* Stew Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
+            <div className="group cursor-pointer border border-black bg-white">
+              <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
                 <Image 
                   src="/stew_homepg.png" 
                   alt="Pot au Feu"
@@ -638,7 +627,7 @@ export function LandingPage() {
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
                 />
               </div>
-              <div>
+              <div className="p-3">
                 <div className="flex items-start justify-between mb-2 gap-2">
                   <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Pot au Feu</h3>
                   <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
@@ -651,7 +640,7 @@ export function LandingPage() {
                 <div className="flex flex-wrap gap-1.5">
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
                     }}
@@ -660,7 +649,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
                     }}
@@ -669,7 +658,7 @@ export function LandingPage() {
                   </Badge>
                   <Badge 
                     variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
+                    className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('dairy-free')
                     }}
@@ -694,7 +683,7 @@ export function LandingPage() {
             <ul className="space-y-4 sm:space-y-5 md:space-y-6 text-base sm:text-lg md:text-xl font-light text-gray-800 max-w-3xl mx-auto">
               <li className="flex items-start group">
                 <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
                     <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
                   </div>
                 </div>
@@ -702,7 +691,7 @@ export function LandingPage() {
               </li>
               <li className="flex items-start group">
                 <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
                     <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
                   </div>
                 </div>
@@ -710,7 +699,7 @@ export function LandingPage() {
               </li>
               <li className="flex items-start group">
                 <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
                     <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
                   </div>
                 </div>
@@ -718,7 +707,7 @@ export function LandingPage() {
               </li>
               <li className="flex items-start group">
                 <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
                     <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
                   </div>
                 </div>
@@ -726,7 +715,7 @@ export function LandingPage() {
               </li>
               <li className="flex items-start group">
                 <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
                     <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
                   </div>
                 </div>
@@ -734,7 +723,7 @@ export function LandingPage() {
               </li>
               <li className="flex items-start group">
                 <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
                     <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
                   </div>
                 </div>
@@ -748,7 +737,7 @@ export function LandingPage() {
             <Button
               onClick={() => setShowAuthForm(true)}
               variant="outline"
-              className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 text-sm sm:text-base md:text-lg font-medium transition-all duration-300 px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4"
+              className="border border-black text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 text-sm sm:text-base md:text-lg font-medium transition-all duration-300 px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4"
             >
               Start building your menu!
             </Button>
@@ -772,7 +761,7 @@ export function LandingPage() {
       {showAuthForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div 
-            className="shadow-xl shadow-gray-300/12 border border-gray-200/60 bg-white/90 backdrop-blur-md max-w-sm w-full max-h-[85vh] overflow-hidden rounded-2xl"
+            className="shadow-xl shadow-gray-300/12 border border-black bg-white/90 backdrop-blur-md max-w-sm w-full max-h-[85vh] overflow-hidden"
           >
             <div className="p-6 pb-4">
               <div className="flex justify-between items-start">
@@ -782,7 +771,7 @@ export function LandingPage() {
                 </div>
                 <button
                   onClick={() => setShowAuthForm(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                  className="p-2 hover:bg-gray-100 rounded-none border border-black transition-colors group"
                 >
                   <X className="h-4 w-4 text-gray-600 group-hover:text-gray-900" />
                 </button>

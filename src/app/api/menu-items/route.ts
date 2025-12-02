@@ -138,7 +138,8 @@ export async function POST(request: NextRequest) {
     const sanitizedTitle = title ? sanitizeTextInput(title) : ''
     const sanitizedDescription = description ? sanitizeTextInput(description) : ''
     const sanitizedPrice = price ? sanitizePrice(price) : null
-    const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : null
+    // Handle image_url: allow null/empty string, but validate if a non-empty string is provided
+    const sanitizedImageUrl = image_url && image_url.trim() ? sanitizeUrl(image_url) : null
     const sanitizedCategoryId = category_id ? sanitizeUUID(category_id) : null
     const sanitizedTagIds = tag_ids ? sanitizeIntegerArray(tag_ids, 1) : null
 
@@ -147,8 +148,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400, headers: getSecurityHeaders() })
     }
 
-    if (!sanitizedImageUrl) {
-      return NextResponse.json({ error: 'Image URL is required and must be valid' }, { status: 400, headers: getSecurityHeaders() })
+    // Validate image_url if provided (non-empty string)
+    if (image_url && image_url.trim() && !sanitizedImageUrl) {
+      return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400, headers: getSecurityHeaders() })
     }
     
     // Validate category_id if provided
@@ -272,13 +274,27 @@ export async function PATCH(request: NextRequest) {
     const sanitizedDescription = description ? sanitizeTextInput(description) : null
     const sanitizedPrice = price !== undefined && price !== null ? sanitizePrice(price) : null
     const sanitizedCategoryId = category_id ? sanitizeUUID(category_id) : null
-    const sanitizedImageUrl = image_url ? sanitizeUrl(image_url) : null
-    const sanitizedTagIds = tag_ids !== undefined ? sanitizeIntegerArray(tag_ids, 1) : undefined
     
-    // Validate image_url if provided
-    if (image_url && !sanitizedImageUrl) {
-      return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400, headers: getSecurityHeaders() })
+    // Handle image_url: normalize empty string/null/undefined to null, validate only if non-empty string is provided
+    let sanitizedImageUrl: string | null = null
+    // Only process image_url if it's explicitly provided and is a non-empty string
+    if (image_url !== undefined && image_url !== null) {
+      if (typeof image_url === 'string') {
+        const trimmedUrl = image_url.trim()
+        if (trimmedUrl.length > 0) {
+          // Only validate if it's a non-empty string after trimming
+          sanitizedImageUrl = sanitizeUrl(trimmedUrl)
+          if (!sanitizedImageUrl) {
+            return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400, headers: getSecurityHeaders() })
+          }
+        }
+        // If trimmedUrl is empty, sanitizedImageUrl stays null (correct - no image)
+      }
+      // If image_url is not a string and not null/undefined, ignore it (treat as null)
     }
+    // If image_url is undefined, null, empty string, or whitespace-only, sanitizedImageUrl stays null
+    
+    const sanitizedTagIds = tag_ids !== undefined ? sanitizeIntegerArray(tag_ids, 1) : undefined
     
     // Validate category_id if provided
     if (category_id && !sanitizedCategoryId) {
@@ -298,8 +314,8 @@ export async function PATCH(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    // Delete old image from storage if image_url is changing and old image exists
-    if (currentItem?.image_url && currentItem.image_url !== sanitizedImageUrl && sanitizedImageUrl) {
+    // Delete old image from storage if image_url is changing (including when being removed)
+    if (currentItem?.image_url && currentItem.image_url !== sanitizedImageUrl) {
       try {
         // Extract file path from Supabase storage URL
         const urlParts = currentItem.image_url.split('/')
@@ -316,14 +332,12 @@ export async function PATCH(request: NextRequest) {
           
           if (storageError) {
             console.warn('Error deleting old image from storage:', storageError)
-            // Continue anyway - new image can be uploaded
-          } else {
-            console.log('Old image deleted from storage')
+            // Continue anyway - item can still be updated
           }
         }
       } catch (storageError) {
         console.warn('Error deleting old image:', storageError)
-        // Continue anyway - new image can be uploaded
+        // Continue anyway - item can still be updated
       }
     }
 
@@ -333,14 +347,15 @@ export async function PATCH(request: NextRequest) {
       description?: string | null
       price?: number | null
       category_id?: string | null
-      image_url?: string
+      image_url?: string | null
     } = {}
     
     if (sanitizedTitle !== null) updateData.title = sanitizedTitle
     if (sanitizedDescription !== null) updateData.description = sanitizedDescription || null
     if (sanitizedPrice !== null) updateData.price = sanitizedPrice
     if (sanitizedCategoryId !== null) updateData.category_id = sanitizedCategoryId
-    if (sanitizedImageUrl !== null) updateData.image_url = sanitizedImageUrl
+    // Always update image_url if it's provided in the request (including null to remove it)
+    if (image_url !== undefined) updateData.image_url = sanitizedImageUrl
 
     // Update the menu item
     const { data: item, error } = await supabase
@@ -580,8 +595,6 @@ export async function DELETE(request: NextRequest) {
           if (storageError) {
             console.warn('Error deleting image from storage:', storageError)
             // Continue with database deletion even if storage deletion fails
-          } else {
-            console.log('Image deleted from storage:', filePath)
           }
         }
       } catch (storageError) {
