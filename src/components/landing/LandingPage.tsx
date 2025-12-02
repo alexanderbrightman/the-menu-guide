@@ -7,23 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
-import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown, Check, Loader2, Search } from 'lucide-react'
-
-// Helper function to get border color for allergen tags
-const getAllergenBorderColor = (tagName: string): string => {
-  const colorMap: Record<string, string> = {
-    'dairy-free': '#B5C1D9',
-    'gluten-free': '#D48963',
-    'nut-free': '#408250',
-    'pescatarian': '#F698A7',
-    'shellfish-free': '#F6D98E',
-    'spicy': '#F04F68',
-    'vegan': '#A9CC66',
-    'vegetarian': '#3B91A2'
-  }
-  return colorMap[tagName.toLowerCase()] || ''
-}
+import { X, ArrowRight, Loader2, Search } from 'lucide-react'
 
 interface Restaurant {
   username: string
@@ -160,120 +144,107 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Safe area overlay - light color for light background */}
-      <div
-        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
+      {/* Top Section - Hero 1 */}
+      <section 
+        ref={heroSectionRef}
+        className="relative w-full hero-background-section"
         style={{
-          height: 'env(safe-area-inset-top, 0px)',
-          background: '#E0D5CA', // Match the top of the header gradient
-        }}
-      />
-      
-      {/* Warm white gradient background */}
-      <div
-        className="fixed inset-0 transition-colors duration-300"
-        style={{
-          background: `linear-gradient(180deg, #F5F0EB 0%, #F0EBE5 50%, #EBE5DE 100%)`,
-          opacity: 1 - scrollProgress * 0.3, // Fade out as user scrolls
+          position: 'relative',
+          width: '100vw',
+          height: '100vh',
+          minHeight: '600px',
+          backgroundImage: 'url(/hero1.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           zIndex: 1,
         }}
-      />
-      
-      {/* Subtle pattern overlay for texture */}
-      <div
-        className="fixed inset-0 opacity-20"
-        style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(0,0,0,0.03) 1px, transparent 0)`,
-          backgroundSize: '40px 40px',
-          zIndex: 2,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Header bar with title and login button */}
-      <div 
-        className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8"
-        style={{
-          background: 'linear-gradient(180deg, #E0D5CA 0%, #E4D9CE 15%, #E8DDD2 35%, #EDE3D8 55%, #F0EBE5 75%, #F2EDE7 90%, #F5F0EB 100%)',
-          paddingTop: 'max(env(safe-area-inset-top, 0px), clamp(1rem, 4vw, 1.5rem))',
-          paddingBottom: 'clamp(1rem, 4vw, 1.5rem)',
-          minHeight: 'clamp(4rem, 10vw, 6rem)',
-        }}
       >
-        {/* Title in upper left */}
-        <h1
-          ref={titleCardRef}
-          className="font-normal leading-none tracking-tight text-gray-900"
+
+        {/* Login button - top right corner */}
+        <div 
+          className="absolute top-0 right-0 z-20 px-4 sm:px-6 lg:px-8"
           style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-            letterSpacing: '-0.03em',
+            paddingTop: 'max(env(safe-area-inset-top, 0px) + clamp(1.5rem, 4vw, 2rem), clamp(1.5rem, 4vw, 2rem))',
           }}
         >
-          The Menu Guide
-        </h1>
-        
-        {/* Login button */}
-        <Button
-          onClick={() => setShowAuthForm(true)}
-          variant="outline"
-          className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl text-sm font-medium transition-all duration-300 px-4 py-2"
+          <Button
+            onClick={() => setShowAuthForm(true)}
+            variant="outline"
+            className="rounded-xl text-xs font-medium transition-all duration-500 ease-out backdrop-blur-xl text-gray-900"
+            style={{
+              height: 'clamp(2rem, 5vw, 2.25rem)',
+              paddingLeft: 'clamp(0.75rem, 2.5vw, 1rem)',
+              paddingRight: 'clamp(0.75rem, 2.5vw, 1rem)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)',
+              border: '1px solid #000000',
+              boxShadow: `
+                0 16px 48px -10px rgba(0, 0, 0, 0.2),
+                0 6px 20px -6px rgba(0, 0, 0, 0.12),
+                0 3px 10px -4px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                0 1px 2px rgba(0, 0, 0, 0.05) inset
+              `,
+            }}
+            onMouseEnter={(e) => {
+              const button = e.currentTarget;
+              button.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 100%)';
+              button.style.boxShadow = `
+                0 20px 60px -8px rgba(0, 0, 0, 0.25),
+                0 8px 24px -6px rgba(0, 0, 0, 0.18),
+                0 4px 12px -4px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+                0 1px 2px rgba(0, 0, 0, 0.05) inset
+              `;
+            }}
+            onMouseLeave={(e) => {
+              const button = e.currentTarget;
+              button.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
+              button.style.boxShadow = `
+                0 16px 48px -10px rgba(0, 0, 0, 0.2),
+                0 6px 20px -6px rgba(0, 0, 0, 0.12),
+                0 3px 10px -4px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                0 1px 2px rgba(0, 0, 0, 0.05) inset
+              `;
+            }}
+          >
+            Log In
+            <ArrowRight className="ml-2 h-3 w-3" />
+          </Button>
+        </div>
+
+        {/* Title - centered above search bar */}
+        <div 
+          className="absolute left-1/2 z-20 w-full flex flex-col items-center px-4 sm:px-6 lg:px-8"
+          style={{
+            top: '22.5%',
+            transform: 'translateX(-50%)',
+          }}
         >
-          Log In
-          <ArrowRight className="ml-2 h-3 w-3" />
-        </Button>
-      </div>
+          <h1
+            ref={titleCardRef}
+            className="font-normal leading-none tracking-tight text-center"
+            style={{
+              fontFamily: 'var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontSize: 'clamp(1.75rem, 4.5vw, 2.75rem)',
+              letterSpacing: '-0.02em',
+              color: '#000000',
+              fontWeight: 700,
+            }}
+          >
+            The Menu Guide
+          </h1>
+        </div>
 
-
-      {/* Hero Layer */}
-      <div 
-        ref={heroSectionRef} 
-        className="relative z-10 min-h-screen px-4 sm:px-6 lg:px-8"
-        style={{
-          paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + clamp(3rem, 8vw, 4.5rem)), clamp(3rem, 8vw, 4.5rem))',
-        }}
-      >
-
-        {/* Search bar and images container - centered in viewport */}
-        <div className="absolute top-1/2 left-1/2 w-full flex flex-col items-center" style={{ 
-          width: 'min(calc(100% - clamp(2rem, 8vw, 4rem)), 500px)',
-          paddingLeft: 'clamp(1rem, 4vw, 2rem)',
-          paddingRight: 'clamp(1rem, 4vw, 2rem)',
-          transform: 'translate(-50%, calc(-50% - clamp(60px, 10vw, 90px)))'
+        {/* Search bar container - positioned higher from top */}
+        <div className="absolute left-1/2 w-full flex flex-col items-center z-20" style={{ 
+          top: '34%',
+          width: 'min(calc(100% - clamp(1rem, 4vw, 2rem)), 650px)',
+          paddingLeft: 'clamp(0.5rem, 2vw, 1rem)',
+          paddingRight: 'clamp(0.5rem, 2vw, 1rem)',
+          transform: 'translateX(-50%)',
         }}>
-          {/* Meal images - positioned above search bar, slightly smaller than search bar */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10" style={{ width: '90%', maxWidth: '450px' }}>
-            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-              <Image
-                src="/Breakfast.jpeg"
-                alt="Breakfast"
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) calc((100vw - 2rem - 0.5rem) / 3), (max-width: 768px) calc((min(100vw - 4rem, 500px) - 0.75rem) / 3), calc((min(100vw - 4rem, 500px) - 1rem) / 3)"
-                priority
-              />
-            </div>
-            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-              <Image
-                src="/Lunch.jpeg"
-                alt="Lunch"
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) calc((100vw - 2rem - 0.5rem) / 3), (max-width: 768px) calc((min(100vw - 4rem, 500px) - 0.75rem) / 3), calc((min(100vw - 4rem, 500px) - 1rem) / 3)"
-                priority
-              />
-            </div>
-            <div className="relative flex-1 aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-              <Image
-                src="/Dinner.jpeg"
-                alt="Dinner"
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) calc((100vw - 2rem - 0.5rem) / 3), (max-width: 768px) calc((min(100vw - 4rem, 500px) - 0.75rem) / 3), calc((min(100vw - 4rem, 500px) - 1rem) / 3)"
-                priority
-              />
-            </div>
-          </div>
 
           {/* Search bar - glassmorphism design */}
           <div className="relative w-full">
@@ -300,46 +271,55 @@ export function LandingPage() {
                     height: 'clamp(2.5rem, 6vw, 2.75rem)',
                     paddingLeft: 'clamp(1rem, 3vw, 1.25rem)',
                     paddingRight: 'clamp(1rem, 3vw, 1.25rem)',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)',
                     boxShadow: `
-                      0 8px 32px 0 rgba(0, 0, 0, 0.08),
-                      0 2px 8px 0 rgba(0, 0, 0, 0.04),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                      0 20px 60px -12px rgba(0, 0, 0, 0.25),
+                      0 8px 24px -6px rgba(0, 0, 0, 0.15),
+                      0 4px 12px -4px rgba(0, 0, 0, 0.1),
+                      0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                      0 1px 2px rgba(0, 0, 0, 0.05) inset
                     `,
-                    border: 'none',
+                    border: '1px solid #000000',
                     zIndex: 1,
                   }}
                     onMouseEnter={(e) => {
                       const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
                       if (container) {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
-                        container.style.boxShadow = `
-                          0 12px 40px 0 rgba(0, 0, 0, 0.12),
-                          0 4px 12px 0 rgba(0, 0, 0, 0.06),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
-                        `;
+                        // Only change if not focused (rainbow border not active)
+                        if (!rainbowBorder || rainbowBorder.style.opacity !== '1') {
+                          container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 100%)';
+                          container.style.boxShadow = `
+                            0 24px 72px -8px rgba(0, 0, 0, 0.3),
+                            0 12px 32px -8px rgba(0, 0, 0, 0.2),
+                            0 6px 16px -4px rgba(0, 0, 0, 0.15),
+                            0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+                            0 1px 2px rgba(0, 0, 0, 0.05) inset
+                          `;
+                          container.style.border = '1px solid #000000';
+                        }
                       }
                     }}
                     onMouseLeave={(e) => {
                       const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
                       const rainbowBorder = document.getElementById('rainbow-border-wrapper');
                       if (container && rainbowBorder && rainbowBorder.style.opacity !== '1') {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
                         container.style.boxShadow = `
-                          0 8px 32px 0 rgba(0, 0, 0, 0.08),
-                          0 2px 8px 0 rgba(0, 0, 0, 0.04),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                          0 20px 60px -12px rgba(0, 0, 0, 0.25),
+                          0 8px 24px -6px rgba(0, 0, 0, 0.15),
+                          0 4px 12px -4px rgba(0, 0, 0, 0.1),
+                          0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                          0 1px 2px rgba(0, 0, 0, 0.05) inset
                         `;
+                        container.style.border = '1px solid #000000';
                       }
                     }}
                   >
                   <Search 
                     className="absolute text-gray-700 z-10 transition-all duration-300"
                     style={{
-                      left: 'clamp(1rem, 3vw, 1.25rem)',
+                      left: 'clamp(0.75rem, 2.5vw, 1rem)',
                       width: 'clamp(1rem, 2.5vw, 1.25rem)',
                       height: 'clamp(1rem, 2.5vw, 1.25rem)',
                     }}
@@ -353,8 +333,8 @@ export function LandingPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full !border-0 bg-transparent rounded-2xl !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
                     style={{
-                      paddingLeft: 'clamp(2.5rem, 6vw, 3rem)',
-                      paddingRight: 'clamp(2.5rem, 6vw, 3rem)',
+                      paddingLeft: 'clamp(2rem, 5vw, 2.5rem)',
+                      paddingRight: 'clamp(2rem, 5vw, 2.5rem)',
                       paddingTop: '0',
                       paddingBottom: '0',
                       fontSize: 'clamp(1rem, 2vw, 1rem)',
@@ -367,11 +347,15 @@ export function LandingPage() {
                       const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
                       const rainbowBorder = document.getElementById('rainbow-border-wrapper');
                       if (container && rainbowBorder) {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 100%)';
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 50%, rgba(255, 255, 255, 0.95) 100%)';
                         container.style.boxShadow = `
-                          0 12px 40px 0 rgba(0, 0, 0, 0.12),
-                          0 4px 12px 0 rgba(0, 0, 0, 0.06)
+                          0 24px 72px -8px rgba(0, 0, 0, 0.35),
+                          0 12px 32px -8px rgba(0, 0, 0, 0.25),
+                          0 6px 16px -4px rgba(0, 0, 0, 0.2),
+                          0 0 0 1px rgba(255, 255, 255, 0.7) inset,
+                          0 1px 2px rgba(0, 0, 0, 0.05) inset
                         `;
+                        container.style.border = 'none';
                         rainbowBorder.style.opacity = '1';
                       }
                     }}
@@ -379,13 +363,15 @@ export function LandingPage() {
                       const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
                       const rainbowBorder = document.getElementById('rainbow-border-wrapper');
                       if (container && rainbowBorder) {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
+                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
                         container.style.boxShadow = `
-                          0 8px 32px 0 rgba(0, 0, 0, 0.08),
-                          0 2px 8px 0 rgba(0, 0, 0, 0.04),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
+                          0 20px 60px -12px rgba(0, 0, 0, 0.25),
+                          0 8px 24px -6px rgba(0, 0, 0, 0.15),
+                          0 4px 12px -4px rgba(0, 0, 0, 0.1),
+                          0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                          0 1px 2px rgba(0, 0, 0, 0.05) inset
                         `;
+                        container.style.border = '1px solid #000000';
                         rainbowBorder.style.opacity = '0';
                       }
                     }}
@@ -396,7 +382,7 @@ export function LandingPage() {
                       searchResults.length > 0 ? 'arrow-swing-animation text-gray-900' : ''
                     }`}
                     style={{
-                      right: 'clamp(1rem, 3vw, 1.25rem)',
+                      right: 'clamp(0.75rem, 2.5vw, 1rem)',
                       width: 'clamp(1rem, 2.5vw, 1.25rem)',
                       height: 'clamp(1rem, 2.5vw, 1.25rem)',
                       transform: searchResults.length > 0 ? undefined : 'translateY(-50%)',
@@ -405,10 +391,20 @@ export function LandingPage() {
                   />
                 </div>
 
-            {/* Search results dropdown - glassmorphism design */}
+            {/* Search results dropdown - glassmorphism design with depth */}
             {searchQuery.trim().length > 0 && (
               <div 
-                className="absolute top-full left-0 right-0 mt-3 rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 bg-white/80 backdrop-blur-md max-h-96 overflow-y-auto z-30"
+                className="absolute top-full left-0 right-0 mt-3 rounded-2xl bg-white/90 backdrop-blur-xl max-h-96 overflow-y-auto z-30"
+                style={{
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  boxShadow: `
+                    0 24px 72px -8px rgba(0, 0, 0, 0.3),
+                    0 12px 32px -8px rgba(0, 0, 0, 0.2),
+                    0 6px 16px -4px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                    0 1px 2px rgba(0, 0, 0, 0.05) inset
+                  `,
+                }}
               >
                 {isSearching ? (
                   <div className="p-8 text-center text-gray-900">
@@ -454,319 +450,39 @@ export function LandingPage() {
             )}
             </div>
         </div>
+      </section>
 
-        {/* Scroll indicator at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center text-gray-700 pb-8 sm:pb-12 z-20">
-          <span className="text-xs sm:text-sm font-light mb-2">Scroll to learn more</span>
-          <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 animate-bounce text-gray-700" />
+      {/* Bottom Section - Hero 2 */}
+      <section 
+        className="relative w-full hero-background-section"
+        style={{
+          position: 'relative',
+          width: '100vw',
+          height: '100vh',
+          minHeight: '600px',
+          backgroundImage: 'url(/hero2.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          zIndex: 1,
+        }}
+      >
+
+        {/* Contact the Builder */}
+        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center pb-8 sm:pb-12 z-20">
+          <a 
+            href="https://www.instagram.com/alexanderbrightman/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs sm:text-sm text-white hover:text-white/80 transition-colors inline-flex items-center gap-1 underline decoration-1 underline-offset-2"
+            style={{
+              textShadow: '1px 1px 4px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            Contact the Builder
+          </a>
         </div>
-      </div>
-
-      {/* Information Section */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-        <div className="max-w-6xl mx-auto w-full">
-          {/* Main heading */}
-          <div className="text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-gray-900 mb-4 sm:mb-6 tracking-tight">
-              How Does The Menu Guide Help?
-            </h2>
-            <p className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed">
-              Here's what your menu could look like — beautiful photos, clear descriptions, and dietary info that helps customers make informed choices.
-            </p>
-          </div>
-
-          {/* Example menu cards grid */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-10 sm:mb-14 md:mb-16">
-            {/* Duck Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
-                <Image 
-                  src="/duck_homepg.png" 
-                  alt="Hudson Duck with White Asparagus"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
-                />
-              </div>
-              <div>
-                <div className="flex items-start justify-between mb-2 gap-2">
-                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Hudson Duck with White Asparagus</h3>
-                  <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
-                    $32
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2 leading-relaxed">
-                  Hudson vally duck breast, with french white asparagus, wild rice, orange jus
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('nut-free')
-                    }}
-                  >
-                    nut-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('gluten-free')
-                    }}
-                  >
-                    gluten-free
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Lobster Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
-                <Image 
-                  src="/lobster_homepg.png" 
-                  alt="Lobster Thermidor"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
-                />
-              </div>
-              <div>
-                <div className="flex items-start justify-between mb-2 gap-2">
-                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Lobster Thermidor</h3>
-                  <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
-                    $34
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2 leading-relaxed">
-                  Maine lobster with broiled gruyere cheese and turned potatoes
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('nut-free')
-                    }}
-                  >
-                    nut-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('gluten-free')
-                    }}
-                  >
-                    gluten-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('pescatarian')
-                    }}
-                  >
-                    pescatarian
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Scallops Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
-                <Image 
-                  src="/scallop_homepg.png" 
-                  alt="Scallops with Apple Fennel Salad"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
-                />
-              </div>
-              <div>
-                <div className="flex items-start justify-between mb-2 gap-2">
-                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Scallops with Apple Fennel Salad</h3>
-                  <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
-                    $29
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2 leading-relaxed">
-                  Seared scallops, vadauvan spice gravy, apple and fennel salad, charred leeks
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('nut-free')
-                    }}
-                  >
-                    nut-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('gluten-free')
-                    }}
-                  >
-                    gluten-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('pescatarian')
-                    }}
-                  >
-                    pescatarian
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Stew Card */}
-            <div className="group cursor-pointer">
-              <div className="relative aspect-[3/2] overflow-hidden rounded-lg mb-3 bg-gray-100">
-                <Image 
-                  src="/stew_homepg.png" 
-                  alt="Pot au Feu"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 40vw, 80vw"
-                />
-              </div>
-              <div>
-                <div className="flex items-start justify-between mb-2 gap-2">
-                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">Pot au Feu</h3>
-                  <div className="text-gray-900 font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
-                    $28
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2 leading-relaxed">
-                  Beef shank stew with fresh market vegetables
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('nut-free')
-                    }}
-                  >
-                    nut-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('gluten-free')
-                    }}
-                  >
-                    gluten-free
-                  </Badge>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 transition-colors"
-                    style={{
-                      borderColor: getAllergenBorderColor('dairy-free')
-                    }}
-                  >
-                    dairy-free
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Separator */}
-          <div className="flex items-center justify-center my-10 sm:my-14 md:my-18">
-            <div className="w-32 sm:w-40 md:w-48 h-px bg-gray-300"></div>
-          </div>
-
-          {/* Feature list */}
-          <div className="mb-10 sm:mb-14 md:mb-16">
-            <p className="text-center text-base sm:text-lg md:text-xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 md:mb-12">
-              The Menu Guide takes what you already do and makes it smoother, clearer, and more inviting. It's the bridge between your kitchen and your customers' expectations — with none of the hassle of building your own website
-            </p>
-            <ul className="space-y-4 sm:space-y-5 md:space-y-6 text-base sm:text-lg md:text-xl font-light text-gray-800 max-w-3xl mx-auto">
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Scan your existing menu to auto-populate items</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Upload your specials in seconds</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Add allergen tags so guests immediately know what's safe</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Share one simple QR code that drops customers right into your visual menu</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Reduce table-side questions and speed up ordering</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center group-hover:bg-gray-300 group-hover:border-gray-400 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Give guests confidence in what they're choosing</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Call to action */}
-          <div className="text-center space-y-4 mt-10 sm:mt-14 md:mt-18">
-            <Button
-              onClick={() => setShowAuthForm(true)}
-              variant="outline"
-              className="border border-gray-200/60 text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-xl shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 text-sm sm:text-base md:text-lg font-medium transition-all duration-300 px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4"
-            >
-              Start building your menu!
-            </Button>
-            
-            {/* Contact the Builder */}
-            <div className="mt-6">
-              <a 
-                href="https://www.instagram.com/alexanderbrightman/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs sm:text-sm text-gray-700 hover:text-gray-900 transition-colors inline-flex items-center gap-1 underline decoration-1 underline-offset-2"
-              >
-                Contact the Builder
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Auth Modal */}
       {showAuthForm && (
