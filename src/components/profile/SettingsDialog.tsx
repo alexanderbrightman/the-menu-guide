@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -55,7 +55,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
   }, [profile])
 
   // Username validation
-  const validateUsername = async (usernameValue: string) => {
+  const validateUsername = useCallback(async (usernameValue: string) => {
     if (!usernameValue.trim()) {
       setUsernameStatus('idle')
       setUsernameMessage('')
@@ -126,7 +126,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
       setUsernameStatus('idle')
       setUsernameMessage('')
     }
-  }
+  }, [profile?.username, supabase])
 
   // Debounce username validation
   useEffect(() => {
@@ -135,7 +135,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
     }, 500)
 
     return () => clearTimeout(timeoutId)
-  }, [username, profile?.username])
+  }, [username, validateUsername])
 
   const handleUpdateUsername = async () => {
     if (!user || !supabase) return

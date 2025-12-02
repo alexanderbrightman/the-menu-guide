@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ChevronDown, X, Filter, Info, Instagram, Globe } from 'lucide-react'
+import { X, Filter, Instagram, Globe } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 
 interface MenuItemWithTags extends MenuItem {
@@ -211,11 +211,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const primaryTextClass = isDarkBackground ? 'text-white' : 'text-slate-900'
   const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-slate-600'
   const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
-  const subtleTextClass = isDarkBackground ? 'text-gray-100/70' : 'text-slate-700'
   const dividerBorderClass = isDarkBackground ? 'border-white/10' : 'border-gray-200'
 
   const iconMutedClass = isDarkBackground ? 'text-gray-200/60' : 'text-gray-400'
-  const linkAccentClass = isDarkBackground ? 'text-blue-200 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'
 
   // Helper to get border color based on background (matching private page)
   const getBorderColor = () => {

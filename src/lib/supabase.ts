@@ -91,6 +91,8 @@ export interface Profile {
   menu_background_color?: string
   show_prices?: boolean
   show_display_name?: boolean
+  instagram_url?: string
+  website_url?: string
   stripe_customer_id?: string
   stripe_subscription_id?: string
   subscription_current_period_end?: string
@@ -111,7 +113,7 @@ export interface MenuItem {
   id: string
   user_id: string
   category_id?: string
-  image_url: string
+  image_url?: string | null
   title: string
   description?: string
   price?: number
