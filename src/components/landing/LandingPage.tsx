@@ -197,7 +197,7 @@ export function LandingPage() {
           className="font-normal leading-none tracking-tight text-gray-900"
           style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: 'clamp(1.625rem, 4vw, 2.5rem)',
+            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
             letterSpacing: '-0.03em',
           }}
         >
