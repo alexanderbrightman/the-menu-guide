@@ -59,8 +59,8 @@ export function Dashboard() {
   )
   const subtleTextClass = isDarkBackground ? 'text-white/75' : 'text-gray-600'
   const outlineButtonClass = isDarkBackground
-    ? 'border-white/60 !text-white hover:bg-white/10 bg-transparent'
-    : 'border-slate-400 !text-slate-900 hover:bg-slate-100 bg-transparent'
+    ? 'border border-white !text-white hover:bg-white/10 bg-transparent rounded-none'
+    : 'border border-black !text-slate-900 hover:bg-slate-100 bg-transparent rounded-none'
   const cardSurfaceClass = `rounded-2xl transition-colors ${
     isDarkBackground
       ? 'bg-white/10 text-white shadow-xl shadow-black/20'

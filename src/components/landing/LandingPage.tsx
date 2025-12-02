@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown, Check, Loader2, Search } from 'lucide-react'
+import { X, ArrowRight, ChevronDown, Loader2, Search } from 'lucide-react'
 
 // Helper function to get border color for allergen tags
 const getAllergenBorderColor = (tagName: string): string => {
@@ -670,89 +670,16 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* Separator */}
-          <div className="flex items-center justify-center my-10 sm:my-14 md:my-18">
-            <div className="w-32 sm:w-40 md:w-48 h-px bg-gray-300"></div>
-          </div>
-
-          {/* Feature list */}
-          <div className="mb-10 sm:mb-14 md:mb-16">
-            <p className="text-center text-base sm:text-lg md:text-xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 md:mb-12">
-              The Menu Guide takes what you already do and makes it smoother, clearer, and more inviting. It's the bridge between your kitchen and your customers' expectations — with none of the hassle of building your own website
-            </p>
-            <ul className="space-y-4 sm:space-y-5 md:space-y-6 text-base sm:text-lg md:text-xl font-light text-gray-800 max-w-3xl mx-auto">
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Scan your existing menu to auto-populate items</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Upload your specials in seconds</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Add allergen tags so guests immediately know what's safe</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Share one simple QR code that drops customers right into your visual menu</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Reduce table-side questions and speed up ordering</span>
-              </li>
-              <li className="flex items-start group">
-                <div className="flex-shrink-0 mr-4 mt-0.5">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 border border-black flex items-center justify-center group-hover:bg-gray-300 transition-all duration-200">
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 text-gray-900" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <span className="flex-1 leading-relaxed text-gray-900">Give guests confidence in what they're choosing</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Call to action */}
-          <div className="text-center space-y-4 mt-10 sm:mt-14 md:mt-18">
-            <Button
-              onClick={() => setShowAuthForm(true)}
-              variant="outline"
-              className="border border-black text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 text-sm sm:text-base md:text-lg font-medium transition-all duration-300 px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4"
+          {/* Contact the Builder */}
+          <div className="text-center mt-10 sm:mt-14 md:mt-18">
+            <a 
+              href="https://www.instagram.com/alexanderbrightman/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs sm:text-sm text-gray-700 hover:text-gray-900 transition-colors inline-flex items-center gap-1 underline decoration-1 underline-offset-2"
             >
-              Start building your menu!
-            </Button>
-            
-            {/* Contact the Builder */}
-            <div className="mt-6">
-              <a 
-                href="https://www.instagram.com/alexanderbrightman/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs sm:text-sm text-gray-700 hover:text-gray-900 transition-colors inline-flex items-center gap-1 underline decoration-1 underline-offset-2"
-              >
-                Contact the Builder
-              </a>
-            </div>
+              Contact the Builder
+            </a>
           </div>
         </div>
       </div>

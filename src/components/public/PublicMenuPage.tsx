@@ -96,14 +96,14 @@ const buildTagStyles = (
   if (!borderColor) {
     if (isDarkBackground) {
       return {
-        borderColor: 'rgba(255,255,255,0.35)',
+        borderColor: '#ffffff',
         color: 'rgba(255,255,255,0.92)',
         backgroundColor: isSelected ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
       }
     }
 
     return {
-      borderColor: 'rgba(17,24,39,0.18)',
+      borderColor: '#000000',
       color: '#1f2937',
       backgroundColor: isSelected ? 'rgba(17,24,39,0.08)' : 'transparent',
     }
@@ -211,7 +211,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const primaryTextClass = isDarkBackground ? 'text-white' : 'text-slate-900'
   const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-slate-600'
   const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
-  const dividerBorderClass = isDarkBackground ? 'border-white/10' : 'border-gray-200'
+  const dividerBorderClass = isDarkBackground ? 'border-white' : 'border-black'
 
   const iconMutedClass = isDarkBackground ? 'text-gray-200/60' : 'text-gray-400'
 
@@ -240,7 +240,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
   const getCategoryButtonStyle = useCallback(
     (isSelected: boolean) => {
-      const borderColor = isDarkBackground ? 'rgba(255,255,255,0.55)' : 'rgba(17,24,39,0.35)'
+      const borderColor = isDarkBackground ? '#ffffff' : '#000000'
       const fillColor = isSelected
         ? isDarkBackground
           ? 'rgba(255,255,255,0.18)'
@@ -405,8 +405,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       <header className="relative max-w-screen-2xl mx-auto w-full">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div 
-            className="relative h-[20vh] w-full overflow-hidden"
-            style={{ backgroundColor: menuBackgroundColor }}
+            className="relative h-[20vh] w-full overflow-hidden border"
+            style={{ 
+              backgroundColor: menuBackgroundColor,
+              borderColor: isDarkBackground ? '#ffffff' : '#000000'
+            }}
           >
             {profile.avatar_url ? (
               <Image 
@@ -534,10 +537,14 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     onClick={clearFilters}
                     className={`py-[3.74px] px-[7.48px] text-[9.9px] rounded-none`}
                     style={isDarkBackground ? {
-                      borderColor: 'rgba(255,255,255,0.35)',
+                      borderColor: '#ffffff',
                       color: '#ffffff',
                       backgroundColor: 'rgba(255,255,255,0.05)'
-                    } : undefined}
+                    } : {
+                      borderColor: '#000000',
+                      color: '#1f2937',
+                      backgroundColor: 'rgba(17,24,39,0.05)'
+                    }}
                     disabled={isPending}
                   >
                     Clear All Filters
@@ -549,7 +556,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
         {/* Menu Items */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <h2
               className={`text-2xl font-bold ${primaryTextClass}`}
               style={{ fontFamily: menuFontFamily }}
@@ -559,12 +566,15 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             {profile.bio && (
               <button
                 onClick={() => setIsInfoModalOpen(true)}
-                className="border rounded-full flex items-center justify-center text-xs font-medium"
+                className="border rounded-full flex items-center justify-center text-[10px] font-medium"
                 style={{
-                  width: '28px',
-                  height: '28px',
-                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-                  color: isDarkBackground ? '#ffffff' : '#000000'
+                  width: '22px',
+                  height: '22px',
+                  borderColor: isDarkBackground ? '#ffffff' : '#000000',
+                  color: isDarkBackground ? '#ffffff' : '#000000',
+                  fontFamily: 'Georgia, serif',
+                  fontStyle: 'italic',
+                  fontWeight: 'normal'
                 }}
                 aria-label="Show restaurant information"
               >
@@ -591,9 +601,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   onClick={clearFilters}
                   className={isDarkBackground ? 'text-white' : ''}
                   style={isDarkBackground ? {
-                    borderColor: 'rgba(255,255,255,0.35)',
+                    borderColor: '#ffffff',
                     backgroundColor: 'rgba(255,255,255,0.05)'
-                  } : undefined}
+                  } : {
+                    borderColor: '#000000',
+                    backgroundColor: 'rgba(17,24,39,0.05)'
+                  }}
                 >
                   Clear Filters
                 </Button>
@@ -655,7 +668,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             style={{
               backgroundColor: menuBackgroundColor,
               color: contrastColor,
-              borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              borderColor: isDarkBackground ? '#ffffff' : '#000000',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -681,7 +694,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
               <div 
                 className="relative h-48 sm:h-64 w-full md:h-full md:min-h-[24rem] border-b md:border-b-0 md:border-r"
                 style={{
-                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'
+                  borderColor: isDarkBackground ? '#ffffff' : '#000000'
                 }}
               >
                 {selectedItem.image_url ? (
@@ -717,7 +730,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                         style={{
                           backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                           color: contrastColor,
-                          borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                          borderColor: isDarkBackground ? '#ffffff' : '#000000',
                         }}
                       >
                         {selectedItem.menu_categories.name}
@@ -782,7 +795,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             style={{
               backgroundColor: menuBackgroundColor,
               color: contrastColor,
-              borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              borderColor: isDarkBackground ? '#ffffff' : '#000000',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
             onClick={(e) => e.stopPropagation()}
