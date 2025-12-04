@@ -422,9 +422,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
   useEffect(() => {
     // Initialize Google Translate
-    // @ts-expect-error
+    // @ts-expect-error - Google Translate API adds properties to window
     window.googleTranslateElementInit = () => {
-      // @ts-expect-error
+      // @ts-expect-error - Google Translate API is loaded at runtime
       new window.google.translate.TranslateElement(
         { pageLanguage: 'en', autoDisplay: false },
         'google_translate_element'
