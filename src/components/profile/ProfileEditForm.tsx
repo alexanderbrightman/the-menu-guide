@@ -13,6 +13,13 @@ import { Upload, RefreshCw } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
+import { getContrastColor } from '@/lib/utils'
+import {
+  DEFAULT_MENU_FONT,
+  DEFAULT_MENU_BACKGROUND_COLOR,
+  FONT_OPTIONS,
+  FONT_FAMILY_MAP
+} from '@/lib/fonts'
 
 interface ProfileEditFormProps {
   onClose: () => void
@@ -21,43 +28,6 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const { profile, refreshProfile } = useAuth()
   const { uploadImage, uploading } = useImageUpload()
-
-  const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
-  const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
-  const FONT_OPTIONS = [
-    { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans' },
-    { label: 'Fjalla One', value: 'Fjalla One' },
-    { label: 'Georgia', value: 'Georgia' },
-    { label: 'Times New Roman', value: 'Times New Roman' },
-    { label: 'Arial', value: 'Arial' },
-    { label: 'Courier New', value: 'Courier New' }
-  ]
-
-  const FONT_FAMILY_MAP: Record<string, string> = {
-    'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
-    'Fjalla One': '"Fjalla One", sans-serif',
-    'Georgia': 'Georgia, serif',
-    'Times New Roman': '"Times New Roman", serif',
-    'Arial': 'Arial, sans-serif',
-    'Courier New': '"Courier New", monospace',
-  }
-
-  const getContrastColor = useCallback((hexColor: string) => {
-    if (!hexColor) return '#1f2937'
-    const cleanHex = hexColor.replace('#', '')
-    const normalizedHex = cleanHex.length === 3
-      ? cleanHex.split('').map(char => char + char).join('')
-      : cleanHex
-
-    if (normalizedHex.length !== 6) return '#1f2937'
-
-    const r = parseInt(normalizedHex.substring(0, 2), 16)
-    const g = parseInt(normalizedHex.substring(2, 4), 16)
-    const b = parseInt(normalizedHex.substring(4, 6), 16)
-
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    return luminance > 0.6 ? '#1f2937' : '#ffffff'
-  }, [])
 
   const [formData, setFormData] = useState({
     display_name: profile?.display_name || '',
@@ -77,7 +47,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
       menu_font: DEFAULT_MENU_FONT,
       menu_background_color: DEFAULT_MENU_BACKGROUND_COLOR
     }))
-  }, [DEFAULT_MENU_FONT, DEFAULT_MENU_BACKGROUND_COLOR])
+  }, [])
 
   // Update form data when profile changes
   useEffect(() => {
@@ -97,9 +67,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   // Prevent auto-focus on mobile devices when dialog opens
   useEffect(() => {
     // Check if we're on a mobile device
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                     ('ontouchstart' in window || navigator.maxTouchPoints > 0)
-    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+
     if (isMobile) {
       // Function to blur focused inputs
       const blurFocusedInputs = () => {
@@ -169,7 +139,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
       // Validate URLs if provided
       const instagramUrl = formData.instagram_url.trim()
       const websiteUrl = formData.website_url.trim()
-      
+
       if (instagramUrl && !instagramUrl.match(/^https?:\/\//)) {
         clearTimeout(timeoutId)
         setMessage('Instagram URL must start with http:// or https://')
@@ -233,7 +203,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
       // Clear timeout and close the dialog
       clearTimeout(timeoutId)
       onClose()
-      
+
     } catch (error) {
       console.error('Profile update error:', error)
       clearTimeout(timeoutId)
@@ -249,23 +219,23 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
     try {
       setMessage('Uploading avatar...')
-      
+
       // Delete old avatar from storage if it exists
       if (profile.avatar_url) {
         try {
           // Extract file path from Supabase storage URL
           const urlParts = profile.avatar_url.split('/')
           const bucketIndex = urlParts.findIndex((part: string) => part === 'avatars')
-          
+
           if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
             // Get path after bucket name (e.g., "userId/filename.webp")
             const oldAvatarPath = urlParts.slice(bucketIndex + 1).join('/')
-            
+
             // Delete old avatar from storage
             const { error: deleteError } = await supabase.storage
               .from('avatars')
               .remove([oldAvatarPath])
-            
+
             if (deleteError) {
               console.warn('Error deleting old avatar from storage:', deleteError)
               // Continue anyway - new upload can proceed
@@ -316,7 +286,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold text-center">Edit Profile</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 max-h-[70vh] overflow-y-auto pr-1 sm:pr-2">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 max-h-[70vh] overflow-y-auto px-1 sm:px-2">
           {/* Header Photo */}
           <div className="relative overflow-hidden border border-black bg-gray-100">
             {profile?.avatar_url ? (
@@ -404,7 +374,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                   <SelectContent>
                     {FONT_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                        <span style={{ fontFamily: FONT_FAMILY_MAP[option.value] }}>
+                          {option.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -472,11 +444,10 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
           {message && (
             <div
-              className={`border p-2 sm:p-3 text-xs sm:text-sm ${
-                message.includes('Error') || message.includes('error')
-                  ? 'bg-red-50 text-red-600 border-red-600'
-                  : 'bg-green-50 text-green-600 border-green-600'
-              }`}
+              className={`border p-2 sm:p-3 text-xs sm:text-sm ${message.includes('Error') || message.includes('error')
+                ? 'bg-red-50 text-red-600 border-red-600'
+                : 'bg-green-50 text-green-600 border-green-600'
+                }`}
             >
               {message}
             </div>
@@ -486,8 +457,8 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             <Button type="button" variant="outline" className="border border-black" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="border border-black"
               disabled={loading}
             >

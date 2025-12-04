@@ -7,12 +7,12 @@ import { getSessionToken, handleAuthError } from '@/lib/auth-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Calendar, 
-  CreditCard, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Calendar,
+  CreditCard,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
   Clock,
   DollarSign,
   User,
@@ -232,13 +232,44 @@ export function SubscriptionDetailsCard() {
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(subscriptionDetails.status)}
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={fetchSubscriptionDetails}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                if (!supabase) return
+                setLoading(true)
+                try {
+                  const token = await getSessionToken()
+                  if (token) {
+                    const response = await fetch('/api/sync-stripe-subscription', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                      },
+                    })
+                    const data = await response.json()
+                    if (response.ok) {
+                      alert('Successfully synced with Stripe!')
+                      fetchSubscriptionDetails()
+                    } else {
+                      setError(data.error || 'Failed to sync with Stripe')
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error syncing subscription:', error)
+                  handleAuthError(error, 'syncStripeSubscription')
+                  setError('An error occurred while syncing your subscription')
+                } finally {
+                  setLoading(false)
+                }
+              }}
+              title="Sync with Stripe"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
       <p className="text-sm text-gray-600 -mt-4">
@@ -268,7 +299,7 @@ export function SubscriptionDetailsCard() {
           <Alert className="border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
-              <strong>Subscription Canceled:</strong> Your subscription has been canceled and will end on {formatDate(subscriptionDetails.current_period_end)}. 
+              <strong>Subscription Canceled:</strong> Your subscription has been canceled and will end on {formatDate(subscriptionDetails.current_period_end)}.
               You will continue to have access to all premium features until then.
             </AlertDescription>
           </Alert>
@@ -405,15 +436,15 @@ export function SubscriptionDetailsCard() {
           {/* Adaptive button based on subscription status */}
           {subscriptionDetails.cancel_at_period_end && subscriptionDetails.is_active ? (
             // Canceled but still active - show reactivate button
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               className="w-full"
               onClick={async () => {
                 if (!supabase) return
                 if (!confirm('Are you sure you want to reactivate your subscription? This will resume monthly billing.')) {
                   return
                 }
-                
+
                 try {
                   const token = await getSessionToken()
                   if (token) {
@@ -444,15 +475,15 @@ export function SubscriptionDetailsCard() {
             </Button>
           ) : subscriptionDetails.is_active ? (
             // Active subscription - show cancel button
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               className="w-full"
               onClick={async () => {
                 if (!supabase) return
                 if (!confirm('Are you sure you want to cancel your subscription? This will cancel at the end of your current billing period and make your menu private.')) {
                   return
                 }
-                
+
                 try {
                   const token = await getSessionToken()
                   if (token) {
@@ -483,8 +514,8 @@ export function SubscriptionDetailsCard() {
             </Button>
           ) : (
             // No active subscription - show renew/upgrade button
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               className="w-full"
               onClick={() => {
                 // Redirect to upgrade page or open upgrade modal

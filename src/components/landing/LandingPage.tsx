@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRight, ChevronDown, Loader2, Search } from 'lucide-react'
+import { X, ArrowRight, Loader2, Search } from 'lucide-react'
 
 // Helper function to get border color for allergen tags
 const getAllergenBorderColor = (tagName: string): string => {
@@ -44,6 +44,35 @@ export function LandingPage() {
   const heroSectionRef = useRef<HTMLDivElement>(null)
   const [arrowAnimationKey, setArrowAnimationKey] = useState(0)
   const titleCardRef = useRef<HTMLHeadingElement>(null)
+  const [shinePosition, setShinePosition] = useState(50)
+
+  // Handle shine effect based on mouse or gyroscope
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { innerWidth } = window
+      const x = e.clientX
+      // Map cursor position to percentage (0-100)
+      const position = (x / innerWidth) * 100
+      setShinePosition(position)
+    }
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      // Gamma is left-to-right tilt in degrees [-90, 90]
+      const gamma = e.gamma || 0
+      // Map -45 to 45 degrees to 0-100% range for the shine
+      // Clamped to avoid extreme values
+      const position = Math.min(100, Math.max(0, ((gamma + 45) / 90) * 100))
+      setShinePosition(position)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('deviceorientation', handleOrientation)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('deviceorientation', handleOrientation)
+    }
+  }, [])
 
   const performSearch = useCallback(async (query: string) => {
     if (!query || query.trim().length < 1) {
@@ -56,7 +85,7 @@ export function LandingPage() {
     try {
       const response = await fetch(`/api/restaurants/search?q=${encodeURIComponent(query.trim())}`)
       const data = await response.json()
-      
+
       if (response.ok) {
         const restaurants = data.restaurants || []
         setSearchResults(restaurants)
@@ -111,26 +140,26 @@ export function LandingPage() {
           rafId = null
           return
         }
-        
+
         const scrollY = window.scrollY
-        
+
         // Cache expensive calculations (only recalculate if needed)
         if (!cachedHeroHeight || !cachedViewportHeight) {
           cachedHeroHeight = heroSectionRef.current.offsetHeight
           cachedViewportHeight = window.innerHeight
         }
-        
+
         const heroHeight = cachedHeroHeight
         const viewportHeight = cachedViewportHeight
-        
+
         // Calculate progress: 0 when at top, 1 when hero section is fully scrolled past
-        const progress = scrollY >= heroHeight - viewportHeight * 0.5 
-          ? 1 
+        const progress = scrollY >= heroHeight - viewportHeight * 0.5
+          ? 1
           : Math.min(1, Math.max(0, scrollY / (heroHeight - viewportHeight * 0.5)))
-        
+
         // Direct update for immediate, seamless color transition
         setScrollProgress(progress)
-        
+
         rafId = null
       })
     }
@@ -169,56 +198,157 @@ export function LandingPage() {
           zIndex: 1,
         }}
       />
-      
-      {/* Subtle pattern overlay for texture */}
+
+      {/* Outer Frame - Static but fades out */}
       <div
-        className="fixed inset-0 opacity-20"
+        className="fixed border-[2px] border-gray-900 z-30 pointer-events-none transition-opacity duration-0"
         style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(0,0,0,0.03) 1px, transparent 0)`,
-          backgroundSize: '40px 40px',
-          zIndex: 2,
-          pointerEvents: 'none',
+          inset: 'clamp(0.5rem, 2vw, 1.5rem)',
+          borderRadius: '4px',
+          opacity: 1 - scrollProgress * 3,
         }}
       />
 
-      {/* Header bar with title and login button */}
-      <div 
-        className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8"
+      {/* Header Background - Burgundy */}
+      <div
+        className="fixed bg-[#631318] z-10 transition-opacity duration-0"
         style={{
-          background: 'transparent',
-          paddingTop: 'max(env(safe-area-inset-top, 0px), clamp(1rem, 4vw, 1.5rem))',
-          paddingBottom: 'clamp(1rem, 4vw, 1.5rem)',
-          minHeight: 'clamp(4rem, 10vw, 6rem)',
+          top: 'clamp(0.5rem, 2vw, 1.5rem)',
+          left: 'clamp(0.5rem, 2vw, 1.5rem)',
+          right: 'clamp(0.5rem, 2vw, 1.5rem)',
+          height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
+          opacity: 1 - scrollProgress * 3,
+        }}
+      />
+
+      {/* Footer Background - Burgundy */}
+      <div
+        className="fixed bg-[#631318] z-10 transition-opacity duration-0"
+        style={{
+          bottom: 'clamp(0.5rem, 2vw, 1.5rem)',
+          left: 'clamp(0.5rem, 2vw, 1.5rem)',
+          right: 'clamp(0.5rem, 2vw, 1.5rem)',
+          height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
+          opacity: 1 - scrollProgress * 3,
+        }}
+      />
+
+      {/* Top Separator Line */}
+      <div
+        className="fixed h-[1px] bg-gray-900 z-20 pointer-events-none transition-opacity duration-0"
+        style={{
+          top: 'clamp(5rem, 12vw, 6rem)',
+          left: 'clamp(0.5rem, 2vw, 1.5rem)',
+          right: 'clamp(0.5rem, 2vw, 1.5rem)',
+          opacity: 1 - scrollProgress * 3,
+        }}
+      />
+
+      {/* Bottom Separator Line */}
+      <div
+        className="fixed h-[1px] bg-gray-900 z-20 pointer-events-none transition-opacity duration-0"
+        style={{
+          bottom: 'clamp(5rem, 12vw, 6rem)',
+          left: 'clamp(0.5rem, 2vw, 1.5rem)',
+          right: 'clamp(0.5rem, 2vw, 1.5rem)',
+          opacity: 1 - scrollProgress * 3,
+        }}
+      />
+
+      {/* Header bar with title */}
+      <div
+        className="fixed z-20 flex items-center justify-center"
+        style={{
+          top: 'clamp(0.5rem, 2vw, 1.5rem)',
+          left: 'clamp(0.5rem, 2vw, 1.5rem)',
+          right: 'clamp(0.5rem, 2vw, 1.5rem)',
+          height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
+          transform: `translateY(-${scrollProgress * 100}px)`,
+          opacity: 1 - scrollProgress * 1.5,
         }}
       >
-        {/* Title in upper left */}
-        <h1
-          ref={titleCardRef}
-          className="font-normal leading-none tracking-tight text-gray-900"
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-            letterSpacing: '-0.03em',
-          }}
-        >
-          The Menu Guide
-        </h1>
-        
-        {/* Login button */}
-        <Button
-          onClick={() => setShowAuthForm(true)}
-          variant="outline"
-          className="border border-black text-gray-900 hover:bg-white/80 bg-white/80 backdrop-blur-md rounded-none text-sm font-medium transition-all duration-300 px-4 py-2"
-        >
-          Log In
-          <ArrowRight className="ml-2 h-3 w-3" />
-        </Button>
+        {/* Header Content Container */}
+        <div className="relative w-full max-w-7xl flex items-center justify-center">
+
+          {/* Title in center */}
+          <h1
+            ref={titleCardRef}
+            className="font-normal leading-none tracking-tight text-center select-none"
+            style={{
+              fontFamily: 'var(--font-dancing-script)',
+              fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+              letterSpacing: '0em',
+              paddingBottom: '0',
+              // Silver shine gradient - More discrete
+              backgroundImage: `linear-gradient(
+                110deg, 
+                #F5F0EB 40%, 
+                #E2E8F0 48%, 
+                #FFFFFF 50%, 
+                #E2E8F0 52%, 
+                #F5F0EB 60%
+              )`,
+              backgroundSize: '200% 100%',
+              backgroundPosition: `${shinePosition}% 0`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent', // Fallback
+              transition: 'background-position 0.1s ease-out', // Smooth transition
+              paddingTop: '0.15em', // Visually center the script font
+            }}
+          >
+            The Menu Guide
+          </h1>
+        </div>
+      </div>
+
+      {/* Footer bar with Login button */}
+      <div
+        className="fixed z-20 flex items-center justify-end"
+        style={{
+          bottom: 'clamp(0.5rem, 2vw, 1.5rem)',
+          left: 'clamp(0.5rem, 2vw, 1.5rem)',
+          right: 'clamp(0.5rem, 2vw, 1.5rem)',
+          height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
+          transform: `translateY(${scrollProgress * 100}px)`,
+          opacity: 1 - scrollProgress * 1.5,
+        }}
+      >
+        <div className="relative w-full max-w-7xl flex justify-end px-4 sm:px-8 md:px-12">
+          <Button
+            onClick={() => setShowAuthForm(true)}
+            variant="ghost"
+            className="hover:bg-[#F5F0EB]/10 rounded-none text-xs sm:text-sm font-medium transition-all duration-300 px-6 py-2 h-auto border border-[#F5F0EB]"
+            style={{
+              // Apply same shine to button text
+              backgroundImage: `linear-gradient(
+                110deg, 
+                #F5F0EB 40%, 
+                #E2E8F0 48%, 
+                #FFFFFF 50%, 
+                #E2E8F0 52%, 
+                #F5F0EB 60%
+              )`,
+              backgroundSize: '200% 100%',
+              backgroundPosition: `${shinePosition}% 0`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent',
+              transition: 'background-position 0.1s ease-out',
+            }}
+          >
+            Log In
+            <ArrowRight className="ml-2 h-3 w-3 text-[#F5F0EB]" style={{ WebkitTextFillColor: '#F5F0EB' }} />
+          </Button>
+        </div>
       </div>
 
 
       {/* Hero Layer */}
-      <div 
-        ref={heroSectionRef} 
+      <div
+        ref={heroSectionRef}
         className="relative z-10 min-h-screen px-4 sm:px-6 lg:px-8"
         style={{
           paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + clamp(3rem, 8vw, 4.5rem)), clamp(3rem, 8vw, 4.5rem))',
@@ -226,14 +356,14 @@ export function LandingPage() {
       >
 
         {/* Search bar and images container - centered in viewport */}
-        <div className="absolute top-1/2 left-1/2 w-full flex flex-col items-center" style={{ 
-          width: 'min(calc(100% - clamp(2rem, 8vw, 4rem)), 500px)',
-          paddingLeft: 'clamp(1rem, 4vw, 2rem)',
-          paddingRight: 'clamp(1rem, 4vw, 2rem)',
-          transform: 'translate(-50%, calc(-50% - clamp(60px, 10vw, 90px)))'
+        <div className="absolute top-1/2 left-1/2 w-full flex flex-col items-center" style={{
+          width: 'min(85vw, 500px)',
+          paddingLeft: '0',
+          paddingRight: '0',
+          transform: 'translate(-50%, calc(-100% + clamp(1.5rem, 4vw, 2.5rem)))'
         }}>
           {/* Meal images - positioned above search bar, slightly smaller than search bar */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10" style={{ width: '90%', maxWidth: '450px' }}>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10 w-full">
             <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
                 src="/Breakfast.jpeg"
@@ -268,135 +398,134 @@ export function LandingPage() {
 
           {/* Search bar - squared off design */}
           <div className="relative w-full">
-                {/* Rainbow border wrapper - appears on focus, positioned behind */}
-                <div 
-                  id="rainbow-border-wrapper"
-                  className="absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255, 182, 193, 0.8) 0%, rgba(255, 218, 185, 0.8) 14%, rgba(255, 255, 182, 0.8) 28%, rgba(182, 255, 182, 0.8) 42%, rgba(185, 218, 255, 0.8) 57%, rgba(218, 185, 255, 0.8) 71%, rgba(255, 182, 218, 0.8) 85%, rgba(255, 182, 193, 0.8) 100%)',
-                    padding: '2px',
-                    zIndex: 0,
-                    margin: '-2px',
-                  }}
-                >
-                  <div className="w-full h-full bg-transparent"></div>
-                </div>
-                
-                {/* Search bar container - always visible */}
-                <div 
-                  id="search-bar-container"
-                  className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black"
-                  style={{
-                    height: 'clamp(2.5rem, 6vw, 2.75rem)',
-                    paddingLeft: 'clamp(1rem, 3vw, 1.25rem)',
-                    paddingRight: 'clamp(1rem, 3vw, 1.25rem)',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)',
-                    boxShadow: `
+            {/* Rainbow border wrapper - appears on focus, positioned behind */}
+            <div
+              id="rainbow-border-wrapper"
+              className="absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 182, 193, 0.8) 0%, rgba(255, 218, 185, 0.8) 14%, rgba(255, 255, 182, 0.8) 28%, rgba(182, 255, 182, 0.8) 42%, rgba(185, 218, 255, 0.8) 57%, rgba(218, 185, 255, 0.8) 71%, rgba(255, 182, 218, 0.8) 85%, rgba(255, 182, 193, 0.8) 100%)',
+                padding: '2px',
+                zIndex: 0,
+                margin: '-2px',
+              }}
+            >
+              <div className="w-full h-full bg-transparent"></div>
+            </div>
+
+            {/* Search bar container - always visible */}
+            <div
+              id="search-bar-container"
+              className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black"
+              style={{
+                height: 'clamp(2.5rem, 5vw, 3.5rem)',
+                paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',
+                paddingRight: 'clamp(0.75rem, 2.5vw, 1.5rem)',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)',
+                boxShadow: `
                       0 8px 32px 0 rgba(0, 0, 0, 0.08),
                       0 2px 8px 0 rgba(0, 0, 0, 0.04),
                       inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
                       inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
                     `,
-                    zIndex: 1,
-                  }}
-                    onMouseEnter={(e) => {
-                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
-                      if (container) {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
-                        container.style.boxShadow = `
+                zIndex: 1,
+              }}
+              onMouseEnter={(e) => {
+                const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                if (container) {
+                  container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.85) 100%)';
+                  container.style.boxShadow = `
                           0 12px 40px 0 rgba(0, 0, 0, 0.12),
                           0 4px 12px 0 rgba(0, 0, 0, 0.06),
                           inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
                           inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
                         `;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
-                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
-                      if (container && rainbowBorder && rainbowBorder.style.opacity !== '1') {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
-                        container.style.boxShadow = `
+                }
+              }}
+              onMouseLeave={(e) => {
+                const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                const rainbowBorder = document.getElementById('rainbow-border-wrapper');
+                if (container && rainbowBorder && rainbowBorder.style.opacity !== '1') {
+                  container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
+                  container.style.boxShadow = `
                           0 8px 32px 0 rgba(0, 0, 0, 0.08),
                           0 2px 8px 0 rgba(0, 0, 0, 0.04),
                           inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
                           inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
                         `;
-                      }
-                    }}
-                  >
-                  <Search 
-                    className="absolute text-gray-700 z-10 transition-all duration-300"
-                    style={{
-                      left: 'clamp(1rem, 3vw, 1.25rem)',
-                      width: 'clamp(1rem, 2.5vw, 1.25rem)',
-                      height: 'clamp(1rem, 2.5vw, 1.25rem)',
-                    }}
-                  />
-                  <Input
-                    type="text"
-                    name="search"
-                    autoComplete="off"
-                    placeholder="Explore menus..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
-                    style={{
-                      paddingLeft: 'clamp(2.5rem, 6vw, 3rem)',
-                      paddingRight: 'clamp(2.5rem, 6vw, 3rem)',
-                      paddingTop: '0',
-                      paddingBottom: '0',
-                      fontSize: 'clamp(1rem, 2vw, 1rem)',
-                      height: '100%',
-                      border: 'none !important',
-                      outline: 'none !important',
-                      boxShadow: 'none !important',
-                    }}
-                    onFocus={(e) => {
-                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
-                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
-                      if (container && rainbowBorder) {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 100%)';
-                        container.style.boxShadow = `
+                }
+              }}
+            >
+              <Search
+                className="absolute text-gray-700 z-10 transition-all duration-300"
+                style={{
+                  left: 'clamp(0.75rem, 2.5vw, 1.5rem)',
+                  width: 'clamp(1rem, 2vw, 1.5rem)',
+                  height: 'clamp(1rem, 2vw, 1.5rem)',
+                }}
+              />
+              <Input
+                type="text"
+                name="search"
+                autoComplete="off"
+                placeholder="Explore menus..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
+                style={{
+                  paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
+                  paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
+                  paddingTop: '0',
+                  paddingBottom: '0',
+                  fontSize: 'clamp(0.9rem, 1.8vw, 1.2rem)',
+                  height: '100%',
+                  border: 'none !important',
+                  outline: 'none !important',
+                  boxShadow: 'none !important',
+                }}
+                onFocus={(e) => {
+                  const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                  const rainbowBorder = document.getElementById('rainbow-border-wrapper');
+                  if (container && rainbowBorder) {
+                    container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 100%)';
+                    container.style.boxShadow = `
                           0 12px 40px 0 rgba(0, 0, 0, 0.12),
                           0 4px 12px 0 rgba(0, 0, 0, 0.06)
                         `;
-                        rainbowBorder.style.opacity = '1';
-                      }
-                    }}
-                    onBlur={(e) => {
-                      const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
-                      const rainbowBorder = document.getElementById('rainbow-border-wrapper');
-                      if (container && rainbowBorder) {
-                        container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
-                        container.style.boxShadow = `
+                    rainbowBorder.style.opacity = '1';
+                  }
+                }}
+                onBlur={(e) => {
+                  const container = e.currentTarget.closest('#search-bar-container') as HTMLElement;
+                  const rainbowBorder = document.getElementById('rainbow-border-wrapper');
+                  if (container && rainbowBorder) {
+                    container.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.75) 100%)';
+                    container.style.boxShadow = `
                           0 8px 32px 0 rgba(0, 0, 0, 0.08),
                           0 2px 8px 0 rgba(0, 0, 0, 0.04),
                           inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
                           inset 0 -1px 0 0 rgba(0, 0, 0, 0.01)
                         `;
-                        rainbowBorder.style.opacity = '0';
-                      }
-                    }}
-                  />
-                  <ArrowRight 
-                    key={arrowAnimationKey}
-                    className={`absolute top-1/2 text-gray-700 z-10 transition-all duration-300 ${
-                      searchResults.length > 0 ? 'arrow-swing-animation text-gray-900' : ''
-                    }`}
-                    style={{
-                      right: 'clamp(1rem, 3vw, 1.25rem)',
-                      width: 'clamp(1rem, 2.5vw, 1.25rem)',
-                      height: 'clamp(1rem, 2.5vw, 1.25rem)',
-                      transform: searchResults.length > 0 ? undefined : 'translateY(-50%)',
-                      transformOrigin: 'center center',
-                    }}
-                  />
-                </div>
+                    rainbowBorder.style.opacity = '0';
+                  }
+                }}
+              />
+              <ArrowRight
+                key={arrowAnimationKey}
+                className={`absolute top-1/2 text-gray-700 z-10 transition-all duration-300 ${searchResults.length > 0 ? 'arrow-swing-animation text-gray-900' : ''
+                  }`}
+                style={{
+                  right: 'clamp(0.75rem, 2.5vw, 1.5rem)',
+                  width: 'clamp(1rem, 2vw, 1.5rem)',
+                  height: 'clamp(1rem, 2vw, 1.5rem)',
+                  transform: searchResults.length > 0 ? undefined : 'translateY(-50%)',
+                  transformOrigin: 'center center',
+                }}
+              />
+            </div>
 
             {/* Search results dropdown - squared off design */}
             {searchQuery.trim().length > 0 && (
-              <div 
+              <div
                 className="absolute top-full left-0 right-0 mt-3 shadow-xl shadow-gray-300/12 border border-black bg-white/80 backdrop-blur-md max-h-96 overflow-y-auto z-30"
               >
                 {isSearching ? (
@@ -441,14 +570,10 @@ export function LandingPage() {
                 )}
               </div>
             )}
-            </div>
+          </div>
         </div>
 
-        {/* Scroll indicator at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center text-gray-700 pb-8 sm:pb-12 z-20">
-          <span className="text-xs sm:text-sm font-light mb-2">Scroll to learn more</span>
-          <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 animate-bounce text-gray-700" />
-        </div>
+
       </div>
 
       {/* Information Section */}
@@ -456,7 +581,7 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto w-full">
           {/* Main heading */}
           <div className="text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-gray-900 mb-4 sm:mb-6 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-black mb-4 sm:mb-6 tracking-tight">
               How Does The Menu Guide Help?
             </h2>
             <p className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed">
@@ -469,8 +594,8 @@ export function LandingPage() {
             {/* Duck Card */}
             <div className="group cursor-pointer border border-black bg-white">
               <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
-                <Image 
-                  src="/duck_homepg.png" 
+                <Image
+                  src="/duck_homepg.png"
                   alt="Hudson Duck with White Asparagus"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -488,8 +613,8 @@ export function LandingPage() {
                   Hudson vally duck breast, with french white asparagus, wild rice, orange jus
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
@@ -497,8 +622,8 @@ export function LandingPage() {
                   >
                     nut-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
@@ -513,8 +638,8 @@ export function LandingPage() {
             {/* Lobster Card */}
             <div className="group cursor-pointer border border-black bg-white">
               <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
-                <Image 
-                  src="/lobster_homepg.png" 
+                <Image
+                  src="/lobster_homepg.png"
                   alt="Lobster Thermidor"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -532,8 +657,8 @@ export function LandingPage() {
                   Maine lobster with broiled gruyere cheese and turned potatoes
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
@@ -541,8 +666,8 @@ export function LandingPage() {
                   >
                     nut-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
@@ -550,8 +675,8 @@ export function LandingPage() {
                   >
                     gluten-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('pescatarian')
@@ -566,8 +691,8 @@ export function LandingPage() {
             {/* Scallops Card */}
             <div className="group cursor-pointer border border-black bg-white">
               <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
-                <Image 
-                  src="/scallop_homepg.png" 
+                <Image
+                  src="/scallop_homepg.png"
                   alt="Scallops with Apple Fennel Salad"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -585,8 +710,8 @@ export function LandingPage() {
                   Seared scallops, vadauvan spice gravy, apple and fennel salad, charred leeks
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
@@ -594,8 +719,8 @@ export function LandingPage() {
                   >
                     nut-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
@@ -603,8 +728,8 @@ export function LandingPage() {
                   >
                     gluten-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('pescatarian')
@@ -619,8 +744,8 @@ export function LandingPage() {
             {/* Stew Card */}
             <div className="group cursor-pointer border border-black bg-white">
               <div className="relative aspect-[3/2] overflow-hidden border-b border-black mb-3 bg-gray-100">
-                <Image 
-                  src="/stew_homepg.png" 
+                <Image
+                  src="/stew_homepg.png"
                   alt="Pot au Feu"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -638,8 +763,8 @@ export function LandingPage() {
                   Beef shank stew with fresh market vegetables
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('nut-free')
@@ -647,8 +772,8 @@ export function LandingPage() {
                   >
                     nut-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('gluten-free')
@@ -656,8 +781,8 @@ export function LandingPage() {
                   >
                     gluten-free
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs bg-gray-50 border text-gray-800 hover:border-gray-300 transition-colors rounded-none"
                     style={{
                       borderColor: getAllergenBorderColor('dairy-free')
@@ -672,11 +797,11 @@ export function LandingPage() {
 
           {/* Contact the Builder */}
           <div className="text-center mt-10 sm:mt-14 md:mt-18">
-            <a 
-              href="https://www.instagram.com/alexanderbrightman/" 
-              target="_blank" 
+            <a
+              href="https://www.instagram.com/alexanderbrightman/"
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-xs sm:text-sm text-gray-700 hover:text-gray-900 transition-colors inline-flex items-center gap-1 underline decoration-1 underline-offset-2"
+              className="text-sm font-medium text-black hover:text-gray-700 transition-colors inline-flex items-center gap-1 hover:underline underline-offset-4"
             >
               Contact the Builder
             </a>
@@ -687,7 +812,7 @@ export function LandingPage() {
       {/* Auth Modal */}
       {showAuthForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             className="shadow-xl shadow-gray-300/12 border border-black bg-white/90 backdrop-blur-md max-w-sm w-full max-h-[85vh] overflow-hidden"
           >
             <div className="p-6 pb-4">

@@ -37,11 +37,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch from database
-    const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    let { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
     if (error) {
       console.error('Error fetching profile:', error)
       return NextResponse.json({ error: 'Profile not found' }, { status: 404, headers: getSecurityHeaders() })
+    }
+
+    // Check for expired subscription and update if needed
+    // This ensures the profile status is always up-to-date when accessed
+    const { checkAndGetExpiredSubscriptionUpdate } = await import('@/lib/premium-validation')
+    const { needsUpdate, updateData } = checkAndGetExpiredSubscriptionUpdate(profile)
+
+    if (needsUpdate && updateData) {
+      console.log(`[Profile] Auto-updating expired subscription for user ${user.id}`)
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (!updateError && updatedProfile) {
+        profile = updatedProfile
+      } else {
+        console.error('[Profile] Failed to auto-update expired subscription:', updateError)
+      }
     }
 
     // Cache the result
@@ -192,17 +213,24 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { is_public, show_prices } = body
+    const { is_public, show_prices, currency } = body
 
     // Build update object with only provided fields
-    const updateData: Record<string, boolean> = {}
-    
+    const updateData: Record<string, boolean | string> = {}
+
     if (typeof is_public === 'boolean') {
       updateData.is_public = is_public
     }
-    
+
     if (typeof show_prices === 'boolean') {
       updateData.show_prices = show_prices
+    }
+
+    if (typeof currency === 'string') {
+      // Basic validation for currency code length
+      if (currency.length === 3) {
+        updateData.currency = currency.toUpperCase()
+      }
     }
 
     // Validate that at least one field is provided
@@ -219,8 +247,8 @@ export async function PUT(request: NextRequest) {
       const errorMessage = error.message || 'An error occurred while updating the profile'
       // Check if it's a column doesn't exist error
       if (errorMessage.includes('column') && errorMessage.includes('does not exist')) {
-        return NextResponse.json({ 
-          error: 'Database column missing. Please run the migration: alter table profiles add column if not exists show_prices boolean default true;' 
+        return NextResponse.json({
+          error: 'Database column missing. Please run the migration: alter table profiles add column if not exists show_prices boolean default true;'
         }, { status: 500, headers: getSecurityHeaders() })
       }
       return NextResponse.json({ error: errorMessage }, { status: 500, headers: getSecurityHeaders() })

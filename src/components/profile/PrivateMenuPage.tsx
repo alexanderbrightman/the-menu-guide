@@ -1,12 +1,13 @@
+
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp, Edit, Link2, Plus, Scan, Star, Trash2, Upload, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase, MenuCategory, MenuItem, Profile, Tag as TagType } from '@/lib/supabase'
+import { supabase, MenuCategory, MenuItem, Profile, Tag as TagType, MenuItemWithRelations, MenuItemTag } from '@/lib/supabase'
+import { formatPrice } from '@/lib/currency'
 import { useImageUpload } from '@/hooks/useImageUpload'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -14,118 +15,40 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { SettingsDialog } from '@/components/profile/SettingsDialog'
+import { Badge } from '@/components/ui/badge'
+import { Tag } from 'lucide-react'
+import { X, Upload } from 'lucide-react'
 
-interface MenuItemWithRelations extends MenuItem {
-  menu_categories?: { name: string }
-  menu_item_tags?: { tags: { id: number; name: string } }[]
-}
+import { useMenuTheme } from '@/hooks/useMenuTheme'
+import { MenuHeader } from './menu-blocks/MenuHeader'
+import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
+import { getAllergenBorderColor } from '@/lib/utils'
+
+// Drag and Drop Imports
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  TouchSensor,
+  MouseSensor,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  restrictToVerticalAxis,
+  restrictToWindowEdges,
+} from '@dnd-kit/modifiers';
+import { SortableItem } from '@/components/ui/sortable-item';
 
 type CategoryMap = Record<string, MenuItemWithRelations[]>
-
-const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
-const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
-const FONT_FAMILY_MAP: Record<string, string> = {
-  'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
-  'Fjalla One': '"Fjalla One", sans-serif',
-  Georgia: 'Georgia, serif',
-  'Times New Roman': '"Times New Roman", serif',
-  Arial: 'Arial, sans-serif',
-  'Courier New': '"Courier New", monospace',
-}
-
-const getContrastColor = (hexColor: string) => {
-  if (!hexColor) return '#1f2937'
-  const cleanHex = hexColor.replace('#', '')
-  const normalizedHex =
-    cleanHex.length === 3
-      ? cleanHex
-          .split('')
-          .map((char) => char + char)
-          .join('')
-      : cleanHex
-
-  if (normalizedHex.length !== 6) return '#1f2937'
-
-  const r = parseInt(normalizedHex.substring(0, 2), 16)
-  const g = parseInt(normalizedHex.substring(2, 4), 16)
-  const b = parseInt(normalizedHex.substring(4, 6), 16)
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? '#1f2937' : '#ffffff'
-}
-
-const hexToRgba = (hexColor: string, alpha: number) => {
-  const cleanHex = hexColor.replace('#', '')
-  const normalized =
-    cleanHex.length === 3
-      ? cleanHex
-          .split('')
-          .map((char) => char + char)
-          .join('')
-      : cleanHex
-
-  if (normalized.length !== 6) return `rgba(255,255,255,${alpha})`
-
-  const r = parseInt(normalized.substring(0, 2), 16)
-  const g = parseInt(normalized.substring(2, 4), 16)
-  const b = parseInt(normalized.substring(4, 6), 16)
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
-const getAllergenBorderColor = (tagName: string): string => {
-  const colorMap: Record<string, string> = {
-    'dairy-free': '#B5C1D9',
-    'gluten-free': '#D48963',
-    'nut-free': '#408250',
-    pescatarian: '#F698A7',
-    'shellfish-free': '#F6D98E',
-    spicy: '#F04F68',
-    vegan: '#A9CC66',
-    vegetarian: '#3B91A2',
-  }
-  return colorMap[tagName.toLowerCase()] || ''
-}
-
-const buildTagStyles = (
-  tagName: string,
-  {
-    isDarkBackground,
-    isSelected = false,
-  }: {
-    isDarkBackground: boolean
-    isSelected?: boolean
-  }
-) => {
-  const borderColor = getAllergenBorderColor(tagName)
-
-  if (!borderColor) {
-    if (isDarkBackground) {
-      return {
-        borderColor: 'rgba(255,255,255,0.35)',
-        color: 'rgba(255,255,255,0.92)',
-        backgroundColor: isSelected ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
-      }
-    }
-
-    return {
-      borderColor: 'rgba(17,24,39,0.18)',
-      color: '#1f2937',
-      backgroundColor: isSelected ? 'rgba(17,24,39,0.08)' : 'transparent',
-    }
-  }
-
-  return {
-    borderColor,
-    color: isDarkBackground ? borderColor : '#1f2937',
-    backgroundColor: isSelected
-      ? hexToRgba(borderColor, isDarkBackground ? 0.32 : 0.16)
-      : isDarkBackground
-        ? 'rgba(255,255,255,0.05)'
-        : 'transparent',
-  }
-}
 
 const mapItemCategory = (item: MenuItemWithRelations, categories: MenuCategory[]) => {
   if (!item.category_id) {
@@ -189,27 +112,38 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
   const { uploading, progress, uploadImage, resetProgress } = useImageUpload()
 
-  const menuFont = profile?.menu_font || DEFAULT_MENU_FONT
-  const menuBackgroundColor = profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
-  const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
-  const isDarkBackground = contrastColor === '#ffffff'
-  const menuFontFamily = useMemo(
-    () => FONT_FAMILY_MAP[menuFont] ?? menuFont,
-    [menuFont]
-  )
+  // Sensors for Drag and Drop
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10, // Enable drag after moving 10px
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Press and hold for 250ms to activate
+        tolerance: 5, // Allow 5px movement during hold
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-  const primaryTextClass = isDarkBackground ? 'text-white' : 'text-slate-900'
-  const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-slate-600'
-  const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
-  const accentButtonClass = isDarkBackground
-    ? 'border border-white/90 bg-transparent !text-white hover:bg-white/15'
-    : 'border border-slate-900 bg-transparent !text-slate-900 hover:bg-slate-100'
-  const outlineButtonClass = isDarkBackground
-    ? 'border border-white/60 bg-transparent !text-white hover:bg-white/10'
-    : 'border border-slate-400 bg-transparent !text-slate-900 hover:bg-slate-100'
-  const focusRingClass = isDarkBackground
-    ? 'focus-visible:ring-white/60 focus-visible:ring-offset-white/5'
-    : 'focus-visible:ring-gray-800/25 focus-visible:ring-offset-gray-100'
+  // Use the new theme hook
+  const theme = useMenuTheme(profile)
+  const {
+    menuBackgroundColor,
+    contrastColor,
+    menuFontFamily,
+    primaryTextClass,
+    secondaryTextClass,
+    mutedTextClass,
+    accentButtonClass,
+    outlineButtonClass,
+    getBorderColor,
+    isDarkBackground,
+  } = theme
 
   const setTransientMessage = useCallback((value: string) => {
     setMessage(value)
@@ -239,19 +173,19 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       }
 
       const headers = {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${session.access_token} `,
       }
 
       const [itemsRes, categoriesRes, tagsRes] = await Promise.all([
-        fetch('/api/menu-items', { 
+        fetch('/api/menu-items', {
           headers,
           cache: 'no-store',
         }),
-        fetch('/api/menu-categories', { 
+        fetch('/api/menu-categories', {
           headers,
           cache: 'no-store',
         }),
-        fetch('/api/tags', { 
+        fetch('/api/tags', {
           headers,
           cache: 'no-store',
         }),
@@ -264,21 +198,29 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       ])
 
       if (itemsRes.ok && Array.isArray(itemsData.items)) {
-        setMenuItems(itemsData.items)
+        // Sort items by sort_order
+        const sortedItems = itemsData.items.sort((a: MenuItemWithRelations, b: MenuItemWithRelations) =>
+          (a.sort_order || 0) - (b.sort_order || 0)
+        )
+        setMenuItems(sortedItems)
       } else if (!itemsRes.ok) {
-        setTransientMessage(`Error: ${itemsData.error || 'Failed to load menu items'}`)
+        setTransientMessage(`Error: ${itemsData.error || 'Failed to load menu items'} `)
       }
 
       if (categoriesRes.ok && Array.isArray(categoriesData.categories)) {
-        setCategories(categoriesData.categories)
+        // Sort categories by sort_order
+        const sortedCategories = categoriesData.categories.sort((a: MenuCategory, b: MenuCategory) =>
+          (a.sort_order || 0) - (b.sort_order || 0)
+        )
+        setCategories(sortedCategories)
       } else if (!categoriesRes.ok) {
-        setTransientMessage(`Error: ${categoriesData.error || 'Failed to load categories'}`)
+        setTransientMessage(`Error: ${categoriesData.error || 'Failed to load categories'} `)
       }
 
       if (tagsRes.ok && Array.isArray(tagsData.tags)) {
         setTags(tagsData.tags)
       } else if (!tagsRes.ok) {
-        setTransientMessage(`Error: ${tagsData.error || 'Failed to load tags'}`)
+        setTransientMessage(`Error: ${tagsData.error || 'Failed to load tags'} `)
       }
     } catch (error) {
       console.error('Error fetching menu data:', error)
@@ -304,7 +246,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       }
 
       const headers = {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${session.access_token} `,
       }
 
       const response = await fetch('/api/favorites', {
@@ -326,6 +268,116 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     fetchMenuData()
     fetchFavorites()
   }, [fetchMenuData, fetchFavorites])
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    // Get session for auth token
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      console.error('No active session')
+      return
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token} `
+    }
+
+    // Check if it's a category
+    const activeCategoryIndex = categories.findIndex(c => c.id === active.id)
+    const overCategoryIndex = categories.findIndex(c => c.id === over.id)
+
+    if (activeCategoryIndex !== -1 && overCategoryIndex !== -1) {
+      // Reordering categories
+      const oldIndex = categories.findIndex((item) => item.id === active.id)
+      const newIndex = categories.findIndex((item) => item.id === over.id)
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newItems = arrayMove(categories, oldIndex, newIndex)
+        setCategories(newItems)
+
+        // Prepare updates for API
+        const updates = newItems.map((item, index) => ({
+          id: item.id,
+          sort_order: index
+        }))
+
+        // Call API in background
+        fetch('/api/reorder', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ type: 'category', updates })
+        }).then(async res => {
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}))
+            console.error('Failed to save category order:', errorData.error || res.statusText)
+            // Optionally revert state here
+          }
+        }).catch(console.error)
+      }
+      return
+    }
+
+    // Check if it's a menu item
+    const activeItem = menuItems.find(i => i.id === active.id)
+    const overItem = menuItems.find(i => i.id === over.id)
+
+    if (activeItem && overItem) {
+      // Ensure they are in the same category (or both uncategorized)
+      const activeCatId = activeItem.category_id || 'uncategorized'
+      const overCatId = overItem.category_id || 'uncategorized'
+
+      if (activeCatId === overCatId) {
+        const categoryItems = menuItems.filter(i => (i.category_id || 'uncategorized') === activeCatId)
+        const oldSubsetIndex = categoryItems.findIndex(i => i.id === active.id)
+        const newSubsetIndex = categoryItems.findIndex(i => i.id === over.id)
+
+        if (oldSubsetIndex !== -1 && newSubsetIndex !== -1) {
+          const newSubset = arrayMove(categoryItems, oldSubsetIndex, newSubsetIndex)
+
+          // Prepare updates
+          const updates = newSubset.map((item, index) => ({
+            id: item.id,
+            sort_order: index
+          }))
+
+          const newSortOrderMap = new Map(updates.map(u => [u.id, u.sort_order]))
+
+          const nextItems = menuItems.map(item => {
+            if (newSortOrderMap.has(item.id)) {
+              return { ...item, sort_order: newSortOrderMap.get(item.id) }
+            }
+            return item
+          })
+
+          // Sort the whole list to ensure consistency
+          const sortedNextItems = nextItems.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          setMenuItems(sortedNextItems)
+
+          // Call API
+          fetch('/api/reorder', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ type: 'item', updates })
+          }).then(async res => {
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}))
+              console.error('Failed to save item order:', errorData.error || res.statusText)
+            }
+          }).catch(console.error)
+        }
+      }
+    }
+  }, [categories, menuItems])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -351,7 +403,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       const originalStyle = window.getComputedStyle(document.body).overflow
       document.body.style.overflow = 'hidden'
       document.documentElement.style.overflow = 'hidden'
-      
+
       window.addEventListener('keydown', handleKeyDown)
       return () => {
         window.removeEventListener('keydown', handleKeyDown)
@@ -398,12 +450,12 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
       const headers = {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${session.access_token} `,
       }
 
       if (isFavorited) {
         // Remove favorite
-        const response = await fetch(`/api/favorites?menu_item_id=${itemId}`, {
+        const response = await fetch(`/ api / favorites ? menu_item_id = ${itemId} `, {
           method: 'DELETE',
           headers,
         })
@@ -522,7 +574,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         method: editingCategory ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token} `,
         },
         body: JSON.stringify(
           editingCategory
@@ -541,11 +593,62 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         resetCategoryDialog()
         await fetchMenuData()
       } else {
-        setTransientMessage(`Error: ${data.error || 'Unable to save category'}`)
+        setTransientMessage(`Error: ${data.error || 'Unable to save category'} `)
       }
     } catch (error) {
       console.error('Error saving category:', error)
       setTransientMessage('Error saving category')
+    }
+  }
+
+  const handleRenameCategory = async (categoryId: string, newName: string) => {
+    if (!supabase) {
+      setTransientMessage('Error: Supabase client not available')
+      return
+    }
+
+    // Optimistic update
+    const originalCategories = [...categories]
+    setCategories(prev => prev.map(cat =>
+      cat.id === categoryId ? { ...cat, name: newName } : cat
+    ))
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        setCategories(originalCategories)
+        setTransientMessage('Error: Not authenticated')
+        return
+      }
+
+      const response = await fetch('/api/menu-categories', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token} `,
+        },
+        body: JSON.stringify({
+          id: categoryId,
+          name: newName,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        setCategories(originalCategories)
+        setTransientMessage(`Error: ${data.error || 'Unable to rename category'} `)
+      } else {
+        setTransientMessage('Category renamed')
+        // Background refresh to ensure consistency
+        fetchMenuData(false)
+      }
+    } catch (error) {
+      console.error('Error renaming category:', error)
+      setCategories(originalCategories)
+      setTransientMessage('Error renaming category')
     }
   }
 
@@ -577,10 +680,10 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         return
       }
 
-      const response = await fetch(`/api/menu-categories?id=${categoryId}`, {
+      const response = await fetch(`/ api / menu - categories ? id = ${categoryId} `, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token} `,
         },
       })
 
@@ -594,7 +697,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           setCategories((prev) => [...prev, categoryToDelete])
         }
         const data = await response.json()
-        setTransientMessage(`Error: ${data.error || 'Unable to delete category'}`)
+        setTransientMessage(`Error: ${data.error || 'Unable to delete category'} `)
       }
     } catch (error) {
       // Restore on error
@@ -684,19 +787,19 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       // Close the sheet immediately for better UX
       const currentItem = editingItem
       closeItemSheet(false)
-      
+
       // Optimistically update the UI with form data (for edits only)
       if (currentItem) {
-        setMenuItems(prevItems => 
-          prevItems.map(item => 
-            item.id === currentItem.id 
+        setMenuItems(prevItems =>
+          prevItems.map(item =>
+            item.id === currentItem.id
               ? {
-                  ...item,
-                  title: itemForm.title,
-                  description: itemForm.description,
-                  price: itemForm.price ? Number(itemForm.price) : undefined,
-                  category_id: itemCategory === 'none' ? undefined : itemCategory,
-                }
+                ...item,
+                title: itemForm.title,
+                description: itemForm.description,
+                price: itemForm.price ? Number(itemForm.price) : undefined,
+                category_id: itemCategory === 'none' ? undefined : itemCategory,
+              }
               : item
           )
         )
@@ -735,14 +838,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           method: currentItem ? 'PATCH' : 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${session.access_token} `,
           },
           body: JSON.stringify(
             currentItem
               ? {
-                  id: currentItem.id,
-                  ...payload,
-                }
+                id: currentItem.id,
+                ...payload,
+              }
               : payload
           ),
         })
@@ -754,7 +857,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           setMenuItems(prevItems => {
             if (currentItem) {
               // Update existing item
-              return prevItems.map(item => 
+              return prevItems.map(item =>
                 item.id === currentItem.id ? {
                   ...item,
                   ...data.item,
@@ -768,28 +871,27 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
               return [data.item, ...prevItems]
             }
           })
-          
+
           setTransientMessage(
             currentItem ? 'Menu item updated successfully' : 'Menu item created successfully'
           )
-          
+
           // Refresh data in background to ensure consistency (silent, no loading indicator)
           fetchMenuData(false)
         } else {
           // Revert optimistic update on error
           if (currentItem) {
-            setMenuItems(prevItems => 
-              prevItems.map(item => 
+            setMenuItems(prevItems =>
+              prevItems.map(item =>
                 item.id === currentItem.id ? currentItem : item
               )
             )
           }
-          setTransientMessage(`Error: ${data.error || 'Unable to save menu item'}`)
+          setTransientMessage(`Error: ${data.error || 'Unable to save menu item'} `)
         }
       })()
 
       // Don't await - let it run in background
-      // Optionally show a toast notification when complete
       savePromise.catch(error => {
         console.error('Error saving menu item:', error)
         setTransientMessage('Error saving menu item')
@@ -829,10 +931,10 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         return
       }
 
-      const response = await fetch(`/api/menu-items?id=${itemId}`, {
+      const response = await fetch(`/ api / menu - items ? id = ${itemId} `, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token} `,
         },
       })
 
@@ -846,7 +948,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           setMenuItems((prev) => [...prev, itemToDelete])
         }
         const data = await response.json()
-        setTransientMessage(`Error: ${data.error || 'Unable to delete menu item'}`)
+        setTransientMessage(`Error: ${data.error || 'Unable to delete menu item'} `)
       }
     } catch (error) {
       // Restore on error
@@ -858,1031 +960,482 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }
 
-  const profileData: Profile | null = profile || null
-  const usernameLink =
-    typeof window !== 'undefined' && profileData?.username
-      ? `${window.location.origin}/menu/${profileData.username}`
-      : null
-
   const handleOpenScanMenu = useCallback(() => {
     if (typeof window === 'undefined') return
     const event = new CustomEvent('open-scan-menu')
     window.dispatchEvent(event)
   }, [])
 
-  const uncategorizedOpen = expandedCategories['uncategorized']
-
-  // Helper to get border color based on background
-  const getBorderColor = () => {
-    return isDarkBackground ? 'border-white' : 'border-black'
-  }
-
   return (
-    <section
-      className="w-full py-4 sm:py-6 md:py-8"
-      style={{
-        backgroundColor: menuBackgroundColor,
-        color: contrastColor,
-        fontFamily: menuFontFamily,
-      }}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      modifiers={[restrictToWindowEdges]}
     >
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-        <header className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              {profileData?.avatar_url && (
-                <Image
-                  src={profileData.avatar_url}
-                  alt={profileData.display_name || 'Menu photo'}
-                  width={120}
-                  height={120}
-                  className="object-cover h-20 w-20 sm:h-24 sm:w-24"
-                />
-              )}
-              <h1
-                className={`font-bold leading-tight ${primaryTextClass}`}
-                style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontFamily: menuFontFamily }}
-              >
-                {profileData?.display_name || 'Your Restaurant'}
-              </h1>
-            </div>
+      <section
+        className="w-full py-4 sm:py-6 md:py-8"
+        style={{
+          backgroundColor: menuBackgroundColor,
+          color: contrastColor,
+          fontFamily: menuFontFamily,
+        }}
+      >
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <MenuHeader
+            profile={profile}
+            user={user}
+            onEditProfile={onEditProfile}
+            onScanMenu={handleOpenScanMenu}
+            onNewCategory={openCreateCategory}
+            onNewItem={startCreateItem}
+            message={message}
+            theme={theme}
+          />
 
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 w-full px-4">
-              {user && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
-                  onClick={handleOpenScanMenu}
-                >
-                  <Scan className="h-4 w-4" />
-                  <span className="hidden sm:inline">Scan Menu</span>
-                  <span className="sm:hidden">Scan</span>
-                </Button>
-              )}
-              {onEditProfile && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
-                  onClick={onEditProfile}
-                >
-                  <Edit className="h-4 w-4" />
-                  <span className="hidden sm:inline">Edit Profile</span>
-                  <span className="sm:hidden">Edit</span>
-                </Button>
-              )}
-              <SettingsDialog triggerClassName={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`} />
-              {usernameLink && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
-                  onClick={() => window.open(usernameLink, '_blank')}
-                >
-                  <Link2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">View Menu</span>
-                  <span className="sm:hidden">Menu</span>
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
-                onClick={openCreateCategory}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">New Category</span>
-                <span className="sm:hidden">Category</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()}`}
-                onClick={startCreateItem}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">New Item</span>
-                <span className="sm:hidden">Item</span>
-              </Button>
-            </div>
-
-            {message && (
+          <div className="mt-6 sm:mt-8 md:mt-12 space-y-4 sm:space-y-6 md:space-y-8">
+            {loading ? (
               <div
-                className={`max-w-2xl border px-3 sm:px-4 py-2 text-xs sm:text-sm ${getBorderColor()} ${
-                  message.toLowerCase().includes('error')
-                    ? isDarkBackground
-                      ? 'bg-red-900/30 text-red-200'
-                      : 'bg-red-50 text-red-700'
-                    : isDarkBackground
-                      ? 'bg-emerald-900/30 text-emerald-200'
-                      : 'bg-emerald-50 text-emerald-700'
-                }`}
-                role="status"
+                className={`flex flex - col items - center justify - center border border - dashed ${getBorderColor()} py - 12 sm: py - 16 md: py - 20 ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
+                  } `}
               >
-                {message}
+                <div className={`h - 8 w - 8 sm: h - 12 sm: w - 12 animate - spin border ${getBorderColor()} border - t - transparent`}></div>
+                <p className={`mt - 3 sm: mt - 4 text - xs sm: text - sm ${secondaryTextClass} `}>Loading your menu...</p>
               </div>
-            )}
-          </div>
-        </header>
-
-        <div className="mt-6 sm:mt-8 md:mt-12 space-y-4 sm:space-y-6 md:space-y-8">
-          {loading ? (
-            <div
-              className={`flex flex-col items-center justify-center border border-dashed ${getBorderColor()} py-12 sm:py-16 md:py-20 ${
-                isDarkBackground ? 'bg-white/5' : 'bg-white/60'
-              }`}
-            >
-              <div className={`h-8 w-8 sm:h-12 sm:w-12 animate-spin border ${getBorderColor()} border-t-transparent`}></div>
-              <p className={`mt-3 sm:mt-4 text-xs sm:text-sm ${secondaryTextClass}`}>Loading your menu...</p>
-            </div>
-          ) : (
-            <>
-              {/* Our Favorites Section */}
-              {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
-                <section
-                  className={`border ${getBorderColor()} ${
-                    isDarkBackground ? 'bg-white/5' : 'bg-white/80'
-                  }`}
-                >
-                  <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
-                    <button
-                      type="button"
-                      className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
-                      onClick={() => toggleCategory('favorites')}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          toggleCategory('favorites')
-                        }
-                      }}
-                    >
-                      <div>
-                        <h2
-                          className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
-                          style={{ fontFamily: menuFontFamily }}
-                        >
-                          Our Favorites
-                        </h2>
-                        <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
-                          {groupedItems['favorites'].length} item{groupedItems['favorites'].length === 1 ? '' : 's'}
-                        </p>
-                      </div>
-                      <span className="mt-1">
-                        {expandedCategories['favorites'] ? (
-                          <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
-                        )}
-                      </span>
-                    </button>
-                  </div>
-
-                  {expandedCategories['favorites'] && (
-                    <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
-                      {groupedItems['favorites'].length === 0 ? (
-                        <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
-                          No favorited items.
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                          {groupedItems['favorites'].map((item) => (
-                            <div
-                              key={item.id}
-                              className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
-                                isDarkBackground ? 'bg-white/5' : 'bg-white'
-                              }`}
-                              onClick={() => setSelectedItem(item)}
-                            >
-                              {item.image_url && (
-                                <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                                  <Image
-                                    src={item.image_url}
-                                    alt={item.title}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                                  />
-                                </div>
-                              )}
-                              <div className="flex-1 flex flex-col p-2 sm:p-3">
-                                <div className="mb-2">
-                                  <h3
-                                    className={`font-semibold text-xs sm:text-sm md:text-base ${primaryTextClass}`}
-                                    style={{ fontFamily: menuFontFamily }}
-                                  >
-                                    {item.title}
-                                  </h3>
-                                </div>
-                                <div className="flex items-center justify-between gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      toggleFavorite(item.id)
-                                    }}
-                                    className={`p-1 transition-colors ${primaryTextClass} hover:opacity-70`}
-                                    aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                  >
-                                    <Star
-                                      className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
-                                    />
-                                  </button>
-                                  <div className="flex gap-1 sm:gap-2">
-                                    <Button
-                                      size="icon-sm"
-                                      variant="outline"
-                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
-                                      onClick={() => startEditItem(item)}
-                                    >
-                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    <Button
-                                      size="icon-sm"
-                                      variant="outline"
-                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
-                                      onClick={() => handleDeleteItem(item.id)}
-                                    >
-                                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* Regular Categories */}
-              {categorySections.length > 0 && (
-                categorySections.map(({ category, items }) => {
-              const isOpen = expandedCategories[category.id]
-              const itemCount = items.length
-
-              return (
-                <section
-                  key={category.id}
-                  className={`border ${getBorderColor()} ${
-                    isDarkBackground ? 'bg-white/5' : 'bg-white/80'
-                  }`}
-                >
-                  <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
-                    <button
-                      type="button"
-                      className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
-                      onClick={() => toggleCategory(category.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          toggleCategory(category.id)
-                        }
-                      }}
-                    >
-                      <div>
-                        <h2
-                          className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
-                          style={{ fontFamily: menuFontFamily }}
-                        >
-                          {category.name}
-                        </h2>
-                        <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
-                          {itemCount} item{itemCount === 1 ? '' : 's'}
-                        </p>
-                      </div>
-                      <span className="mt-1">
-                        {isOpen ? (
-                          <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
-                        )}
-                      </span>
-                    </button>
-
-                    <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          startCreateItem()
-                          setItemCategory(category.id)
-                        }}
-                      >
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Item</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openEditCategory(category)
-                        }}
-                      >
-                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Edit</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleDeleteCategory(category.id)
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Delete</span>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {isOpen && (
-                    <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
-                      {itemCount === 0 ? (
-                        <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
-                          No menu items yet. Use the New Item button to add your first dish.
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                          {items.map((item) => (
-                            <div
-                              key={item.id}
-                              className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
-                                isDarkBackground ? 'bg-white/5' : 'bg-white'
-                              }`}
-                              onClick={() => setSelectedItem(item)}
-                            >
-                              {item.image_url && (
-                                <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                                  <Image
-                                    src={item.image_url}
-                                    alt={item.title}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                                  />
-                                </div>
-                              )}
-                              <div className="flex-1 flex flex-col p-2 sm:p-3">
-                                <div className="mb-2">
-                                  <h3
-                                    className={`font-semibold text-xs sm:text-sm md:text-base ${primaryTextClass}`}
-                                    style={{ fontFamily: menuFontFamily }}
-                                  >
-                                    {item.title}
-                                  </h3>
-                                </div>
-                                <div className="flex items-center justify-between gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      toggleFavorite(item.id)
-                                    }}
-                                    className={`p-1 transition-colors ${primaryTextClass} hover:opacity-70`}
-                                    aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                  >
-                                    <Star
-                                      className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
-                                    />
-                                  </button>
-                                  <div className="flex gap-1 sm:gap-2">
-                                    <Button
-                                      size="icon-sm"
-                                      variant="outline"
-                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
-                                      onClick={() => startEditItem(item)}
-                                    >
-                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    <Button
-                                      size="icon-sm"
-                                      variant="outline"
-                                      className={`${outlineButtonClass} border ${getBorderColor()}`}
-                                      onClick={() => handleDeleteItem(item.id)}
-                                    >
-                                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </section>
-                  )
-                })
-              )}
-
-              {/* Uncategorized Section */}
-              {uncategorizedItems.length > 0 && categorySections.length === 0 && (
-            <section
-              className={`border ${getBorderColor()} ${
-                isDarkBackground ? 'bg-white/5' : 'bg-white'
-              }`}
-            >
-              <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 md:gap-5 mb-4 sm:mb-5 md:mb-6">
-                  <div>
-                    <h2
-                      className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
-                      style={{ fontFamily: menuFontFamily }}
-                    >
-                      Menu Items
-                    </h2>
-                    <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
-                      Organize with categories whenever you are ready.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className={`${outlineButtonClass} border ${getBorderColor()}`}
-                    onClick={startCreateItem}
-                  >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    <span className="text-xs sm:text-sm">Add Item</span>
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                  {uncategorizedItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
-                        isDarkBackground ? 'bg-white/5' : 'bg-white'
-                      }`}
-                      onClick={() => setSelectedItem(item)}
-                    >
-                      {item.image_url && (
-                        <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                          <Image
-                            src={item.image_url}
-                            alt={item.title}
-                            fill
-                            className="object-cover"
-                            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 flex flex-col p-2 sm:p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3
-                            className={`font-semibold text-xs sm:text-sm md:text-base flex-1 ${primaryTextClass}`}
-                            style={{ fontFamily: menuFontFamily }}
-                          >
-                            {item.title}
-                          </h3>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleFavorite(item.id)
-                            }}
-                            className={`p-1 transition-colors ${
-                              favoritedIds.has(item.id)
-                                ? isDarkBackground
-                                  ? 'text-yellow-400 hover:text-yellow-300'
-                                  : 'text-yellow-600 hover:text-yellow-700'
-                                : isDarkBackground
-                                  ? 'text-white/40 hover:text-white/60'
-                                  : 'text-slate-400 hover:text-slate-600'
-                            }`}
-                            aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
-                          >
-                            <Star
-                              className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
-                            />
-                          </button>
-                        </div>
-                        <div className="flex justify-end gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            className={`${outlineButtonClass} border ${getBorderColor()}`}
-                            onClick={() => startEditItem(item)}
-                          >
-                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            className={`${outlineButtonClass} border ${getBorderColor()}`}
-                            onClick={() => handleDeleteItem(item.id)}
-                          >
-                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-              )}
-
-              {/* Empty State */}
-              {categorySections.length === 0 && uncategorizedItems.length === 0 && (
-                <div
-                  className={`border border-dashed ${getBorderColor()} py-12 sm:py-14 md:py-16 text-center ${
-                    isDarkBackground ? 'bg-white/5' : 'bg-white/60'
-                  }`}
-                >
-                  <h2 className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}>
-                    Organize your menu with categories
-                  </h2>
-                  <p className={`mt-2 text-xs sm:text-sm ${mutedTextClass}`}>
-                    Create a menu category to get started. Menu items appear here once created.
-                  </p>
-                  <Button
-                    className={`mt-4 sm:mt-6 ${accentButtonClass} border ${getBorderColor()}`}
-                    onClick={openCreateCategory}
-                  >
-                    Add your first category
-                  </Button>
-                </div>
-              )}
-
-              {/* Uncategorized section when there are categories */}
-              {categorySections.length > 0 && uncategorizedItems.length > 0 && (
-            <section
-              className={`border ${getBorderColor()} ${
-                isDarkBackground ? 'bg-white/5' : 'bg-white/80'
-              }`}
-            >
-              <div
-                role="button"
-                tabIndex={0}
-                className={`w-full px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
-                onClick={() =>
-                  setExpandedCategories((prev) => ({
-                    ...prev,
-                    uncategorized: !prev.uncategorized,
-                  }))
-                }
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    setExpandedCategories((prev) => ({
-                      ...prev,
-                      uncategorized: !prev.uncategorized,
-                    }))
-                  }
-                }}
-              >
-                <div>
-                  <h2
-                    className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
-                    style={{ fontFamily: menuFontFamily }}
-                  >
-                    Uncategorized
-                  </h2>
-                  <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
-                    {uncategorizedItems.length} item
-                    {uncategorizedItems.length === 1 ? '' : 's'}
-                  </p>
-                </div>
-                {uncategorizedOpen ? (
-                  <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
+            ) : (
+              <>
+                {/* Our Favorites Section */}
+                {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
+                  <MenuCategorySection
+                    id="favorites"
+                    title="Our Favorites"
+                    items={groupedItems['favorites']}
+                    isOpen={expandedCategories['favorites']}
+                    onToggle={() => toggleCategory('favorites')}
+                    onEditItem={startEditItem}
+                    onDeleteItem={handleDeleteItem}
+                    onToggleFavorite={toggleFavorite}
+                    onItemClick={setSelectedItem}
+                    favoritedIds={favoritedIds}
+                    theme={theme}
+                    emptyMessage="No favorited items."
+                    isSortable={false} // Favorites are auto-generated, maybe not sortable manually? Or sortable within favorites? User didn't specify. Let's disable for now to be safe.
+                  />
                 )}
-              </div>
 
-              {uncategorizedOpen && (
-                <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
-                  {uncategorizedItems.length === 0 ? (
-                    <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
-                      No uncategorized items.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                      {uncategorizedItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${
-                            isDarkBackground ? 'bg-white/5' : 'bg-white'
-                          }`}
-                          onClick={() => setSelectedItem(item)}
-                        >
-                          {item.image_url && (
-                            <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                              <Image
-                                src={item.image_url}
-                                alt={item.title}
-                                fill
-                                className="object-cover"
-                                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                              />
-                            </div>
-                          )}
-                          <div className="flex-1 flex flex-col p-2 sm:p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3
-                                className={`font-semibold text-xs sm:text-sm md:text-base flex-1 ${primaryTextClass}`}
-                                style={{ fontFamily: menuFontFamily }}
-                              >
-                                {item.title}
-                              </h3>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleFavorite(item.id)
-                                }}
-                                className={`p-1 transition-colors ${
-                                  favoritedIds.has(item.id)
-                                    ? isDarkBackground
-                                      ? 'text-yellow-400 hover:text-yellow-300'
-                                      : 'text-yellow-600 hover:text-yellow-700'
-                                    : isDarkBackground
-                                      ? 'text-white/40 hover:text-white/60'
-                                      : 'text-slate-400 hover:text-slate-600'
-                                }`}
-                                aria-label={favoritedIds.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}
-                              >
-                                <Star
-                                  className={`h-3 w-3 sm:h-4 sm:w-4 ${favoritedIds.has(item.id) ? 'fill-current' : ''}`}
-                                />
-                              </button>
-                            </div>
-                            <div className="flex justify-end gap-1 sm:gap-2" onClick={(e) => e.stopPropagation()}>
-                              <Button
-                                size="icon-sm"
-                                variant="outline"
-                                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                                onClick={() => startEditItem(item)}
-                              >
-                                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
-                              <Button
-                                size="icon-sm"
-                                variant="outline"
-                                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                                onClick={() => handleDeleteItem(item.id)}
-                              >
-                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
+                {/* Regular Categories */}
+                {categorySections.length > 0 && (
+                  <SortableContext
+                    items={categorySections.map(c => c.category.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-4 sm:space-y-6 md:space-y-8">
+                      {categorySections.map(({ category, items }) => (
+                        <SortableItem key={category.id} id={category.id}>
+                          <MenuCategorySection
+                            id={category.id}
+                            title={category.name}
+                            items={items}
+                            isOpen={!!expandedCategories[category.id]}
+                            onToggle={() => toggleCategory(category.id)}
+                            onAddItem={() => {
+                              setEditingItem(null)
+                              setItemForm(EMPTY_ITEM_FORM)
+                              setItemCategory(category.id)
+                              setItemTags([])
+                              setImageFile(null)
+                              setIsItemSheetOpen(true)
+                              resetProgress()
+                            }}
+                            onRenameCategory={handleRenameCategory}
+                            onDeleteCategory={() => handleDeleteCategory(category.id)}
+                            onEditItem={startEditItem}
+                            onDeleteItem={(itemId) => setSelectedItem(menuItems.find(i => i.id === itemId) || null)}
+                            onToggleFavorite={toggleFavorite}
+                            onItemClick={(item) => setSelectedItem(item)}
+                            favoritedIds={favoritedIds}
+                            theme={theme}
+                            emptyMessage="No menu items yet. Use the New Item button to add your first dish."
+                            isSortable={true}
+                          />
+                        </SortableItem>
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
-            </section>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      <Dialog open={isCategoryDialogOpen} onOpenChange={(open) => {
-        setIsCategoryDialogOpen(open)
-        if (!open) {
-          resetCategoryDialog()
-        }
-      }}>
-        <DialogContent
-          className={`sm:max-w-md border ${getBorderColor()}`}
-          style={{
-            backgroundColor: menuBackgroundColor,
-            color: contrastColor,
-          }}
-        >
-          <DialogHeader className="pb-0">
-            <DialogTitle className="text-base sm:text-lg">{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm pb-0">
-              {editingCategory
-                ? 'Update the category name. Menu items remain in the category.'
-                : 'Create a category to group menu items.'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCategorySubmit} className="pt-0 space-y-2 sm:space-y-3">
-            <Input
-              id="category-name"
-              value={categoryName}
-              onChange={(event) => setCategoryName(event.target.value)}
-              placeholder="e.g. Starters"
-              required
-              className="border"
-              style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                onClick={() => {
-                  setIsCategoryDialogOpen(false)
-                  resetCategoryDialog()
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" className={`${accentButtonClass} border ${getBorderColor()}`}>
-                {editingCategory ? 'Save changes' : 'Create category'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
-        <SheetContent
-          side="right"
-          className={`!w-full sm:!w-3/4 sm:max-w-lg overflow-hidden border-l ${getBorderColor()}`}
-          style={{
-            backgroundColor: menuBackgroundColor,
-            color: contrastColor,
-          }}
-        >
-          <SheetHeader className="px-3 sm:px-4 md:px-6 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 border-b" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
-            <SheetTitle className="text-base sm:text-lg md:text-xl" style={{ color: contrastColor }}>
-              {editingItem ? 'Edit Menu Item' : 'Create Menu Item'}
-            </SheetTitle>
-          </SheetHeader>
-          <form onSubmit={upsertMenuItem} className="flex flex-col gap-4 sm:gap-5 md:gap-6 px-3 sm:px-4 md:px-6 pb-6 sm:pb-8 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto">
-            <div className="space-y-2 sm:space-y-3">
-              <Label htmlFor="item-title" className="text-sm sm:text-base font-medium">Title</Label>
-              <Input
-                id="item-title"
-                value={itemForm.title}
-                onChange={(event) =>
-                  setItemForm((prev) => ({ ...prev, title: event.target.value }))
-                }
-                placeholder="e.g. Truffle Fries"
-                required
-                className="h-10 sm:h-12 text-sm sm:text-base border"
-                style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-              />
-            </div>
-
-            <div className="space-y-2 sm:space-y-3">
-              <Label htmlFor="item-description" className="text-sm sm:text-base font-medium">Description</Label>
-              <Textarea
-                id="item-description"
-                value={itemForm.description}
-                onChange={(event) =>
-                  setItemForm((prev) => ({ ...prev, description: event.target.value }))
-                }
-                placeholder="Describe the dish and highlight key details."
-                rows={5}
-                className="text-sm sm:text-base min-h-[100px] sm:min-h-[120px] border"
-                style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
-              <div className="space-y-2 sm:space-y-3">
-                <Label htmlFor="item-price" className="text-sm sm:text-base font-medium">Price</Label>
-                <Input
-                  id="item-price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={itemForm.price}
-                  onChange={(event) =>
-                    setItemForm((prev) => ({ ...prev, price: event.target.value }))
-                  }
-                  placeholder="12.50"
-                  className="h-10 sm:h-12 text-sm sm:text-base border"
-                  style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-                />
-              </div>
-
-              <div className="space-y-2 sm:space-y-3">
-                <Label htmlFor="item-category" className="text-sm sm:text-base font-medium">Category</Label>
-                <Select value={itemCategory} onValueChange={setItemCategory}>
-                  <SelectTrigger id="item-category" className="h-10 sm:h-12 text-sm sm:text-base border" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
-                    <SelectValue placeholder="Assign a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2 sm:space-y-3">
-              <Label className="text-sm sm:text-base font-medium">Dietary tags</Label>
-              {tags.length === 0 ? (
-                <p className={`text-xs sm:text-sm ${mutedTextClass}`}>
-                  Create tags in the Tags manager to categorize dietary preferences.
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => {
-                    const isSelected = itemTags.includes(tag.id)
-                    return (
-                      <Button
-                        key={tag.id}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className={`flex items-center gap-2 border ${getBorderColor()}`}
-                        style={{
-                          backgroundColor: isSelected
-                            ? isDarkBackground ? 'rgba(255,255,255,0.12)' : 'rgba(17,24,39,0.08)'
-                            : 'transparent',
-                          color: isDarkBackground ? '#ffffff' : '#1f2937',
-                        }}
-                        onClick={() => toggleFormTag(tag.id)}
-                      >
-                        {tag.name}
-                      </Button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 sm:space-y-3">
-              <Label htmlFor="item-image" className="text-sm sm:text-base font-medium">Menu photo</Label>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-                <Input
-                  id="item-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0]
-                    if (file) {
-                      setImageFile(file)
-                    }
-                  }}
-                  className="h-10 sm:h-12 text-xs sm:text-sm border"
-                  style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-                />
-                {itemForm.image_url && !imageFile && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={`${outlineButtonClass} h-10 sm:h-12 px-3 sm:px-4 border ${getBorderColor()}`}
-                    onClick={() =>
-                      setItemForm((prev) => ({
-                        ...prev,
-                        image_url: '',
-                      }))
-                    }
-                  >
-                    Remove existing
-                  </Button>
+                  </SortableContext>
                 )}
-              </div>
-              {uploading && (
-                <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
-                  {progress.message} ({Math.round(progress.progress)}%)
-                </div>
-              )}
-            </div>
 
-            <div className="flex flex-col gap-2 sm:gap-3 pt-3 sm:pt-4">
-              <Button type="submit" className={`${accentButtonClass} flex items-center justify-center gap-2 h-10 sm:h-12 text-sm sm:text-base font-medium border ${getBorderColor()}`}>
-                <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
-                {editingItem ? 'Save menu item' : 'Create menu item'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className={`${outlineButtonClass} h-10 sm:h-12 text-sm sm:text-base font-medium border ${getBorderColor()}`}
-                onClick={() => closeItemSheet(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </SheetContent>
-      </Sheet>
+                {/* Uncategorized Section */}
+                {uncategorizedItems.length > 0 && categorySections.length === 0 && (
+                  <MenuCategorySection
+                    id="uncategorized"
+                    title="Menu Items"
+                    items={uncategorizedItems}
+                    isOpen={true} // Always open if it's the only section
+                    onToggle={() => { }} // No toggle
+                    onAddItem={startCreateItem}
+                    onEditItem={startEditItem}
+                    onDeleteItem={handleDeleteItem}
+                    onToggleFavorite={toggleFavorite}
+                    onItemClick={setSelectedItem}
+                    favoritedIds={favoritedIds}
+                    theme={theme}
+                    subtitle="Organize with categories whenever you are ready."
+                    isSortable={true}
+                  />
+                )}
 
-      {/* Menu Item Details Popup */}
-      {selectedItem && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-          style={{
-            width: '100vw',
-            overflow: 'auto',
-          }}
-          onClick={() => setSelectedItem(null)}
-        >
-          <div 
-            className="relative border shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+                {/* Empty State */}
+                {categorySections.length === 0 && uncategorizedItems.length === 0 && (
+                  <div
+                    className={`border border - dashed ${getBorderColor()} py - 12 sm: py - 14 md: py - 16 text - center ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
+                      } `}
+                  >
+                    <h2 className={`text - lg sm: text - xl md: text - 2xl font - semibold ${primaryTextClass} `}>
+                      Organize your menu with categories
+                    </h2>
+                    <p className={`mt - 2 text - xs sm: text - sm ${mutedTextClass} `}>
+                      Create a menu category to get started. Menu items appear here once created.
+                    </p>
+                    <Button
+                      className={`mt - 4 sm: mt - 6 ${accentButtonClass} border ${getBorderColor()} `}
+                      onClick={openCreateCategory}
+                    >
+                      Add your first category
+                    </Button>
+                  </div>
+                )}
+
+                {/* Uncategorized section when there are categories */}
+                {categorySections.length > 0 && uncategorizedItems.length > 0 && (
+                  <MenuCategorySection
+                    id="uncategorized"
+                    title="Uncategorized"
+                    items={uncategorizedItems}
+                    isOpen={expandedCategories['uncategorized']}
+                    onToggle={() => toggleCategory('uncategorized')}
+                    onEditItem={startEditItem}
+                    onDeleteItem={handleDeleteItem}
+                    onToggleFavorite={toggleFavorite}
+                    onItemClick={setSelectedItem}
+                    favoritedIds={favoritedIds}
+                    theme={theme}
+                    emptyMessage="No uncategorized items."
+                    isSortable={true}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <Dialog open={isCategoryDialogOpen} onOpenChange={(open) => {
+          setIsCategoryDialogOpen(open)
+          if (!open) {
+            resetCategoryDialog()
+          }
+        }}>
+          <DialogContent
+            className={`sm: max - w - md border ${getBorderColor()} `}
             style={{
               backgroundColor: menuBackgroundColor,
               color: contrastColor,
-              borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="menu-item-heading"
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedItem(null)}
-              className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-2 border ${getBorderColor()} transition-colors z-10 ${
-                isDarkBackground 
-                  ? 'bg-white/20 hover:bg-white/30 text-white' 
-                  : 'bg-white/80 hover:bg-white text-gray-700'
-              }`}
-              aria-label="Close"
-            >
-              <X className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
-
-            {/* Content */}
-            <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-              <div className={`relative h-48 sm:h-64 w-full md:h-full md:min-h-[24rem] border-b md:border-b-0 md:border-r ${getBorderColor()}`}>
-                {selectedItem.image_url ? (
-                  <Image 
-                    src={selectedItem.image_url} 
-                    alt={selectedItem.title}
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 40vw, 90vw"
-                  />
-                ) : (
-                  <div className={`flex h-full w-full items-center justify-center text-xs sm:text-sm ${mutedTextClass}`}>
-                    Photo coming soon
-                  </div>
-                )}
+            <DialogHeader className="pb-0">
+              <DialogTitle className="text-base sm:text-lg">{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm pb-0">
+                {editingCategory
+                  ? 'Update the category name. Menu items remain in the category.'
+                  : 'Create a category to group menu items.'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCategorySubmit} className="pt-0 space-y-2 sm:space-y-3">
+              <Input
+                id="category-name"
+                value={categoryName}
+                onChange={(event) => setCategoryName(event.target.value)}
+                placeholder="e.g. Starters"
+                required
+                className="border"
+                style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={`${outlineButtonClass} border ${getBorderColor()} `}
+                  onClick={() => {
+                    setIsCategoryDialogOpen(false)
+                    resetCategoryDialog()
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className={`${accentButtonClass} border ${getBorderColor()} `}>
+                  {editingCategory ? 'Save changes' : 'Create category'}
+                </Button>
               </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
-              <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 lg:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
-                {/* Title */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col gap-2">
-                    <h2
-                      id="menu-item-heading"
-                      className={`text-xl sm:text-2xl md:text-3xl font-bold ${primaryTextClass}`}
-                      style={{ fontFamily: menuFontFamily }}
-                    >
-                      {selectedItem.title}
-                    </h2>
-                    {selectedItem.menu_categories && (
-                      <Badge 
-                        variant="secondary" 
-                        className="self-start border"
-                        style={{
-                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                          color: contrastColor,
-                          borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-                        }}
-                      >
-                        {selectedItem.menu_categories.name}
-                      </Badge>
-                    )}
-                  </div>
-                  {typeof selectedItem.price === 'number' && (
-                    <div className={`text-lg sm:text-xl font-semibold ${primaryTextClass}`}>
-                      ${selectedItem.price.toFixed(2)}
-                    </div>
-                  )}
+        <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
+          <SheetContent
+            side="right"
+            className={`w - full sm: max - w - md border - l ${getBorderColor()} p - 0 gap - 0`}
+            style={{
+              backgroundColor: menuBackgroundColor,
+              color: contrastColor,
+            }}
+          >
+            <SheetHeader className={`p - 6 border - b ${getBorderColor()} text - left space - y - 0`}>
+              <SheetTitle className={primaryTextClass}>
+                {editingItem ? 'Edit Menu Item' : 'New Menu Item'}
+              </SheetTitle>
+            </SheetHeader>
+
+            <form onSubmit={upsertMenuItem} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className={primaryTextClass}>Item Name *</Label>
+                  <Input
+                    id="title"
+                    value={itemForm.title}
+                    onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
+                    placeholder="e.g., Grilled Salmon"
+                    required
+                    className={`border ${getBorderColor()} bg - transparent`}
+                  />
                 </div>
 
-                {/* Description */}
-                {selectedItem.description && (
-                  <div>
-                    <p className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}>
-                      {selectedItem.description}
-                    </p>
+                <div className="space-y-2">
+                  <Label htmlFor="price" className={primaryTextClass}>Price</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={itemForm.price}
+                    onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
+                    placeholder="0.00"
+                    className={`border ${getBorderColor()} bg - transparent`}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description" className={primaryTextClass}>Description</Label>
+                  <Textarea
+                    id="description"
+                    value={itemForm.description}
+                    onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+                    placeholder="Describe your menu item..."
+                    rows={3}
+                    className={`border ${getBorderColor()} bg - transparent`}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={primaryTextClass}>Image</Label>
+                  <div className={`border border - dashed ${getBorderColor()} rounded - md p - 4 text - center`}>
+                    {imageFile ? (
+                      <div className="relative">
+                        <p className={`text - sm ${primaryTextClass} mb - 2`}>{imageFile.name}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setImageFile(null)}
+                          className={`${outlineButtonClass} border ${getBorderColor()} `}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Remove
+                        </Button>
+                      </div>
+                    ) : itemForm.image_url ? (
+                      <div className="relative">
+                        <div className="relative h-32 w-full mb-2">
+                          <Image
+                            src={itemForm.image_url}
+                            alt="Preview"
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setItemForm({ ...itemForm, image_url: '' })}
+                          className={`${outlineButtonClass} border ${getBorderColor()} `}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Remove Image
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <Upload className={`h - 8 w - 8 mb - 2 ${mutedTextClass} `} />
+                        <Label
+                          htmlFor="image-upload"
+                          className={`cursor - pointer ${primaryTextClass} hover: underline`}
+                        >
+                          Click to upload image
+                        </Label>
+                        <input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) setImageFile(file)
+                          }}
+                          className="hidden"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={primaryTextClass}>Category</Label>
+                  <Select value={itemCategory} onValueChange={setItemCategory}>
+                    <SelectTrigger className={`border ${getBorderColor()} bg - transparent`}>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Category</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={primaryTextClass}>Dietary Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => {
+                      const isSelected = itemTags.includes(tag.id)
+                      const borderColor = getAllergenBorderColor(tag.name)
+
+                      return (
+                        <Badge
+                          key={tag.id}
+                          variant="outline"
+                          className="cursor-pointer transition-all"
+                          onClick={() => toggleFormTag(tag.id)}
+                          style={{
+                            borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
+                            backgroundColor: isSelected
+                              ? (borderColor || (isDarkBackground ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'))
+                              : 'transparent',
+                            color: contrastColor
+                          }}
+                        >
+                          <Tag className="h-3 w-3 mr-1" />
+                          {tag.name}
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className={`p - 6 border - t ${getBorderColor()} flex justify - end gap - 2`}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => closeItemSheet(false)}
+                  className={`${outlineButtonClass} border ${getBorderColor()} `}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={uploading}
+                  className={`${accentButtonClass} border ${getBorderColor()} `}
+                >
+                  {uploading ? 'Saving...' : 'Save Item'}
+                </Button>
+              </div>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Item Detail Modal */}
+        <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+          <DialogContent
+            className={`sm: max - w - lg p - 0 overflow - hidden border ${getBorderColor()} `}
+            style={{
+              backgroundColor: menuBackgroundColor,
+              color: contrastColor,
+              fontFamily: menuFontFamily,
+            }}
+          >
+            {selectedItem && (
+              <>
+                {selectedItem.image_url && (
+                  <div className="relative w-full aspect-video">
+                    <Image
+                      src={selectedItem.image_url}
+                      alt={selectedItem.title}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 )}
+                <div className="p-4 sm:p-6 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h2 className={`text-xl sm:text-2xl font-bold ${primaryTextClass}`}>
+                      {selectedItem.title}
+                    </h2>
+                    {selectedItem.price && (
+                      <span className={`text-lg font-semibold ${primaryTextClass} notranslate`}>
+                        {formatPrice(selectedItem.price, profile?.currency)}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Dietary Tags */}
-                {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                  <div>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedItem.menu_item_tags.map((itemTag, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="outline" 
-                          className="text-xs border"
-                          style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
+                  {selectedItem.description && (
+                    <p className={`text - sm sm: text - base ${secondaryTextClass} `}>
+                      {selectedItem.description}
+                    </p>
+                  )}
+
+                  {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {selectedItem.menu_item_tags.map((tagEntry) => (
+                        <Badge
+                          key={tagEntry.tags.id}
+                          variant="outline"
+                          style={{
+                            borderColor: getAllergenBorderColor(tagEntry.tags.name),
+                            color: contrastColor
+                          }}
                         >
-                          {itemTag.tags.name}
+                          <Tag className="h-3 w-3 mr-1" />
+                          {tagEntry.tags.name}
                         </Badge>
                       ))}
                     </div>
+                  )}
+
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedItem(null)}
+                      className={`${outlineButtonClass} border ${getBorderColor()} `}
+                    >
+                      Close
+                    </Button>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </section>
+    </DndContext>
   )
 }
-

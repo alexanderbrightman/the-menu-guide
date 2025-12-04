@@ -161,6 +161,41 @@ async function handleCheckoutSessionCompleted(event: Stripe.Event) {
   )
 }
 
+async function findProfileByEmail(email: string) {
+  try {
+    // Try to find user in auth.users using the auth schema
+    // This requires the service role key which supabaseAdmin has
+    const { data: userData, error: userError } = await supabaseAdmin
+      .schema('auth')
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (userError || !userData) {
+      console.log('[FindProfile] User not found by email in auth.users:', email)
+      return null
+    }
+
+    // Find profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', userData.id)
+      .single()
+
+    if (profileError || !profile) {
+      console.log('[FindProfile] Profile not found for user:', userData.id)
+      return null
+    }
+
+    return profile
+  } catch (error) {
+    console.error('[FindProfile] Error looking up profile:', error)
+    return null
+  }
+}
+
 async function handleSubscriptionChange(event: Stripe.Event) {
   const subscription = event.data.object as Stripe.Subscription
   console.log('[Subscription] Event received:', {
@@ -171,31 +206,38 @@ async function handleSubscriptionChange(event: Stripe.Event) {
     metadata: subscription.metadata
   })
 
-  const userIdFromSubscription = subscription.metadata?.userId as string
-  const profileIdFromSubscription = subscription.metadata?.profileId as string
+  let userId = subscription.metadata?.userId as string
+  let profileId = subscription.metadata?.profileId as string
 
   // If metadata is missing, try to find profile by customer email
-  if (!userIdFromSubscription || !profileIdFromSubscription) {
+  if (!userId || !profileId) {
     console.log('[Subscription] Missing metadata, attempting to find profile by customer email')
     try {
-      const customer = await stripe!.customers.retrieve(subscription.customer as string)
+      const customer = await stripe!.customers.retrieve(subscription.customer as string) as Stripe.Customer
       if (customer && !customer.deleted && customer.email) {
-        // Alternative: search by username or look up in auth.users
-        // For now, we'll log this and require metadata
-        console.error('[Subscription] Cannot automatically find profile without metadata')
+        const profile = await findProfileByEmail(customer.email)
+        if (profile) {
+          console.log('[Subscription] Found profile by email:', profile.id)
+          userId = profile.id
+          profileId = profile.id
+        } else {
+          console.error('[Subscription] Could not find profile by email:', customer.email)
+        }
+      } else {
+        console.error('[Subscription] Customer has no email or is deleted')
       }
     } catch (error) {
       console.error('[Subscription] Error retrieving customer:', error)
     }
   }
 
-  if (userIdFromSubscription && profileIdFromSubscription) {
+  if (userId && profileId) {
     await manageSubscriptionStatusChange(
       stripe!,
       subscription.id,
       subscription.customer as string,
-      userIdFromSubscription,
-      profileIdFromSubscription,
+      userId,
+      profileId,
       false
     )
   } else {
@@ -205,10 +247,10 @@ async function handleSubscriptionChange(event: Stripe.Event) {
 
 async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
   const invoice = event.data.object as Stripe.Invoice & { subscription?: string | Stripe.Subscription }
-  const subscriptionId = typeof invoice.subscription === 'string' 
-    ? invoice.subscription 
+  const subscriptionId = typeof invoice.subscription === 'string'
+    ? invoice.subscription
     : invoice.subscription?.id || null
-    
+
   console.log('[Invoice] Payment succeeded:', {
     invoiceId: invoice.id,
     customer: invoice.customer,
@@ -218,7 +260,7 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
 
   // If this is for a subscription, ensure the subscription status is updated
   if (subscriptionId) {
-    
+
     // Retrieve the subscription to get its status
     const subscription = await stripe!.subscriptions.retrieve(subscriptionId)
     console.log('[Invoice] Retrieved subscription:', {
@@ -299,7 +341,7 @@ async function manageSubscriptionStatusChange(
     // Determine subscription status based on Stripe subscription status
     let subscriptionStatus: Profile['subscription_status'] = 'free'
     let isPublic = false
-    
+
     if (subscription.status === 'active') {
       subscriptionStatus = 'pro'
       isPublic = true
@@ -307,7 +349,7 @@ async function manageSubscriptionStatusChange(
       // Check if subscription was canceled at period end or immediately
       const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end
       const now = Math.floor(Date.now() / 1000)
-      
+
       if (subscription.cancel_at_period_end && currentPeriodEnd > now) {
         // Subscription is canceled but still active until period end
         subscriptionStatus = 'pro'

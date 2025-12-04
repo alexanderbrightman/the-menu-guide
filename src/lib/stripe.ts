@@ -9,7 +9,7 @@ export const stripe = process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRE
   : null
 
 export const STRIPE_CONFIG = {
-  priceId: process.env.STRIPE_PRICE_ID || 'price_1234567890', // You'll need to create this in Stripe
+  priceId: process.env.STRIPE_PRICE_ID || '', // Should be set in environment variables
   currency: 'usd',
   interval: 'month',
   amount: 1500, // $15.00 in cents

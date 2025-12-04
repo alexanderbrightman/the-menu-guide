@@ -66,10 +66,10 @@ export async function POST(request: NextRequest) {
     const forwardedProto = request.headers.get('x-forwarded-proto')
     const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
     const baseUrl = `${protocol}://${host}`
-    
-    const successUrl = `${baseUrl}/dashboard?success=true&payment=completed`
-    const cancelUrl = `${baseUrl}/dashboard?canceled=true`
-    
+
+    const successUrl = `${baseUrl}/?success=true&payment=completed`
+    const cancelUrl = `${baseUrl}/?canceled=true`
+
     console.log('Stripe checkout URLs:', { baseUrl, successUrl, cancelUrl, nodeEnv: process.env.NODE_ENV })
 
     // Create Stripe checkout session with optimized configuration

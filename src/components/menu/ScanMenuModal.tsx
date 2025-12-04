@@ -40,7 +40,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
     if (file) {
       setSelectedFile(file)
       setMessage(null)
-      
+
       // Create preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader()
@@ -67,7 +67,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
 
   const handleUpload = async () => {
     if (!selectedFile || !supabase) return
-    
+
     setLoading(true)
     setMessage(null)
 
@@ -99,19 +99,19 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
       if (res.ok) {
         const itemCount = data.itemsInserted || 0
         const categoryCount = data.categoriesCreated || 0
-        
+
         let successMsg = `✅ Successfully imported ${itemCount} menu item${itemCount !== 1 ? 's' : ''}!`
         if (categoryCount > 0) {
           successMsg += ` Created ${categoryCount} categor${categoryCount !== 1 ? 'ies' : 'y'}.`
         }
-        
+
         setMessage(successMsg)
-        
+
         // Trigger refresh callback after a delay to ensure database is committed
         setTimeout(() => {
           onScanSuccess?.()
         }, 1500)
-        
+
         // Close modal after showing success
         setTimeout(() => {
           if (!loading) {
@@ -192,7 +192,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
             onChange={handleFileSelect}
             className="hidden"
           />
-          
+
           <div className="space-y-4">
             {!loading && !message && (
               <>
@@ -213,7 +213,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 bg-white/90 backdrop-blur-md hover:bg-white shadow-lg shadow-gray-200/12 rounded-lg"
+                        className="absolute top-2 right-2 bg-white hover:bg-gray-100 shadow-none rounded-none border border-black p-1 h-auto"
                         onClick={handleRemoveFile}
                       >
                         <X className="h-4 w-4" />
@@ -224,7 +224,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
                     </p>
                   </div>
                 )}
-                
+
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
@@ -259,11 +259,10 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
 
             {message && (
               <div className="py-4">
-                <div className={`p-4 rounded-lg ${
-                  message.includes('✅') 
-                    ? 'bg-green-50 text-green-800 border border-green-200' 
-                    : 'bg-red-50 text-red-800 border border-red-200'
-                }`}>
+                <div className={`p-4 rounded-lg ${message.includes('✅')
+                  ? 'bg-green-50 text-green-800 border border-green-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}>
                   <p className="text-sm font-medium">{message}</p>
                 </div>
                 {!loading && (

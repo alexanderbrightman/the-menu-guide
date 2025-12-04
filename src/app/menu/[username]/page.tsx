@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { PublicMenuPage } from '@/components/public/PublicMenuPage'
+import { validatePremiumAccess } from '@/lib/premium-validation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,7 +36,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       .select('username')
       .eq('username', username)
       .single()
-    
+
     if (privateProfile) {
       // Profile exists but is private
       notFound()
@@ -43,6 +44,13 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       // Profile doesn't exist at all
       notFound()
     }
+  }
+
+  // Validate premium access (check for expiration)
+  // This ensures that even if is_public is true in DB, expired subscriptions are hidden
+  const { isValid } = validatePremiumAccess(profile, 'public menu')
+  if (!isValid) {
+    notFound()
   }
 
   // Fetch menu categories
