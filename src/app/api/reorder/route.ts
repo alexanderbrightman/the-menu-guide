@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
 import { getSecurityHeaders } from '@/lib/security'
-import { checkRateLimit, getRateLimitHeaders, STANDARD_RATE_LIMIT } from '@/lib/rate-limiting'
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/rate-limiting'
 
 export async function POST(request: NextRequest) {
     try {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid type' }, { status: 400, headers: getSecurityHeaders() })
         }
 
-        const cleanUpdates = updates.map((update: any) => ({
+        const cleanUpdates = updates.map((update: { id: string; sort_order: number }) => ({
             id: update.id,
             sort_order: update.sort_order,
         }))

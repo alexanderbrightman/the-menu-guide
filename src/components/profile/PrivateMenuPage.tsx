@@ -3,9 +3,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase, MenuCategory, MenuItem, Profile, Tag as TagType, MenuItemWithRelations, MenuItemTag } from '@/lib/supabase'
+import { supabase, MenuCategory, MenuItemWithRelations, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { Button } from '@/components/ui/button'
@@ -29,7 +28,6 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -43,7 +41,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {
-  restrictToVerticalAxis,
   restrictToWindowEdges,
 } from '@dnd-kit/modifiers';
 import { SortableItem } from '@/components/ui/sortable-item';
@@ -110,7 +107,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
   const [selectedItem, setSelectedItem] = useState<MenuItemWithRelations | null>(null)
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set())
 
-  const { uploading, progress, uploadImage, resetProgress } = useImageUpload()
+  const { uploading, uploadImage, resetProgress } = useImageUpload()
 
   // Sensors for Drag and Drop
   const sensors = useSensors(
@@ -542,11 +539,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     setIsCategoryDialogOpen(true)
   }
 
-  const openEditCategory = (category: MenuCategory) => {
-    setEditingCategory(category)
-    setCategoryName(category.name)
-    setIsCategoryDialogOpen(true)
-  }
+
 
   const handleCategorySubmit = async (event: React.FormEvent) => {
     event.preventDefault()

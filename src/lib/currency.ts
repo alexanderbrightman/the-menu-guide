@@ -29,7 +29,7 @@ export function formatPrice(price: number, currencyCode: string = DEFAULT_CURREN
             style: 'currency',
             currency: currencyCode,
         }).format(price)
-    } catch (error) {
+    } catch {
         // Fallback if currency code is invalid
         return `${getCurrencySymbol(currencyCode)}${price.toFixed(2)}`
     }

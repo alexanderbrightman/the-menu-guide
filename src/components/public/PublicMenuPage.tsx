@@ -422,9 +422,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
   useEffect(() => {
     // Initialize Google Translate
-    // @ts-ignore
+    // @ts-expect-error
     window.googleTranslateElementInit = () => {
-      // @ts-ignore
+      // @ts-expect-error
       new window.google.translate.TranslateElement(
         { pageLanguage: 'en', autoDisplay: false },
         'google_translate_element'

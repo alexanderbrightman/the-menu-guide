@@ -131,7 +131,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
       setUsernameStatus('idle')
       setUsernameMessage('')
     }
-  }, [profile?.username, supabase])
+  }, [profile?.username])
 
   // Debounce username validation
   useEffect(() => {

@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch from database
-    let { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data: initialProfile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    let profile = initialProfile
 
     if (error) {
       console.error('Error fetching profile:', error)
