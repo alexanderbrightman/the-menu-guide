@@ -25,7 +25,7 @@ export function SortableItem({ id, children, className, style }: SortableItemPro
         opacity: isDragging ? 0.5 : 1,
         zIndex: isDragging ? 50 : 'auto',
         position: 'relative',
-        touchAction: 'none', // Important for touch devices
+        touchAction: 'manipulation', // Allow scrolling, but prevent double-tap zoom
         ...style,
     }
 
