@@ -421,6 +421,19 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   }, [menuBackgroundColor])
 
   useEffect(() => {
+    // Check if we should maintain the translation
+    const shouldTranslate = sessionStorage.getItem('should_translate')
+
+    if (shouldTranslate) {
+      // We just reloaded to apply a translation, so we keep the cookie
+      // and remove the flag for the next refresh
+      sessionStorage.removeItem('should_translate')
+    } else {
+      // We are on a fresh load or refresh, so we clear the translation cookie
+      // to ensure we start in English (or original language)
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    }
+
     // Initialize Google Translate
     // @ts-expect-error - Google Translate API adds properties to window
     window.googleTranslateElementInit = () => {
@@ -460,6 +473,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     // Set the googtrans cookie which the script reads to determine target language
     // Format: /source_lang/target_lang
     document.cookie = `googtrans=/auto/${langCode}; path=/`
+
+    // Set a flag to tell the next load that this was an intentional translation
+    sessionStorage.setItem('should_translate', 'true')
+
     window.location.reload()
   }, [])
 
@@ -636,14 +653,14 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   <button
                     className="border rounded-full flex items-center justify-center transition-colors hover:opacity-70"
                     style={{
-                      width: '22px',
-                      height: '22px',
+                      width: '32px',
+                      height: '32px',
                       borderColor: isDarkBackground ? '#ffffff' : '#000000',
                       color: isDarkBackground ? '#ffffff' : '#000000',
                     }}
                     aria-label="Translate menu"
                   >
-                    <Globe className="h-3 w-3" />
+                    <Globe className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -661,10 +678,10 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
               {profile.bio && (
                 <button
                   onClick={() => setIsInfoModalOpen(true)}
-                  className="border rounded-full flex items-center justify-center text-[10px] font-medium transition-colors hover:opacity-70"
+                  className="border rounded-full flex items-center justify-center text-sm font-medium transition-colors hover:opacity-70"
                   style={{
-                    width: '22px',
-                    height: '22px',
+                    width: '32px',
+                    height: '32px',
                     borderColor: isDarkBackground ? '#ffffff' : '#000000',
                     color: isDarkBackground ? '#ffffff' : '#000000',
                     fontFamily: 'Georgia, serif',

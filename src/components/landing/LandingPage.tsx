@@ -109,10 +109,10 @@ export function LandingPage() {
       clearTimeout(debounceTimerRef.current)
     }
 
-    // Reduced debounce from 300ms to 150ms for faster response
+    // Reduced debounce to 80ms for snappier response
     debounceTimerRef.current = setTimeout(() => {
       performSearch(searchQuery)
-    }, 150)
+    }, 80)
 
     return () => {
       if (debounceTimerRef.current) {
@@ -218,6 +218,8 @@ export function LandingPage() {
           right: 'clamp(0.5rem, 2vw, 1.5rem)',
           height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
           opacity: 1 - scrollProgress * 3,
+          boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.3)',
+          borderRadius: '4px',
         }}
       />
 
@@ -230,6 +232,8 @@ export function LandingPage() {
           right: 'clamp(0.5rem, 2vw, 1.5rem)',
           height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
           opacity: 1 - scrollProgress * 3,
+          boxShadow: '0 -10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.3)',
+          borderRadius: '4px',
         }}
       />
 
@@ -476,7 +480,7 @@ export function LandingPage() {
                   paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
                   paddingTop: '0',
                   paddingBottom: '0',
-                  fontSize: 'clamp(0.9rem, 1.8vw, 1.2rem)',
+                  fontSize: '16px',
                   height: '100%',
                   border: 'none !important',
                   outline: 'none !important',
