@@ -1380,9 +1380,9 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                 )}
                 <div className="p-4 sm:p-6 space-y-4">
                   <div className="flex justify-between items-start">
-                    <h2 className={`text-xl sm:text-2xl font-bold ${primaryTextClass}`}>
+                    <DialogTitle className={`text-xl sm:text-2xl font-bold ${primaryTextClass}`}>
                       {selectedItem.title}
-                    </h2>
+                    </DialogTitle>
                     {selectedItem.price && (
                       <span className={`text-lg font-semibold ${primaryTextClass} notranslate`}>
                         {formatPrice(selectedItem.price, profile?.currency)}
