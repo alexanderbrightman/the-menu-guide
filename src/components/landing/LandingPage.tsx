@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AuthForm } from '@/components/auth/AuthForm'
@@ -121,9 +122,7 @@ export function LandingPage() {
     }
   }, [searchQuery, performSearch])
 
-  const handleRestaurantClick = (username: string) => {
-    router.push(`/menu/${username}`)
-  }
+
 
 
   // Track scroll progress for blur and color transition with optimized performance
@@ -201,7 +200,7 @@ export function LandingPage() {
 
       {/* Outer Frame - Static but fades out */}
       <div
-        className="fixed border-[2px] border-gray-900 z-30 pointer-events-none transition-opacity duration-0"
+        className="fixed border border-black z-30 pointer-events-none transition-opacity duration-0"
         style={{
           inset: 'clamp(0.5rem, 2vw, 1.5rem)',
           borderRadius: '4px',
@@ -209,59 +208,11 @@ export function LandingPage() {
         }}
       />
 
-      {/* Header Background - Burgundy */}
-      <div
-        className="fixed bg-[#631318] z-10 transition-opacity duration-0"
-        style={{
-          top: 'clamp(0.5rem, 2vw, 1.5rem)',
-          left: 'clamp(0.5rem, 2vw, 1.5rem)',
-          right: 'clamp(0.5rem, 2vw, 1.5rem)',
-          height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
-          opacity: 1 - scrollProgress * 3,
-          boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.3)',
-          borderRadius: '4px',
-        }}
-      />
 
-      {/* Footer Background - Burgundy */}
-      <div
-        className="fixed bg-[#631318] z-10 transition-opacity duration-0"
-        style={{
-          bottom: 'clamp(0.5rem, 2vw, 1.5rem)',
-          left: 'clamp(0.5rem, 2vw, 1.5rem)',
-          right: 'clamp(0.5rem, 2vw, 1.5rem)',
-          height: 'calc(clamp(5rem, 12vw, 6rem) - clamp(0.5rem, 2vw, 1.5rem))',
-          opacity: 1 - scrollProgress * 3,
-          boxShadow: '0 -10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.3)',
-          borderRadius: '4px',
-        }}
-      />
-
-      {/* Top Separator Line */}
-      <div
-        className="fixed h-[1px] bg-gray-900 z-20 pointer-events-none transition-opacity duration-0"
-        style={{
-          top: 'clamp(5rem, 12vw, 6rem)',
-          left: 'clamp(0.5rem, 2vw, 1.5rem)',
-          right: 'clamp(0.5rem, 2vw, 1.5rem)',
-          opacity: 1 - scrollProgress * 3,
-        }}
-      />
-
-      {/* Bottom Separator Line */}
-      <div
-        className="fixed h-[1px] bg-gray-900 z-20 pointer-events-none transition-opacity duration-0"
-        style={{
-          bottom: 'clamp(5rem, 12vw, 6rem)',
-          left: 'clamp(0.5rem, 2vw, 1.5rem)',
-          right: 'clamp(0.5rem, 2vw, 1.5rem)',
-          opacity: 1 - scrollProgress * 3,
-        }}
-      />
 
       {/* Header bar with title */}
       <div
-        className="fixed z-20 flex items-center justify-center"
+        className="fixed z-20 flex items-start justify-start"
         style={{
           top: 'clamp(0.5rem, 2vw, 1.5rem)',
           left: 'clamp(0.5rem, 2vw, 1.5rem)',
@@ -272,34 +223,16 @@ export function LandingPage() {
         }}
       >
         {/* Header Content Container */}
-        <div className="relative w-full max-w-7xl flex items-center justify-center">
+        <div className="relative w-full max-w-7xl flex items-start justify-start p-6">
 
           {/* Title in center */}
           <h1
             ref={titleCardRef}
-            className="font-normal leading-none tracking-tight text-center select-none"
+            className="font-normal leading-none tracking-tight text-center select-none text-black"
             style={{
-              fontFamily: 'var(--font-dancing-script)',
               fontSize: 'clamp(2.5rem, 5vw, 4rem)',
               letterSpacing: '0em',
               paddingBottom: '0',
-              // Silver shine gradient - More discrete
-              backgroundImage: `linear-gradient(
-                110deg, 
-                #F5F0EB 40%, 
-                #E2E8F0 48%, 
-                #FFFFFF 50%, 
-                #E2E8F0 52%, 
-                #F5F0EB 60%
-              )`,
-              backgroundSize: '200% 100%',
-              backgroundPosition: `${shinePosition}% 0`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent', // Fallback
-              transition: 'background-position 0.1s ease-out', // Smooth transition
-              paddingTop: '0.15em', // Visually center the script font
             }}
           >
             The Menu Guide
@@ -309,7 +242,7 @@ export function LandingPage() {
 
       {/* Footer bar with Login button */}
       <div
-        className="fixed z-20 flex items-center justify-end"
+        className="fixed z-20 flex items-end justify-end"
         style={{
           bottom: 'clamp(0.5rem, 2vw, 1.5rem)',
           left: 'clamp(0.5rem, 2vw, 1.5rem)',
@@ -319,32 +252,14 @@ export function LandingPage() {
           opacity: 1 - scrollProgress * 1.5,
         }}
       >
-        <div className="relative w-full max-w-7xl flex justify-end px-4 sm:px-8 md:px-12">
+        <div className="relative w-full max-w-7xl flex items-end justify-end p-6">
           <Button
             onClick={() => setShowAuthForm(true)}
             variant="ghost"
-            className="hover:bg-[#F5F0EB]/10 rounded-none text-xs sm:text-sm font-medium transition-all duration-300 px-6 py-2 h-auto border border-[#F5F0EB]"
-            style={{
-              // Apply same shine to button text
-              backgroundImage: `linear-gradient(
-                110deg, 
-                #F5F0EB 40%, 
-                #E2E8F0 48%, 
-                #FFFFFF 50%, 
-                #E2E8F0 52%, 
-                #F5F0EB 60%
-              )`,
-              backgroundSize: '200% 100%',
-              backgroundPosition: `${shinePosition}% 0`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent',
-              transition: 'background-position 0.1s ease-out',
-            }}
+            className="hover:bg-black/10 rounded-none text-xs sm:text-sm font-medium transition-all duration-300 px-6 py-2 h-auto border border-black text-black"
           >
             Log In
-            <ArrowRight className="ml-2 h-3 w-3 text-[#F5F0EB]" style={{ WebkitTextFillColor: '#F5F0EB' }} />
+            <ArrowRight className="ml-2 h-3 w-3 text-black" />
           </Button>
         </div>
       </div>
@@ -540,9 +455,9 @@ export function LandingPage() {
                 ) : searchResults.length > 0 ? (
                   <div className="py-2">
                     {searchResults.map((restaurant) => (
-                      <button
+                      <Link
                         key={restaurant.username}
-                        onClick={() => handleRestaurantClick(restaurant.username)}
+                        href={`/menu/${restaurant.username}`}
                         className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-4"
                       >
                         {restaurant.avatar_url ? (
@@ -564,7 +479,7 @@ export function LandingPage() {
                           <span className="text-gray-900 font-medium">{restaurant.display_name}</span>
                           <span className="text-gray-600 text-sm">@{restaurant.username}</span>
                         </div>
-                      </button>
+                      </Link>
                     ))}
                   </div>
                 ) : (
