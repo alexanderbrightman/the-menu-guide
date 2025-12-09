@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Tag } from 'lucide-react'
-import { X, Upload, AlertCircle } from 'lucide-react'
+import { X, Upload, AlertCircle, Check } from 'lucide-react'
 
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { MenuHeader } from './menu-blocks/MenuHeader'
@@ -1182,45 +1182,61 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
             }
           }}>
             <DialogContent
-              className={`sm: max - w - md border ${getBorderColor()} `}
+              className={`sm:max-w-md border-0 sm:border ${getBorderColor()} p-0 gap-0 overflow-hidden`}
+              showCloseButton={false}
               style={{
                 backgroundColor: menuBackgroundColor,
                 color: contrastColor,
               }}
             >
-              <DialogHeader className="pb-0">
-                <DialogTitle className="text-base sm:text-lg">{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm pb-0">
-                  {editingCategory
-                    ? 'Update the category name. Menu items remain in the category.'
-                    : 'Create a category to group menu items.'}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCategorySubmit} className="pt-0 space-y-2 sm:space-y-3">
-                <Input
-                  id="category-name"
-                  value={categoryName}
-                  onChange={(event) => setCategoryName(event.target.value)}
-                  placeholder="e.g. Starters"
-                  required
-                  className="border"
-                  style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-                />
-                <div className="flex justify-end gap-2">
+              <form onSubmit={handleCategorySubmit} className="flex flex-col w-full">
+                {/* Header - Matches Item Sheet Design */}
+                <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
                   <Button
                     type="button"
-                    variant="outline"
-                    className={`${outlineButtonClass} border ${getBorderColor()} `}
+                    variant="ghost"
                     onClick={() => {
                       setIsCategoryDialogOpen(false)
                       resetCategoryDialog()
                     }}
+                    className="text-base font-normal hover:bg-transparent px-2 -ml-2 sm:px-4 sm:ml-0"
+                    style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className={`${accentButtonClass} border ${getBorderColor()} `}>
-                    {editingCategory ? 'Save changes' : 'Create category'}
+
+                  <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
+                    {editingCategory ? 'Edit Category' : 'New Category'}
+                  </DialogTitle>
+
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    className="text-base font-semibold hover:bg-transparent px-2 -mr-2 sm:px-4 sm:mr-0 text-blue-500 hover:text-blue-600"
+                  >
+                    Save
                   </Button>
+                </div>
+
+                {/* Content */}
+                <div className="p-4 sm:p-6 space-y-4">
+                  <DialogDescription className="text-xs sm:text-sm hidden">
+                    {editingCategory
+                      ? 'Update the category name.'
+                      : 'Create a category to group menu items.'}
+                  </DialogDescription>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="category-name" className={primaryTextClass}>Category Name</Label>
+                    <Input
+                      id="category-name"
+                      value={categoryName}
+                      onChange={(event) => setCategoryName(event.target.value)}
+                      placeholder="e.g. Starters"
+                      required
+                      className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                    />
+                  </div>
                 </div>
               </form>
             </DialogContent>
@@ -1228,183 +1244,199 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
           <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
             <SheetContent
-              side="right"
-              className={`w - full sm: max - w - md border - l ${getBorderColor()} p - 0 gap - 0`}
+              side="bottom"
+              className={`w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-4xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 ease-in-out data-[state=open]:slide-in-from-bottom-full sm:data-[state=open]:slide-in-from-bottom-10 sm:data-[state=open]:zoom-in-95 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 [&>button]:hidden flex flex-col`}
               style={{
                 backgroundColor: menuBackgroundColor,
                 color: contrastColor,
               }}
             >
-              <SheetHeader className={`p - 6 border - b ${getBorderColor()} text - left space - y - 0`}>
-                <SheetTitle className={primaryTextClass}>
-                  {editingItem ? 'Edit Menu Item' : 'New Menu Item'}
-                </SheetTitle>
-              </SheetHeader>
+              <form onSubmit={upsertMenuItem} className="flex flex-col flex-1 min-h-0 w-full">
+                {/* Header - Mobile & Desktop Unified (Responsive) */}
+                <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => closeItemSheet(false)}
+                    className="text-base font-normal hover:bg-transparent px-2 -ml-2 sm:px-4 sm:ml-0"
+                    style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
+                  >
+                    Cancel
+                  </Button>
 
-              <form onSubmit={upsertMenuItem} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="title" className={primaryTextClass}>Item Name *</Label>
-                    <Input
-                      id="title"
-                      value={itemForm.title}
-                      onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
-                      placeholder="e.g., Grilled Salmon"
-                      required
-                      className={`border ${getBorderColor()} bg - transparent`}
-                    />
-                  </div>
+                  <SheetTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
+                    {editingItem ? 'Edit Item' : 'New Item'}
+                  </SheetTitle>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="price" className={primaryTextClass}>Price</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      value={itemForm.price}
-                      onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                      placeholder="0.00"
-                      className={`border ${getBorderColor()} bg - transparent`}
-                    />
-                  </div>
+                  <Button
+                    type="submit"
+                    disabled={uploading}
+                    variant="ghost"
+                    className="text-base font-semibold hover:bg-transparent px-2 -mr-2 sm:px-4 sm:mr-0 text-blue-500 hover:text-blue-600"
+                  >
+                    {uploading ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      'Save'
+                    )}
+                  </Button>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className={primaryTextClass}>Description</Label>
-                    <Textarea
-                      id="description"
-                      value={itemForm.description}
-                      onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                      placeholder="Describe your menu item..."
-                      rows={3}
-                      className={`border ${getBorderColor()} bg - transparent`}
-                    />
-                  </div>
+                {/* Content Area - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+                  <div className="max-w-5xl mx-auto w-full">
+                    <div className="flex flex-col md:grid md:grid-cols-2 md:gap-8 lg:gap-12">
 
-                  <div className="space-y-2">
-                    <Label className={primaryTextClass}>Image</Label>
-                    <div className={`border border - dashed ${getBorderColor()} rounded - md p - 4 text - center`}>
-                      {imageFile ? (
-                        <div className="relative">
-                          <p className={`text - sm ${primaryTextClass} mb - 2`}>{imageFile.name}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setImageFile(null)}
-                            className={`${outlineButtonClass} border ${getBorderColor()} `}
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Remove
-                          </Button>
-                        </div>
-                      ) : itemForm.image_url ? (
-                        <div className="relative">
-                          <div className="relative h-32 w-full mb-2">
-                            <Image
-                              src={itemForm.image_url}
-                              alt="Preview"
-                              fill
-                              className="object-cover rounded-md"
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setItemForm({ ...itemForm, image_url: '' })}
-                            className={`${outlineButtonClass} border ${getBorderColor()} `}
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Remove Image
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <Upload className={`h - 8 w - 8 mb - 2 ${mutedTextClass} `} />
-                          <Label
-                            htmlFor="image-upload"
-                            className={`cursor - pointer ${primaryTextClass} hover: underline`}
-                          >
-                            Click to upload image
-                          </Label>
+                      {/* Left Column (Desktop) / Top (Mobile) - Image */}
+                      <div className="space-y-4">
+                        <Label className={`${primaryTextClass} text-base font-medium`}>Image</Label>
+                        <div className={`h-48 sm:h-auto sm:aspect-video md:aspect-[4/3] relative rounded-lg overflow-hidden border-2 border-dashed ${getBorderColor()} bg-secondary/20 hover:bg-secondary/30 transition-colors group cursor-pointer`}>
                           <input
-                            id="image-upload"
                             type="file"
                             accept="image/*"
+                            className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
                             onChange={(e) => {
                               const file = e.target.files?.[0]
                               if (file) setImageFile(file)
                             }}
-                            className="hidden"
+                          />
+                          {(imageFile || itemForm.image_url) ? (
+                            <>
+                              <Image
+                                src={imageFile ? URL.createObjectURL(imageFile) : itemForm.image_url}
+                                alt="Preview"
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  className="z-20 pointer-events-none" // Events handled by parent div input
+                                >
+                                  Change
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="z-20"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    e.preventDefault()
+                                    setImageFile(null)
+                                    setItemForm({ ...itemForm, image_url: '' })
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                              <Upload className={`h-8 w-8 mb-2 ${mutedTextClass}`} />
+                              <p className={`text-sm ${secondaryTextClass}`}>
+                                Tap to upload image
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Column (Desktop) / Bottom (Mobile) - Inputs */}
+                      <div className="space-y-5 sm:space-y-6 mt-6 md:mt-0">
+                        <div className="space-y-2">
+                          <Label htmlFor="title" className={primaryTextClass}>Item Name *</Label>
+                          <Input
+                            id="title"
+                            value={itemForm.title}
+                            onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
+                            placeholder="e.g., Grilled Salmon"
+                            required
+                            className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
                           />
                         </div>
-                      )}
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="price" className={primaryTextClass}>Price</Label>
+                            <div className="relative">
+                              <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${mutedTextClass}`}>$</span>
+                              <Input
+                                id="price"
+                                type="number"
+                                step="0.01"
+                                value={itemForm.price}
+                                onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
+                                placeholder="0.00"
+                                className={`h-11 pl-7 border ${getBorderColor()} bg-transparent text-base`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className={primaryTextClass}>Category</Label>
+                            <Select value={itemCategory} onValueChange={setItemCategory}>
+                              <SelectTrigger className={`h-11 border ${getBorderColor()} bg-transparent`}>
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No Category</SelectItem>
+                                {categories.map((category) => (
+                                  <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="description" className={primaryTextClass}>Description</Label>
+                          <Textarea
+                            id="description"
+                            value={itemForm.description}
+                            onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+                            placeholder="Describe your menu item..."
+                            rows={4}
+                            className={`resize-none border ${getBorderColor()} bg-transparent text-base`}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className={primaryTextClass}>Dietary Tags</Label>
+                          <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-dashed" style={{ borderColor: getBorderColor() }}>
+                            {tags.map((tag) => {
+                              const isSelected = itemTags.includes(tag.id)
+                              const borderColor = getAllergenBorderColor(tag.name)
+
+                              return (
+                                <Badge
+                                  key={tag.id}
+                                  variant="outline"
+                                  className={`cursor-pointer transition-all px-3 py-1.5 text-sm select-none ${isSelected ? 'ring-1 ring-offset-1' : 'hover:opacity-70'}`}
+                                  onClick={() => toggleFormTag(tag.id)}
+                                  style={{
+                                    borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
+                                    backgroundColor: isSelected
+                                      ? (borderColor || (isDarkBackground ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'))
+                                      : 'transparent',
+                                    color: contrastColor
+                                  }}
+                                >
+                                  {isSelected && <Check className="h-3 w-3 mr-1" />}
+                                  {tag.name}
+                                </Badge>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                      </div>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className={primaryTextClass}>Category</Label>
-                    <Select value={itemCategory} onValueChange={setItemCategory}>
-                      <SelectTrigger className={`border ${getBorderColor()} bg - transparent`}>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Category</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className={primaryTextClass}>Dietary Tags</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {tags.map((tag) => {
-                        const isSelected = itemTags.includes(tag.id)
-                        const borderColor = getAllergenBorderColor(tag.name)
-
-                        return (
-                          <Badge
-                            key={tag.id}
-                            variant="outline"
-                            className="cursor-pointer transition-all"
-                            onClick={() => toggleFormTag(tag.id)}
-                            style={{
-                              borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
-                              backgroundColor: isSelected
-                                ? (borderColor || (isDarkBackground ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'))
-                                : 'transparent',
-                              color: contrastColor
-                            }}
-                          >
-                            <Tag className="h-3 w-3 mr-1" />
-                            {tag.name}
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`p - 6 border - t ${getBorderColor()} flex justify - end gap - 2`}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => closeItemSheet(false)}
-                    className={`${outlineButtonClass} border ${getBorderColor()} `}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={uploading}
-                    className={`${accentButtonClass} border ${getBorderColor()} `}
-                  >
-                    {uploading ? 'Saving...' : 'Save Item'}
-                  </Button>
                 </div>
               </form>
             </SheetContent>

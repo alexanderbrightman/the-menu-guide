@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Settings, Eye, EyeOff, Trash2, AlertTriangle, DollarSign, User, Coins } from 'lucide-react'
+import { Settings, Eye, EyeOff, Trash2, AlertTriangle, DollarSign, User, Coins, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubscriptionDetailsCard } from './SubscriptionDetailsCard'
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { UpgradeCard } from '@/components/payment/UpgradeCard'
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currency'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useMenuTheme } from '@/hooks/useMenuTheme'
 
 interface SettingsDialogProps {
   triggerClassName?: string
@@ -387,6 +388,18 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
     }
   }
 
+
+
+  const {
+    menuBackgroundColor,
+    contrastColor,
+    primaryTextClass,
+    secondaryTextClass,
+    mutedTextClass,
+    getBorderColor,
+    isDarkBackground
+  } = useMenuTheme(profile)
+
   return (
     <Dialog open={showSettings} onOpenChange={setShowSettings}>
       <DialogTrigger asChild>
@@ -396,29 +409,52 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
           <span className="sm:hidden">Settings</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg p-4 overflow-hidden border border-black">
-        <DialogHeader className="space-y-1 border-b border-black pb-4">
-          <DialogTitle className="text-base font-semibold text-center">Account Settings</DialogTitle>
-        </DialogHeader>
+      <DialogContent
+        className={`w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
+        style={{
+          backgroundColor: menuBackgroundColor,
+          color: contrastColor,
+        }}
+      >
+        <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+          <div /> {/* Spacer for centering if needed, using 3-column flex with center title */}
 
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-2">
+          <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
+            Account Settings
+          </DialogTitle>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSettings(false)}
+            className="h-8 w-8 hover:bg-transparent"
+            style={{ color: contrastColor }}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8">
           {/* Edit Username */}
-          <div className="space-y-3 border-b border-black pb-4">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-600" />
-              <h3 className="text-sm font-semibold">Edit Restaurant Username</h3>
+              <User className={`h-4 w-4 ${mutedTextClass}`} />
+              <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Restaurant Username</h3>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm">Username</Label>
+            <div className="pl-6 space-y-3">
+              <Label htmlFor="username" className={`text-sm ${secondaryTextClass}`}>
+                Your public menu URL: themenuguide.com/menu/<strong>{username || 'username'}</strong>
+              </Label>
               <div className="relative">
                 <Input
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className={`pr-10 border border-black ${usernameStatus === 'taken' || usernameStatus === 'invalid'
-                    ? 'border-red-600 focus:border-red-600'
+                  className={`pr-10 h-11 border ${getBorderColor()} bg-transparent text-base ${usernameStatus === 'taken' || usernameStatus === 'invalid'
+                    ? 'border-red-500/50 focus:border-red-500'
                     : usernameStatus === 'available'
-                      ? 'border-green-600 focus:border-green-600'
+                      ? 'border-green-500/50 focus:border-green-500'
                       : ''
                     }`}
                 />
@@ -439,42 +475,45 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                   ? 'text-green-600'
                   : usernameStatus === 'taken' || usernameStatus === 'invalid'
                     ? 'text-red-600'
-                    : 'text-gray-600'
+                    : secondaryTextClass
                   }`}>
                   {usernameMessage}
                 </p>
               )}
-              <Button
-                onClick={handleUpdateUsername}
-                disabled={usernameLoading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid' || username === profile?.username}
-                className="w-full border border-black"
-              >
-                {usernameLoading ? 'Updating...' : 'Update Username'}
-              </Button>
+              {(usernameStatus === 'available' && username !== profile?.username) && (
+                <Button
+                  onClick={handleUpdateUsername}
+                  disabled={usernameLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {usernameLoading ? 'Updating...' : 'Save New Username'}
+                </Button>
+              )}
             </div>
           </div>
 
+          <div className={`border-t ${getBorderColor()}`} />
+
           {/* Menu Visibility Settings */}
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Menu Configuration</h3>
+
             {/* Currency Selector */}
             <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1.5 flex-1">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium">Currency</span>
+                  <Coins className={`h-4 w-4 ${mutedTextClass}`} />
+                  <span className={`text-sm font-medium ${primaryTextClass}`}>Currency</span>
                 </div>
-                <p className="text-sm text-gray-600">
-                  Select the currency for your menu prices
-                </p>
               </div>
-              <div className="w-[140px]">
+              <div className="w-[120px]">
                 <Select
                   value={currency}
                   onValueChange={handleUpdateCurrency}
                   disabled={currencyLoading}
                 >
-                  <SelectTrigger className="border-black">
-                    <SelectValue placeholder="Select currency" />
+                  <SelectTrigger className={`border ${getBorderColor()} bg-transparent h-9`}>
+                    <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
                     {CURRENCIES.map((c) => (
@@ -489,79 +528,65 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
 
             {/* Show Prices Toggle */}
             <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1.5 flex-1">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium">
-                    {showPrices ? 'Show Prices' : 'Hide Prices'}
+                  <DollarSign className={`h-4 w-4 ${mutedTextClass}`} />
+                  <span className={`text-sm font-medium ${primaryTextClass}`}>
+                    Show Prices
                   </span>
                 </div>
-                <p className="text-sm text-gray-600">
-                  {showPrices
-                    ? 'Prices are displayed on your public menu'
-                    : 'Prices are hidden on your public menu'
-                  }
+                <p className={`text-xs ${secondaryTextClass}`}>
+                  {showPrices ? 'Visible on menu' : 'Hidden on menu'}
                 </p>
               </div>
-              <div className="w-[140px] flex justify-end">
-                <Switch
-                  checked={showPrices}
-                  onCheckedChange={handleToggleShowPrices}
-                  disabled={priceLoading}
-                />
-              </div>
+              <Switch
+                checked={showPrices}
+                onCheckedChange={handleToggleShowPrices}
+                disabled={priceLoading}
+                className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
+              />
             </div>
 
             {/* Menu is Public Toggle */}
             <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1.5 flex-1">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   {isPublic && hasPremiumAccess ? (
-                    <Eye className="h-4 w-4 text-gray-600" />
+                    <Eye className={`h-4 w-4 ${mutedTextClass}`} />
                   ) : (
-                    <EyeOff className="h-4 w-4 text-gray-600" />
+                    <EyeOff className={`h-4 w-4 ${mutedTextClass}`} />
                   )}
-                  <span className="text-sm font-medium">
-                    {isPublic && hasPremiumAccess ? 'Menu is Public' : 'Menu is Private'}
+                  <span className={`text-sm font-medium ${primaryTextClass}`}>
+                    Public Visibility
                   </span>
                 </div>
-                <p className="text-sm text-gray-600">
-                  {isPublic && hasPremiumAccess
-                    ? 'Customers can view your menu at /menu/' + profile?.username
-                    : 'Your menu is only visible to you'
-                  }
+                <p className={`text-xs ${secondaryTextClass}`}>
+                  {isPublic && hasPremiumAccess ? 'Menu is live' : 'Menu is private'}
                 </p>
               </div>
-              <div className="w-[140px] flex justify-end">
-                <Switch
-                  checked={isPublic && hasPremiumAccess}
-                  onCheckedChange={handleTogglePublic}
-                  disabled={loading || !hasPremiumAccess}
-                />
-              </div>
+              <Switch
+                checked={isPublic && hasPremiumAccess}
+                onCheckedChange={handleTogglePublic}
+                disabled={loading || !hasPremiumAccess}
+                className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
+              />
             </div>
 
             {!hasPremiumAccess && (
-              <Alert className="border border-orange-600 bg-orange-50">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-sm text-orange-800">
-                  <strong>Premium Required:</strong> {premiumValidation.error || 'You need a Premium subscription to make your menu public.'}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {message && (
-              <div className={`border p-3 text-sm ${message.includes('error') || message.includes('Error') || message.includes('Failed')
-                ? 'bg-red-50 text-red-600 border-red-600'
-                : 'bg-green-50 text-green-600 border-green-600'
-                }`}>
-                {message}
+              <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-md flex gap-2">
+                <AlertTriangle className="h-4 w-4 text-orange-500 flex-none" />
+                <span className="text-xs text-orange-600">
+                  Premium required for public visibility.
+                </span>
               </div>
             )}
           </div>
 
-          <div className="border-t border-black pt-4">
-            {/* Subscription Details */}
+          <div className={`border-t ${getBorderColor()}`} />
+
+          {/* Subscription Details */}
+          <div className="space-y-4">
+            <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Subscription</h3>
             {hasPremiumAccess ? (
               <>
                 <SubscriptionExpiryWarning />
@@ -573,47 +598,28 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
           </div>
 
           {/* Delete Account Section */}
-          <div className="border-t border-black pt-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-orange-600" />
-              <h3 className="text-sm font-semibold text-orange-800">Delete All Menu Items</h3>
-            </div>
-            <p className="text-sm text-orange-700">
-              Remove every menu item, category, and stored menu image.
-            </p>
-            <Alert className="border border-orange-600 bg-orange-100">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-sm text-orange-800">
-                <strong>Warning:</strong> This cannot be undone. Diners will no longer see any items on your public menu.
-              </AlertDescription>
-            </Alert>
-
+          <div className="space-y-4 pt-4">
             <Button
               variant="outline"
-              className="w-full border border-orange-600 text-orange-700 hover:bg-orange-100"
+              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-colors"
               onClick={handleDeleteAllMenuItems}
               disabled={deleteItemsLoading}
             >
-              {deleteItemsLoading ? 'Deleting menu items...' : 'Delete All Menu Items'}
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteItemsLoading ? 'Deleting...' : 'Delete All Menu Items'}
             </Button>
+
+            {dangerMessage && (
+              <div className="text-xs text-center text-orange-600">
+                {dangerMessage}
+              </div>
+            )}
           </div>
 
-          {dangerMessage && (
-            <div className={`border p-3 text-sm ${dangerMessage.toLowerCase().includes('error')
-              ? 'bg-red-100 text-red-700 border-red-600'
-              : 'bg-orange-100 text-orange-700 border-orange-600'
-              }`}>
-              {dangerMessage}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-4 border-t border-black">
-            <Button variant="outline" className="border border-black" onClick={() => setShowSettings(false)}>
-              Close
-            </Button>
-          </div>
+          <div className="pb-10 sm:pb-0" />
         </div>
       </DialogContent>
     </Dialog>
   )
 }
+

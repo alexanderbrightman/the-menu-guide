@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Upload, RefreshCw } from 'lucide-react'
+import { Upload, RefreshCw, X, Check } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
 import { getContrastColor } from '@/lib/utils'
+import { useMenuTheme } from '@/hooks/useMenuTheme'
 import {
   DEFAULT_MENU_FONT,
   DEFAULT_MENU_BACKGROUND_COLOR,
@@ -272,6 +273,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     }
   }
 
+
   const handleDialogOpenChange = (open: boolean) => {
     // Only close if explicitly closed (not during submission)
     if (!open && !loading) {
@@ -279,194 +281,242 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     }
   }
 
+  const {
+    menuBackgroundColor,
+    contrastColor,
+    primaryTextClass,
+    secondaryTextClass,
+    outlineButtonClass,
+    accentButtonClass,
+    getBorderColor,
+    isDarkBackground
+  } = useMenuTheme(profile)
+
   return (
     <Dialog open={true} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className="sm:max-w-lg p-4 sm:p-5 md:p-6 overflow-hidden border border-black">
-        <DialogHeader className="space-y-1 border-b border-black pb-3 sm:pb-4">
-          <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold text-center">Edit Profile</DialogTitle>
-        </DialogHeader>
+      <DialogContent
+        className={`w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
+        style={{
+          backgroundColor: menuBackgroundColor,
+          color: contrastColor,
+        }}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 w-full">
+          {/* Header */}
+          <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              className="text-base font-normal hover:bg-transparent px-2 -ml-2 sm:px-4 sm:ml-0"
+              style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
+            >
+              Cancel
+            </Button>
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 max-h-[70vh] overflow-y-auto px-1 sm:px-2">
-          {/* Header Photo */}
-          <div className="relative overflow-hidden border border-black bg-gray-100">
-            {profile?.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt="Menu header photo"
-                width={900}
-                height={360}
-                className="h-32 sm:h-40 md:h-48 w-full object-cover"
-                priority
-              />
-            ) : (
-              <div className="flex h-32 sm:h-40 md:h-48 w-full items-center justify-center text-xs sm:text-sm text-gray-500">
-                No header photo yet
-              </div>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Label
-                htmlFor="avatar-upload"
-                className="inline-flex cursor-pointer items-center gap-2 border border-black bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Change menu header photo</span>
-                <span className="sm:hidden">Change photo</span>
-              </Label>
-            </div>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              disabled={uploading}
-              className="hidden"
-            />
+            <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
+              Edit Profile
+            </DialogTitle>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              variant="ghost"
+              className="text-base font-semibold hover:bg-transparent px-2 -mr-2 sm:px-4 sm:mr-0 text-blue-500 hover:text-blue-600"
+            >
+              {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                'Save'
+              )}
+            </Button>
           </div>
 
-          {/* Name + Username */}
-          <div className="space-y-2 sm:space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="display_name" className="text-xs sm:text-sm">Restaurant name</Label>
-              <Input
-                id="display_name"
-                value={formData.display_name}
-                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                required
-                className="border border-black h-9 sm:h-10 text-sm sm:text-base"
-              />
-              <div className="flex items-center gap-2 pt-1">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            {/* Header Photo */}
+            <div className="space-y-2">
+              <Label className={primaryTextClass}>Cover Photo</Label>
+              <div className={`relative overflow-hidden rounded-md border ${getBorderColor()} bg-secondary/20 group`}>
+                {profile?.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt="Menu header photo"
+                    width={900}
+                    height={360}
+                    className="h-32 sm:h-40 md:h-48 w-full object-cover transition-opacity group-hover:opacity-90"
+                    priority
+                  />
+                ) : (
+                  <div className={`flex h-32 sm:h-40 md:h-48 w-full items-center justify-center text-xs sm:text-sm ${secondaryTextClass}`}>
+                    No header photo
+                  </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                  <Label
+                    htmlFor="avatar-upload"
+                    className="cursor-pointer bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors shadow-sm"
+                  >
+                    Change
+                  </Label>
+                </div>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Name + Username */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="display_name" className={primaryTextClass}>Restaurant Name</Label>
+                <Input
+                  id="display_name"
+                  value={formData.display_name}
+                  onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                  required
+                  className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg border" style={{ borderColor: getBorderColor() }}>
+                <Label htmlFor="show_display_name" className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>
+                  Show name on public page
+                </Label>
                 <Switch
                   id="show_display_name"
                   checked={formData.show_display_name}
                   onCheckedChange={(checked) => setFormData({ ...formData, show_display_name: checked })}
                 />
-                <Label htmlFor="show_display_name" className="text-xs sm:text-sm cursor-pointer">
-                  Display restaurant name on public page
-                </Label>
               </div>
             </div>
-          </div>
 
-          {/* Preview */}
-          <div
-            className="border border-black px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm transition-colors"
-            style={{
-              backgroundColor: formData.menu_background_color,
-              color: getContrastColor(formData.menu_background_color),
-              fontFamily: FONT_FAMILY_MAP[formData.menu_font] ?? formData.menu_font,
-            }}
-          >
-            <p className="text-xs sm:text-sm font-semibold tracking-wide">The Menu Guide Preview</p>
-          </div>
+            {/* Theme controls */}
+            <div className="space-y-4 pt-2">
+              <Label className={`${primaryTextClass} text-base font-semibold`}>Appearance</Label>
 
-          {/* Theme controls */}
-          <div className="space-y-2 sm:space-y-2.5">
-            <div className="flex flex-row flex-wrap items-start gap-2 sm:gap-3">
-              <div className="flex flex-col gap-1.5 sm:gap-2 min-w-[140px] sm:min-w-[150px] max-w-[200px] flex-none">
-                <Label className="text-xs sm:text-sm font-medium">Menu font</Label>
-                <Select
-                  value={formData.menu_font}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, menu_font: value }))}
-                >
-                  <SelectTrigger className="w-full border border-black h-9 sm:h-10 text-xs sm:text-sm">
-                    <SelectValue placeholder="Select a font" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span style={{ fontFamily: FONT_FAMILY_MAP[option.value] }}>
-                          {option.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Preview Card */}
+              <div
+                className="rounded-lg p-4 text-center transition-colors border shadow-sm"
+                style={{
+                  backgroundColor: formData.menu_background_color,
+                  color: getContrastColor(formData.menu_background_color),
+                  fontFamily: FONT_FAMILY_MAP[formData.menu_font] ?? formData.menu_font,
+                  borderColor: getBorderColor()
+                }}
+              >
+                <p className="text-sm font-medium tracking-wide">Preview: {formData.display_name || 'Restaurant Name'}</p>
               </div>
 
-              <div className="flex flex-col gap-1.5 sm:gap-2 flex-none">
-                <Label className="text-xs sm:text-sm font-medium">Menu background color</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="color"
-                    value={formData.menu_background_color}
-                    onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, menu_background_color: event.target.value }))
-                    }
-                    className="h-9 sm:h-10 w-14 sm:w-16 cursor-pointer border border-black p-1 bg-white"
-                  />
-                  <Button type="button" variant="outline" size="sm" className="border border-black" onClick={handleResetTheme}>
-                    <RefreshCw className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> <span className="text-xs sm:text-sm">Reset</span>
-                  </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className={primaryTextClass}>Avg Font</Label>
+                  <Select
+                    value={formData.menu_font}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, menu_font: value }))}
+                  >
+                    <SelectTrigger className={`w-full h-11 border ${getBorderColor()} bg-transparent`}>
+                      <SelectValue placeholder="Select font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <span style={{ fontFamily: FONT_FAMILY_MAP[option.value] }}>
+                            {option.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={primaryTextClass}>Background</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 h-11 relative rounded-md overflow-hidden border" style={{ borderColor: getBorderColor() }}>
+                      <input
+                        type="color"
+                        value={formData.menu_background_color}
+                        onChange={(event) =>
+                          setFormData((prev) => ({ ...prev, menu_background_color: event.target.value }))
+                        }
+                        className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`${outlineButtonClass} border ${getBorderColor()} h-11`}
+                      onClick={handleResetTheme}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Bio */}
-          <div className="space-y-1.5">
-            <Label htmlFor="bio" className="text-xs sm:text-sm">Bio</Label>
-            <Textarea
-              id="bio"
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              placeholder="Tell customers about your restaurant..."
-              rows={3}
-              className="border border-black text-sm sm:text-base"
-            />
-          </div>
-
-          {/* Social Links */}
-          <div className="space-y-2 sm:space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="instagram_url" className="text-xs sm:text-sm">Instagram URL (optional)</Label>
-              <Input
-                id="instagram_url"
-                type="url"
-                value={formData.instagram_url}
-                onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
-                placeholder="https://instagram.com/yourrestaurant"
-                className="border border-black h-9 sm:h-10 text-sm sm:text-base"
+            {/* Bio */}
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="bio" className={primaryTextClass}>Bio</Label>
+              <Textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                placeholder="Tell customers about your restaurant..."
+                rows={3}
+                className={`resize-none border ${getBorderColor()} bg-transparent text-base`}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="website_url" className="text-xs sm:text-sm">Website URL (optional)</Label>
-              <Input
-                id="website_url"
-                type="url"
-                value={formData.website_url}
-                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                placeholder="https://yourrestaurant.com"
-                className="border border-black h-9 sm:h-10 text-sm sm:text-base"
-              />
+            {/* Social Links */}
+            <div className="space-y-4 pt-2">
+              <Label className={`${primaryTextClass} text-base font-semibold`}>Social Media</Label>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="instagram_url" className={secondaryTextClass}>Instagram URL</Label>
+                  <Input
+                    id="instagram_url"
+                    type="url"
+                    value={formData.instagram_url}
+                    onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
+                    placeholder="https://instagram.com/..."
+                    className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website_url" className={secondaryTextClass}>Website URL</Label>
+                  <Input
+                    id="website_url"
+                    type="url"
+                    value={formData.website_url}
+                    onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                    placeholder="https://..."
+                    className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {message && (
-            <div
-              className={`border p-2 sm:p-3 text-xs sm:text-sm ${message.includes('Error') || message.includes('error')
-                ? 'bg-red-50 text-red-600 border-red-600'
-                : 'bg-green-50 text-green-600 border-green-600'
-                }`}
-            >
-              {message}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-black">
-            <Button type="button" variant="outline" className="border border-black" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="border border-black"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
+            {message && (
+              <div
+                className={`rounded-md p-3 text-sm ${message.includes('Error') || message.includes('error')
+                  ? 'bg-red-500/10 text-red-600 border border-red-500/20'
+                  : 'bg-green-500/10 text-green-600 border border-green-500/20'
+                  }`}
+              >
+                {message}
+              </div>
+            )}
+            <div className="pb-10 sm:pb-0" /> {/* Spacer for bottom safe area */}
           </div>
         </form>
       </DialogContent>
     </Dialog>
   )
 }
+

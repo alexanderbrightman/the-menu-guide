@@ -17,9 +17,11 @@ import {
   DollarSign,
   User,
   Mail,
+
   RefreshCw
 } from 'lucide-react'
 import { validatePremiumAccess } from '@/lib/premium-validation'
+import { useMenuTheme } from '@/hooks/useMenuTheme'
 
 interface SubscriptionDetails {
   id: string
@@ -47,6 +49,12 @@ interface SubscriptionDetails {
 
 export function SubscriptionDetailsCard() {
   const { user, profile } = useAuth()
+  const {
+    primaryTextClass,
+    secondaryTextClass,
+    mutedTextClass,
+    isDarkBackground
+  } = useMenuTheme(profile)
   const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -152,12 +160,12 @@ export function SubscriptionDetailsCard() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-gray-600" />
+          <CreditCard className={`h-4 w-4 ${mutedTextClass}`} />
           <h3 className="text-base font-semibold">Subscription Details</h3>
         </div>
         <div className="flex items-center justify-center py-8">
-          <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-600">Loading subscription details...</span>
+          <RefreshCw className={`h-6 w-6 animate-spin ${mutedTextClass}`} />
+          <span className={`ml-2 ${secondaryTextClass}`}>Loading subscription details...</span>
         </div>
       </div>
     )
@@ -227,8 +235,8 @@ export function SubscriptionDetailsCard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-gray-600" />
-          <h3 className="text-base font-semibold">Subscription Details</h3>
+          <CreditCard className={`h-4 w-4 ${secondaryTextClass}`} />
+          <h3 className={`text-base font-semibold ${primaryTextClass}`}>Subscription Details</h3>
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(subscriptionDetails.status)}
@@ -272,24 +280,24 @@ export function SubscriptionDetailsCard() {
           </div>
         </div>
       </div>
-      <p className="text-sm text-gray-600 -mt-4">
+      <p className={`text-sm ${secondaryTextClass} -mt-4`}>
         Your Premium subscription information and billing details
       </p>
       <div className="space-y-6 pt-2">
         {/* Current Billing Period */}
         <div className="space-y-3">
-          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+          <h4 className={`font-medium ${primaryTextClass} flex items-center gap-2`}>
             <Calendar className="h-4 w-4" />
             Current Billing Period
           </h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600">Started:</span>
-              <p className="font-medium">{formatDate(subscriptionDetails.current_period_start)}</p>
+              <span className={secondaryTextClass}>Started:</span>
+              <p className={`font-medium ${primaryTextClass}`}>{formatDate(subscriptionDetails.current_period_start)}</p>
             </div>
             <div>
-              <span className="text-gray-600">Ends:</span>
-              <p className="font-medium">{formatDate(subscriptionDetails.current_period_end)}</p>
+              <span className={secondaryTextClass}>Ends:</span>
+              <p className={`font-medium ${primaryTextClass}`}>{formatDate(subscriptionDetails.current_period_end)}</p>
             </div>
           </div>
         </div>
@@ -307,37 +315,37 @@ export function SubscriptionDetailsCard() {
 
         {/* Pricing Information */}
         <div className="space-y-3">
-          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+          <h4 className={`font-medium ${primaryTextClass} flex items-center gap-2`}>
             <DollarSign className="h-4 w-4" />
             Pricing
           </h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600">Amount:</span>
-              <p className="font-medium">{formatAmount(subscriptionDetails.amount, subscriptionDetails.currency)}</p>
+              <span className={secondaryTextClass}>Amount:</span>
+              <p className={`font-medium ${primaryTextClass}`}>{formatAmount(subscriptionDetails.amount, subscriptionDetails.currency)}</p>
             </div>
             <div>
-              <span className="text-gray-600">Billing:</span>
-              <p className="font-medium capitalize">{subscriptionDetails.interval}ly</p>
+              <span className={secondaryTextClass}>Billing:</span>
+              <p className={`font-medium capitalize ${primaryTextClass}`}>{subscriptionDetails.interval}ly</p>
             </div>
           </div>
         </div>
 
         {/* Customer Information */}
         <div className="space-y-3">
-          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+          <h4 className={`font-medium ${primaryTextClass} flex items-center gap-2`}>
             <User className="h-4 w-4" />
             Customer Information
           </h4>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-400" />
-              <span>{subscriptionDetails.customer_email}</span>
+              <Mail className={`h-4 w-4 ${mutedTextClass}`} />
+              <span className={primaryTextClass}>{subscriptionDetails.customer_email}</span>
             </div>
             {subscriptionDetails.customer_name && (
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-400" />
-                <span>{subscriptionDetails.customer_name}</span>
+                <User className={`h-4 w-4 ${mutedTextClass}`} />
+                <span className={primaryTextClass}>{subscriptionDetails.customer_name}</span>
               </div>
             )}
           </div>
@@ -346,7 +354,7 @@ export function SubscriptionDetailsCard() {
         {/* Renewal Information */}
         {subscriptionDetails.is_active && (
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+            <h4 className={`font-medium ${primaryTextClass} flex items-center gap-2`}>
               <Clock className="h-4 w-4" />
               Renewal Information
             </h4>
@@ -380,7 +388,7 @@ export function SubscriptionDetailsCard() {
         {/* Cancellation Information */}
         {subscriptionDetails.cancel_at_period_end && (
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+            <h4 className={`font-medium ${primaryTextClass} flex items-center gap-2`}>
               <AlertTriangle className="h-4 w-4" />
               Cancellation Information
             </h4>
@@ -414,7 +422,7 @@ export function SubscriptionDetailsCard() {
         {/* Trial Information */}
         {subscriptionDetails.trial_end && (
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+            <h4 className={`font-medium ${primaryTextClass} flex items-center gap-2`}>
               <Clock className="h-4 w-4" />
               Trial Information
             </h4>
@@ -516,7 +524,7 @@ export function SubscriptionDetailsCard() {
             // No active subscription - show renew/upgrade button
             <Button
               variant="default"
-              className="w-full"
+              className={`w-full ${isDarkBackground ? "bg-white text-black hover:bg-gray-200" : ""}`}
               onClick={() => {
                 // Redirect to upgrade page or open upgrade modal
                 window.location.href = '/dashboard'
