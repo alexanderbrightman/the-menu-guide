@@ -123,15 +123,16 @@ export function MenuHeader({
 
                 {message && (
                     <div
-                        className={`max-w-2xl border px-3 sm:px-4 py-2 text-xs sm:text-sm ${getBorderColor()} ${message.toLowerCase().includes('error')
-                                ? isDarkBackground
-                                    ? 'bg-red-900/30 text-red-200'
-                                    : 'bg-red-50 text-red-700'
-                                : isDarkBackground
-                                    ? 'bg-emerald-900/30 text-emerald-200'
-                                    : 'bg-emerald-50 text-emerald-700'
+                        className={`max-w-2xl border px-4 py-3 text-sm sm:text-base font-medium rounded-md shadow-sm ${getBorderColor()} ${message.toLowerCase().includes('error')
+                            ? isDarkBackground
+                                ? 'bg-red-900/30 text-red-100'
+                                : 'bg-red-50 text-red-800'
+                            : isDarkBackground
+                                ? 'bg-emerald-900/30 text-emerald-100'
+                                : 'bg-emerald-50 text-emerald-800'
                             }`}
                         role="status"
+                        aria-live="polite"
                     >
                         {message}
                     </div>

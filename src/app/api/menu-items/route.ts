@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
     const categoryIdParam = searchParams.get('categoryId')
     const limitParam = searchParams.get('limit') || '100'
     const offsetParam = searchParams.get('offset') || '0'
-    
+
     // Validate and sanitize inputs
     const categoryId = categoryIdParam ? sanitizeUUID(categoryIdParam) : null
     const limit = sanitizeInteger(limitParam, 1, 1000) ?? 100 // Max 1000 items
     const offset = sanitizeInteger(offsetParam, 0) ?? 0
-    
+
     // Validate categoryId if provided
     if (categoryIdParam && !categoryId) {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
       return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
     }
-    
+
     // Get and validate auth token
     const token = getAuthToken(request)
     if (!token) {
@@ -152,12 +152,12 @@ export async function POST(request: NextRequest) {
     if (image_url && image_url.trim() && !sanitizedImageUrl) {
       return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400, headers: getSecurityHeaders() })
     }
-    
+
     // Validate category_id if provided
     if (category_id && !sanitizedCategoryId) {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
     }
-    
+
     // Validate tag_ids if provided
     if (tag_ids && sanitizedTagIds === null) {
       return NextResponse.json({ error: 'Invalid tag IDs format' }, { status: 400, headers: getSecurityHeaders() })
@@ -222,7 +222,7 @@ export async function PATCH(request: NextRequest) {
     if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
       return NextResponse.json({ error: 'Request body too large' }, { status: 413, headers: getSecurityHeaders() })
     }
-    
+
     // Get and validate auth token
     const token = getAuthToken(request)
     if (!token) {
@@ -274,7 +274,7 @@ export async function PATCH(request: NextRequest) {
     const sanitizedDescription = description ? sanitizeTextInput(description) : null
     const sanitizedPrice = price !== undefined && price !== null ? sanitizePrice(price) : null
     const sanitizedCategoryId = category_id ? sanitizeUUID(category_id) : null
-    
+
     // Handle image_url: normalize empty string/null/undefined to null, validate only if non-empty string is provided
     let sanitizedImageUrl: string | null = null
     // Only process image_url if it's explicitly provided and is a non-empty string
@@ -293,14 +293,14 @@ export async function PATCH(request: NextRequest) {
       // If image_url is not a string and not null/undefined, ignore it (treat as null)
     }
     // If image_url is undefined, null, empty string, or whitespace-only, sanitizedImageUrl stays null
-    
+
     const sanitizedTagIds = tag_ids !== undefined ? sanitizeIntegerArray(tag_ids, 1) : undefined
-    
+
     // Validate category_id if provided
     if (category_id && !sanitizedCategoryId) {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400, headers: getSecurityHeaders() })
     }
-    
+
     // Validate tag_ids if provided
     if (tag_ids !== undefined && sanitizedTagIds === null) {
       return NextResponse.json({ error: 'Invalid tag IDs format' }, { status: 400, headers: getSecurityHeaders() })
@@ -320,16 +320,16 @@ export async function PATCH(request: NextRequest) {
         // Extract file path from Supabase storage URL
         const urlParts = currentItem.image_url.split('/')
         const bucketIndex = urlParts.findIndex((part: string) => part === 'menu_items')
-        
+
         if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
           // Get path after bucket name (e.g., "userId/filename.webp")
           const oldImagePath = urlParts.slice(bucketIndex + 1).join('/')
-          
+
           // Delete old image from storage
           const { error: storageError } = await supabase.storage
             .from('menu_items')
             .remove([oldImagePath])
-          
+
           if (storageError) {
             console.warn('Error deleting old image from storage:', storageError)
             // Continue anyway - item can still be updated
@@ -349,7 +349,7 @@ export async function PATCH(request: NextRequest) {
       category_id?: string | null
       image_url?: string | null
     } = {}
-    
+
     if (sanitizedTitle !== null) updateData.title = sanitizedTitle
     if (sanitizedDescription !== null) updateData.description = sanitizedDescription || null
     if (sanitizedPrice !== null) updateData.price = sanitizedPrice
@@ -547,8 +547,8 @@ export async function DELETE(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { 
-          success: true, 
+        {
+          success: true,
           deletedCount: itemIds.length,
           categoriesDeletedCount: categoriesDeletedCount || 0
         },
@@ -582,16 +582,16 @@ export async function DELETE(request: NextRequest) {
         // URL format: https://project.supabase.co/storage/v1/object/public/bucket_name/path/to/file
         const urlParts = menuItem.image_url.split('/')
         const bucketIndex = urlParts.findIndex((part: string) => part === 'menu_items')
-        
+
         if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
           // Get path after bucket name (e.g., "userId/filename.webp")
           const filePath = urlParts.slice(bucketIndex + 1).join('/')
-          
+
           // Delete from storage
           const { error: storageError } = await supabase.storage
             .from('menu_items')
             .remove([filePath])
-          
+
           if (storageError) {
             console.warn('Error deleting image from storage:', storageError)
             // Continue with database deletion even if storage deletion fails
@@ -610,15 +610,20 @@ export async function DELETE(request: NextRequest) {
       .eq('menu_item_id', sanitizedItemId!)
 
     // Delete the menu item
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from('menu_items')
       .delete()
       .eq('id', sanitizedItemId!)
       .eq('user_id', user.id)
+      .select()
 
     if (error) {
       console.error('Error deleting menu item:', error)
       return NextResponse.json({ error: 'An error occurred while deleting the menu item' }, { status: 500, headers: getSecurityHeaders() })
+    }
+
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: 'Menu item not found or could not be deleted' }, { status: 404, headers: getSecurityHeaders() })
     }
 
     return NextResponse.json(

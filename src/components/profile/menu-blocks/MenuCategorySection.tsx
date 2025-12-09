@@ -136,6 +136,7 @@ export function MenuCategorySection({
                             type="button"
                             className={`w-full flex items-start justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${focusRingClass}`}
                             onClick={onToggle}
+                            onPointerDown={(e) => e.stopPropagation()}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter' || event.key === ' ') {
                                     event.preventDefault()
@@ -176,6 +177,7 @@ export function MenuCategorySection({
                                     event.stopPropagation()
                                     onAddItem()
                                 }}
+                                onPointerDown={(e) => e.stopPropagation()}
                             >
                                 <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                                 <span className="text-xs sm:text-sm">Item</span>
@@ -195,6 +197,7 @@ export function MenuCategorySection({
                                         onEditCategory()
                                     }
                                 }}
+                                onPointerDown={(e) => e.stopPropagation()}
                             >
                                 <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                                 <span className="text-xs sm:text-sm">Edit</span>
@@ -209,6 +212,7 @@ export function MenuCategorySection({
                                     event.stopPropagation()
                                     onDeleteCategory()
                                 }}
+                                onPointerDown={(e) => e.stopPropagation()}
                             >
                                 <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                 <span className="text-xs sm:text-sm">Delete</span>
@@ -232,7 +236,7 @@ export function MenuCategorySection({
                         >
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                                 {items.map((item) => (
-                                    <SortableItem key={item.id} id={item.id}>
+                                    <SortableItem key={item.id} id={item.id} className="h-full">
                                         <MenuItemCard
                                             item={item}
                                             theme={theme}

@@ -33,7 +33,7 @@ export function MenuItemCard({
 
     return (
         <div
-            className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${isDarkBackground ? 'bg-white/5' : 'bg-white'
+            className={`group relative flex flex-col cursor-pointer border h-full ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${isDarkBackground ? 'bg-white/5' : 'bg-white'
                 }`}
             onClick={onClick}
         >
@@ -61,13 +61,14 @@ export function MenuItemCard({
                             e.stopPropagation()
                             onToggleFavorite()
                         }}
+                        onPointerDown={(e) => e.stopPropagation()}
                         className={`p-1 transition-colors ${isFavorited
-                                ? isDarkBackground
-                                    ? 'text-yellow-400 hover:text-yellow-300'
-                                    : 'text-yellow-600 hover:text-yellow-700'
-                                : isDarkBackground
-                                    ? 'text-white/40 hover:text-white/60'
-                                    : 'text-slate-400 hover:text-slate-600'
+                            ? isDarkBackground
+                                ? 'text-yellow-400 hover:text-yellow-300'
+                                : 'text-yellow-600 hover:text-yellow-700'
+                            : isDarkBackground
+                                ? 'text-white/40 hover:text-white/60'
+                                : 'text-slate-400 hover:text-slate-600'
                             }`}
                         aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                     >
@@ -82,6 +83,7 @@ export function MenuItemCard({
                         variant="outline"
                         className={`${outlineButtonClass} border ${getBorderColor()}`}
                         onClick={onEdit}
+                        onPointerDown={(e) => e.stopPropagation()}
                     >
                         <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
@@ -90,6 +92,7 @@ export function MenuItemCard({
                         variant="outline"
                         className={`${outlineButtonClass} border ${getBorderColor()}`}
                         onClick={onDelete}
+                        onPointerDown={(e) => e.stopPropagation()}
                     >
                         <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>

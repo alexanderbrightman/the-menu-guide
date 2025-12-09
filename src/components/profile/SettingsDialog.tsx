@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Settings, Eye, EyeOff, Trash2, AlertTriangle, Check, DollarSign, User, Coins } from 'lucide-react'
+import { Settings, Eye, EyeOff, Trash2, AlertTriangle, DollarSign, User, Coins } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubscriptionDetailsCard } from './SubscriptionDetailsCard'
@@ -503,11 +503,13 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                   }
                 </p>
               </div>
-              <Switch
-                checked={showPrices}
-                onCheckedChange={handleToggleShowPrices}
-                disabled={priceLoading}
-              />
+              <div className="w-[140px] flex justify-end">
+                <Switch
+                  checked={showPrices}
+                  onCheckedChange={handleToggleShowPrices}
+                  disabled={priceLoading}
+                />
+              </div>
             </div>
 
             {/* Menu is Public Toggle */}
@@ -530,11 +532,13 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                   }
                 </p>
               </div>
-              <Switch
-                checked={isPublic && hasPremiumAccess}
-                onCheckedChange={handleTogglePublic}
-                disabled={loading || !hasPremiumAccess}
-              />
+              <div className="w-[140px] flex justify-end">
+                <Switch
+                  checked={isPublic && hasPremiumAccess}
+                  onCheckedChange={handleTogglePublic}
+                  disabled={loading || !hasPremiumAccess}
+                />
+              </div>
             </div>
 
             {!hasPremiumAccess && (
@@ -583,27 +587,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
                 <strong>Warning:</strong> This cannot be undone. Diners will no longer see any items on your public menu.
               </AlertDescription>
             </Alert>
-            <div className="space-y-2 text-sm text-orange-700 ml-4">
-              <p className="font-medium uppercase tracking-wide text-orange-800">This will remove:</p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  All menu items and their descriptions
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  All menu categories
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  Menu item images stored in storage
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  Dietary tags attached to menu items
-                </li>
-              </ul>
-            </div>
+
             <Button
               variant="outline"
               className="w-full border border-orange-600 text-orange-700 hover:bg-orange-100"

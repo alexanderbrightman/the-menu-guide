@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, MenuCategory, MenuItemWithRelations, Tag as TagType } from '@/lib/supabase'
@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Tag } from 'lucide-react'
-import { X, Upload } from 'lucide-react'
+import { X, Upload, AlertCircle } from 'lucide-react'
 
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { MenuHeader } from './menu-blocks/MenuHeader'
@@ -109,6 +109,13 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
 
   const { uploading, uploadImage, resetProgress } = useImageUpload()
 
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean
+    type: 'item' | 'category'
+    id: string
+    title: string
+  }>({ isOpen: false, type: 'item', id: '', title: '' })
+
   // Sensors for Drag and Drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -119,7 +126,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250, // Press and hold for 250ms to activate
-        tolerance: 5, // Allow 5px movement during hold
+        tolerance: 8, // Allow 8px movement during hold
       },
     }),
     useSensor(KeyboardSensor, {
@@ -142,11 +149,31 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     isDarkBackground,
   } = theme
 
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   const setTransientMessage = useCallback((value: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
     setMessage(value)
     if (!value) return
-    const timeout = setTimeout(() => setMessage(''), 4000)
-    return () => clearTimeout(timeout)
+
+    // Show errors for longer
+    const duration = value.startsWith('Error') ? 10000 : 6000
+
+    timeoutRef.current = setTimeout(() => {
+      setMessage('')
+      timeoutRef.current = undefined
+    }, duration)
+  }, [])
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
   }, [])
 
   const fetchMenuData = useCallback(async (showLoading = true) => {
@@ -451,8 +478,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
       }
 
       if (isFavorited) {
-        // Remove favorite
-        const response = await fetch(`/ api / favorites ? menu_item_id = ${itemId} `, {
+        const response = await fetch(`/api/favorites?menu_item_id=${itemId}`, {
           method: 'DELETE',
           headers,
         })
@@ -645,19 +671,27 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Delete this category? Menu items will become uncategorized.')) {
-      return
-    }
+  const promptDeleteCategory = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId)
+    if (!category) return
+    setDeleteConfirmation({
+      isOpen: true,
+      type: 'category',
+      id: categoryId,
+      title: category.name
+    })
+  }
 
-    if (!supabase) {
-      setTransientMessage('Error: Supabase client not available')
-      return
-    }
-
+  const executeDeleteCategory = async (categoryId: string) => {
     // Optimistic update: remove category from state immediately
     const categoryToDelete = categories.find((cat) => cat.id === categoryId)
     setCategories((prev) => prev.filter((cat) => cat.id !== categoryId))
+
+    if (!supabase) {
+      setTransientMessage('Error: Supabase client not available')
+      if (categoryToDelete) setCategories((prev) => [...prev, categoryToDelete])
+      return
+    }
 
     try {
       const {
@@ -673,10 +707,10 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         return
       }
 
-      const response = await fetch(`/ api / menu - categories ? id = ${categoryId} `, {
+      const response = await fetch(`/api/menu-categories?id=${categoryId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${session.access_token} `,
+          Authorization: `Bearer ${session.access_token}`,
         },
       })
 
@@ -690,6 +724,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           setCategories((prev) => [...prev, categoryToDelete])
         }
         const data = await response.json()
+        console.error('Delete category failed:', data)
         setTransientMessage(`Error: ${data.error || 'Unable to delete category'} `)
       }
     } catch (error) {
@@ -896,19 +931,27 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }
 
-  const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Delete this menu item?')) {
-      return
-    }
+  const promptDeleteItem = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+    if (!item) return
+    setDeleteConfirmation({
+      isOpen: true,
+      type: 'item',
+      id: itemId,
+      title: item.title
+    })
+  }
 
-    if (!supabase) {
-      setTransientMessage('Error: Supabase client not available')
-      return
-    }
-
+  const executeDeleteItem = async (itemId: string) => {
     // Optimistic update: remove item from state immediately
     const itemToDelete = menuItems.find((item) => item.id === itemId)
     setMenuItems((prev) => prev.filter((item) => item.id !== itemId))
+
+    if (!supabase) {
+      setTransientMessage('Error: Supabase client not available')
+      if (itemToDelete) setMenuItems((prev) => [...prev, itemToDelete])
+      return
+    }
 
     try {
       const {
@@ -924,10 +967,10 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
         return
       }
 
-      const response = await fetch(`/ api / menu - items ? id = ${itemId} `, {
+      const response = await fetch(`/api/menu-items?id=${itemId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${session.access_token} `,
+          Authorization: `Bearer ${session.access_token}`,
         },
       })
 
@@ -941,6 +984,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
           setMenuItems((prev) => [...prev, itemToDelete])
         }
         const data = await response.json()
+        console.error('Delete item failed:', data)
         setTransientMessage(`Error: ${data.error || 'Unable to delete menu item'} `)
       }
     } catch (error) {
@@ -959,476 +1003,584 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     window.dispatchEvent(event)
   }, [])
 
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmation.type === 'category') {
+      await executeDeleteCategory(deleteConfirmation.id)
+    } else {
+      await executeDeleteItem(deleteConfirmation.id)
+    }
+    setDeleteConfirmation(prev => ({ ...prev, isOpen: false }))
+  }
+
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-      modifiers={[restrictToWindowEdges]}
-    >
-      <section
-        className="w-full py-4 sm:py-6 md:py-8"
-        style={{
-          backgroundColor: menuBackgroundColor,
-          color: contrastColor,
-          fontFamily: menuFontFamily,
-        }}
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToWindowEdges]}
       >
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <MenuHeader
-            profile={profile}
-            user={user}
-            onEditProfile={onEditProfile}
-            onScanMenu={handleOpenScanMenu}
-            onNewCategory={openCreateCategory}
-            onNewItem={startCreateItem}
-            message={message}
-            theme={theme}
-          />
+        <section
+          className="w-full py-4 sm:py-6 md:py-8"
+          style={{
+            backgroundColor: menuBackgroundColor,
+            color: contrastColor,
+            fontFamily: menuFontFamily,
+          }}
+        >
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+            <MenuHeader
+              profile={profile}
+              user={user}
+              onEditProfile={onEditProfile}
+              onScanMenu={handleOpenScanMenu}
+              onNewCategory={openCreateCategory}
+              onNewItem={startCreateItem}
+              message={message}
+              theme={theme}
+            />
 
-          <div className="mt-6 sm:mt-8 md:mt-12 space-y-4 sm:space-y-6 md:space-y-8">
-            {loading ? (
-              <div
-                className={`flex flex - col items - center justify - center border border - dashed ${getBorderColor()} py - 12 sm: py - 16 md: py - 20 ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
-                  } `}
-              >
-                <div className={`h - 8 w - 8 sm: h - 12 sm: w - 12 animate - spin border ${getBorderColor()} border - t - transparent`}></div>
-                <p className={`mt - 3 sm: mt - 4 text - xs sm: text - sm ${secondaryTextClass} `}>Loading your menu...</p>
-              </div>
-            ) : (
-              <>
-                {/* Our Favorites Section */}
-                {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
-                  <MenuCategorySection
-                    id="favorites"
-                    title="Our Favorites"
-                    items={groupedItems['favorites']}
-                    isOpen={expandedCategories['favorites']}
-                    onToggle={() => toggleCategory('favorites')}
-                    onEditItem={startEditItem}
-                    onDeleteItem={handleDeleteItem}
-                    onToggleFavorite={toggleFavorite}
-                    onItemClick={setSelectedItem}
-                    favoritedIds={favoritedIds}
-                    theme={theme}
-                    emptyMessage="No favorited items."
-                    isSortable={false} // Favorites are auto-generated, maybe not sortable manually? Or sortable within favorites? User didn't specify. Let's disable for now to be safe.
-                  />
-                )}
+            <div className="mt-6 sm:mt-8 md:mt-12 space-y-4 sm:space-y-6 md:space-y-8">
+              {loading ? (
+                <div
+                  className={`flex flex - col items - center justify - center border border - dashed ${getBorderColor()} py - 12 sm: py - 16 md: py - 20 ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
+                    } `}
+                >
+                  <div className={`h - 8 w - 8 sm: h - 12 sm: w - 12 animate - spin border ${getBorderColor()} border - t - transparent`}></div>
+                  <p className={`mt - 3 sm: mt - 4 text - xs sm: text - sm ${secondaryTextClass} `}>Loading your menu...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Our Favorites Section */}
+                  {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
+                    <MenuCategorySection
+                      id="favorites"
+                      title="Our Favorites"
+                      items={groupedItems['favorites']}
+                      isOpen={expandedCategories['favorites']}
+                      onToggle={() => toggleCategory('favorites')}
+                      onEditItem={startEditItem}
+                      onDeleteItem={promptDeleteItem}
+                      onToggleFavorite={toggleFavorite}
+                      onItemClick={setSelectedItem}
+                      favoritedIds={favoritedIds}
+                      theme={theme}
+                      emptyMessage="No favorited items."
+                      isSortable={false} // Favorites are auto-generated, maybe not sortable manually? Or sortable within favorites? User didn't specify. Let's disable for now to be safe.
+                    />
+                  )}
 
-                {/* Regular Categories */}
-                {categorySections.length > 0 && (
-                  <SortableContext
-                    items={categorySections.map(c => c.category.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-4 sm:space-y-6 md:space-y-8">
-                      {categorySections.map(({ category, items }) => (
-                        <SortableItem key={category.id} id={category.id}>
-                          <MenuCategorySection
-                            id={category.id}
-                            title={category.name}
-                            items={items}
-                            isOpen={!!expandedCategories[category.id]}
-                            onToggle={() => toggleCategory(category.id)}
-                            onAddItem={() => {
-                              setEditingItem(null)
-                              setItemForm(EMPTY_ITEM_FORM)
-                              setItemCategory(category.id)
-                              setItemTags([])
-                              setImageFile(null)
-                              setIsItemSheetOpen(true)
-                              resetProgress()
-                            }}
-                            onRenameCategory={handleRenameCategory}
-                            onDeleteCategory={() => handleDeleteCategory(category.id)}
-                            onEditItem={startEditItem}
-                            onDeleteItem={(itemId) => setSelectedItem(menuItems.find(i => i.id === itemId) || null)}
-                            onToggleFavorite={toggleFavorite}
-                            onItemClick={(item) => setSelectedItem(item)}
-                            favoritedIds={favoritedIds}
-                            theme={theme}
-                            emptyMessage="No menu items yet. Use the New Item button to add your first dish."
-                            isSortable={true}
-                          />
-                        </SortableItem>
-                      ))}
-                    </div>
-                  </SortableContext>
-                )}
-
-                {/* Uncategorized Section */}
-                {uncategorizedItems.length > 0 && categorySections.length === 0 && (
-                  <MenuCategorySection
-                    id="uncategorized"
-                    title="Menu Items"
-                    items={uncategorizedItems}
-                    isOpen={true} // Always open if it's the only section
-                    onToggle={() => { }} // No toggle
-                    onAddItem={startCreateItem}
-                    onEditItem={startEditItem}
-                    onDeleteItem={handleDeleteItem}
-                    onToggleFavorite={toggleFavorite}
-                    onItemClick={setSelectedItem}
-                    favoritedIds={favoritedIds}
-                    theme={theme}
-                    subtitle="Organize with categories whenever you are ready."
-                    isSortable={true}
-                  />
-                )}
-
-                {/* Empty State */}
-                {categorySections.length === 0 && uncategorizedItems.length === 0 && (
-                  <div
-                    className={`border border - dashed ${getBorderColor()} py - 12 sm: py - 14 md: py - 16 text - center ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
-                      } `}
-                  >
-                    <h2 className={`text - lg sm: text - xl md: text - 2xl font - semibold ${primaryTextClass} `}>
-                      Organize your menu with categories
-                    </h2>
-                    <p className={`mt - 2 text - xs sm: text - sm ${mutedTextClass} `}>
-                      Create a menu category to get started. Menu items appear here once created.
-                    </p>
-                    <Button
-                      className={`mt - 4 sm: mt - 6 ${accentButtonClass} border ${getBorderColor()} `}
-                      onClick={openCreateCategory}
+                  {/* Regular Categories */}
+                  {categorySections.length > 0 && (
+                    <SortableContext
+                      items={categorySections.map(c => c.category.id)}
+                      strategy={verticalListSortingStrategy}
                     >
-                      Add your first category
-                    </Button>
-                  </div>
-                )}
+                      <div className="space-y-4 sm:space-y-6 md:space-y-8">
+                        {categorySections.map(({ category, items }) => (
+                          <SortableItem key={category.id} id={category.id}>
+                            <MenuCategorySection
+                              id={category.id}
+                              title={category.name}
+                              items={items}
+                              isOpen={!!expandedCategories[category.id]}
+                              onToggle={() => toggleCategory(category.id)}
+                              onAddItem={() => {
+                                setEditingItem(null)
+                                setItemForm(EMPTY_ITEM_FORM)
+                                setItemCategory(category.id)
+                                setItemTags([])
+                                setImageFile(null)
+                                setIsItemSheetOpen(true)
+                                resetProgress()
+                              }}
+                              onRenameCategory={handleRenameCategory}
+                              onDeleteCategory={() => promptDeleteCategory(category.id)}
+                              onEditItem={startEditItem}
+                              onDeleteItem={promptDeleteItem}
+                              onToggleFavorite={toggleFavorite}
+                              onItemClick={(item) => setSelectedItem(item)}
+                              favoritedIds={favoritedIds}
+                              theme={theme}
+                              emptyMessage="No menu items yet. Use the New Item button to add your first dish."
+                              isSortable={true}
+                            />
+                          </SortableItem>
+                        ))}
+                      </div>
+                    </SortableContext>
+                  )}
 
-                {/* Uncategorized section when there are categories */}
-                {categorySections.length > 0 && uncategorizedItems.length > 0 && (
-                  <MenuCategorySection
-                    id="uncategorized"
-                    title="Uncategorized"
-                    items={uncategorizedItems}
-                    isOpen={expandedCategories['uncategorized']}
-                    onToggle={() => toggleCategory('uncategorized')}
-                    onEditItem={startEditItem}
-                    onDeleteItem={handleDeleteItem}
-                    onToggleFavorite={toggleFavorite}
-                    onItemClick={setSelectedItem}
-                    favoritedIds={favoritedIds}
-                    theme={theme}
-                    emptyMessage="No uncategorized items."
-                    isSortable={true}
-                  />
-                )}
-              </>
-            )}
+                  {/* Uncategorized Section */}
+                  {uncategorizedItems.length > 0 && categorySections.length === 0 && (
+                    <MenuCategorySection
+                      id="uncategorized"
+                      title="Menu Items"
+                      items={uncategorizedItems}
+                      isOpen={true} // Always open if it's the only section
+                      onToggle={() => { }} // No toggle
+                      onAddItem={startCreateItem}
+                      onEditItem={startEditItem}
+                      onDeleteItem={promptDeleteItem}
+                      onToggleFavorite={toggleFavorite}
+                      onItemClick={setSelectedItem}
+                      favoritedIds={favoritedIds}
+                      theme={theme}
+                      subtitle="Organize with categories whenever you are ready."
+                      isSortable={true}
+                    />
+                  )}
+
+                  {/* Empty State */}
+                  {categorySections.length === 0 && uncategorizedItems.length === 0 && (
+                    <div
+                      className={`border border - dashed ${getBorderColor()} py - 12 sm: py - 14 md: py - 16 text - center ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
+                        } `}
+                    >
+                      <h2 className={`text - lg sm: text - xl md: text - 2xl font - semibold ${primaryTextClass} `}>
+                        Organize your menu with categories
+                      </h2>
+                      <p className={`mt - 2 text - xs sm: text - sm ${mutedTextClass} `}>
+                        Create a menu category to get started. Menu items appear here once created.
+                      </p>
+                      <Button
+                        className={`mt - 4 sm: mt - 6 ${accentButtonClass} border ${getBorderColor()} `}
+                        onClick={openCreateCategory}
+                      >
+                        Add your first category
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Uncategorized section when there are categories */}
+                  {categorySections.length > 0 && uncategorizedItems.length > 0 && (
+                    <MenuCategorySection
+                      id="uncategorized"
+                      title="Uncategorized"
+                      items={uncategorizedItems}
+                      isOpen={expandedCategories['uncategorized']}
+                      onToggle={() => toggleCategory('uncategorized')}
+                      onEditItem={startEditItem}
+                      onDeleteItem={promptDeleteItem}
+                      onToggleFavorite={toggleFavorite}
+                      onItemClick={setSelectedItem}
+                      favoritedIds={favoritedIds}
+                      theme={theme}
+                      emptyMessage="No uncategorized items."
+                      isSortable={true}
+                    />
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        <Dialog open={isCategoryDialogOpen} onOpenChange={(open) => {
-          setIsCategoryDialogOpen(open)
-          if (!open) {
-            resetCategoryDialog()
-          }
-        }}>
-          <DialogContent
-            className={`sm: max - w - md border ${getBorderColor()} `}
-            style={{
-              backgroundColor: menuBackgroundColor,
-              color: contrastColor,
-            }}
-          >
-            <DialogHeader className="pb-0">
-              <DialogTitle className="text-base sm:text-lg">{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm pb-0">
-                {editingCategory
-                  ? 'Update the category name. Menu items remain in the category.'
-                  : 'Create a category to group menu items.'}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCategorySubmit} className="pt-0 space-y-2 sm:space-y-3">
-              <Input
-                id="category-name"
-                value={categoryName}
-                onChange={(event) => setCategoryName(event.target.value)}
-                placeholder="e.g. Starters"
-                required
-                className="border"
-                style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
-              />
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`${outlineButtonClass} border ${getBorderColor()} `}
-                  onClick={() => {
-                    setIsCategoryDialogOpen(false)
-                    resetCategoryDialog()
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className={`${accentButtonClass} border ${getBorderColor()} `}>
-                  {editingCategory ? 'Save changes' : 'Create category'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
-          <SheetContent
-            side="right"
-            className={`w - full sm: max - w - md border - l ${getBorderColor()} p - 0 gap - 0`}
-            style={{
-              backgroundColor: menuBackgroundColor,
-              color: contrastColor,
-            }}
-          >
-            <SheetHeader className={`p - 6 border - b ${getBorderColor()} text - left space - y - 0`}>
-              <SheetTitle className={primaryTextClass}>
-                {editingItem ? 'Edit Menu Item' : 'New Menu Item'}
-              </SheetTitle>
-            </SheetHeader>
-
-            <form onSubmit={upsertMenuItem} className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className={primaryTextClass}>Item Name *</Label>
-                  <Input
-                    id="title"
-                    value={itemForm.title}
-                    onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
-                    placeholder="e.g., Grilled Salmon"
-                    required
-                    className={`border ${getBorderColor()} bg - transparent`}
-                  />
+          <Dialog open={isCategoryDialogOpen} onOpenChange={(open) => {
+            setIsCategoryDialogOpen(open)
+            if (!open) {
+              resetCategoryDialog()
+            }
+          }}>
+            <DialogContent
+              className={`sm: max - w - md border ${getBorderColor()} `}
+              style={{
+                backgroundColor: menuBackgroundColor,
+                color: contrastColor,
+              }}
+            >
+              <DialogHeader className="pb-0">
+                <DialogTitle className="text-base sm:text-lg">{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm pb-0">
+                  {editingCategory
+                    ? 'Update the category name. Menu items remain in the category.'
+                    : 'Create a category to group menu items.'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCategorySubmit} className="pt-0 space-y-2 sm:space-y-3">
+                <Input
+                  id="category-name"
+                  value={categoryName}
+                  onChange={(event) => setCategoryName(event.target.value)}
+                  placeholder="e.g. Starters"
+                  required
+                  className="border"
+                  style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`${outlineButtonClass} border ${getBorderColor()} `}
+                    onClick={() => {
+                      setIsCategoryDialogOpen(false)
+                      resetCategoryDialog()
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className={`${accentButtonClass} border ${getBorderColor()} `}>
+                    {editingCategory ? 'Save changes' : 'Create category'}
+                  </Button>
                 </div>
+              </form>
+            </DialogContent>
+          </Dialog>
 
-                <div className="space-y-2">
-                  <Label htmlFor="price" className={primaryTextClass}>Price</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={itemForm.price}
-                    onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                    placeholder="0.00"
-                    className={`border ${getBorderColor()} bg - transparent`}
-                  />
-                </div>
+          <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
+            <SheetContent
+              side="right"
+              className={`w - full sm: max - w - md border - l ${getBorderColor()} p - 0 gap - 0`}
+              style={{
+                backgroundColor: menuBackgroundColor,
+                color: contrastColor,
+              }}
+            >
+              <SheetHeader className={`p - 6 border - b ${getBorderColor()} text - left space - y - 0`}>
+                <SheetTitle className={primaryTextClass}>
+                  {editingItem ? 'Edit Menu Item' : 'New Menu Item'}
+                </SheetTitle>
+              </SheetHeader>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description" className={primaryTextClass}>Description</Label>
-                  <Textarea
-                    id="description"
-                    value={itemForm.description}
-                    onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                    placeholder="Describe your menu item..."
-                    rows={3}
-                    className={`border ${getBorderColor()} bg - transparent`}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className={primaryTextClass}>Image</Label>
-                  <div className={`border border - dashed ${getBorderColor()} rounded - md p - 4 text - center`}>
-                    {imageFile ? (
-                      <div className="relative">
-                        <p className={`text - sm ${primaryTextClass} mb - 2`}>{imageFile.name}</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setImageFile(null)}
-                          className={`${outlineButtonClass} border ${getBorderColor()} `}
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Remove
-                        </Button>
-                      </div>
-                    ) : itemForm.image_url ? (
-                      <div className="relative">
-                        <div className="relative h-32 w-full mb-2">
-                          <Image
-                            src={itemForm.image_url}
-                            alt="Preview"
-                            fill
-                            className="object-cover rounded-md"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setItemForm({ ...itemForm, image_url: '' })}
-                          className={`${outlineButtonClass} border ${getBorderColor()} `}
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Remove Image
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center">
-                        <Upload className={`h - 8 w - 8 mb - 2 ${mutedTextClass} `} />
-                        <Label
-                          htmlFor="image-upload"
-                          className={`cursor - pointer ${primaryTextClass} hover: underline`}
-                        >
-                          Click to upload image
-                        </Label>
-                        <input
-                          id="image-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) setImageFile(file)
-                          }}
-                          className="hidden"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className={primaryTextClass}>Category</Label>
-                  <Select value={itemCategory} onValueChange={setItemCategory}>
-                    <SelectTrigger className={`border ${getBorderColor()} bg - transparent`}>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Category</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className={primaryTextClass}>Dietary Tags</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => {
-                      const isSelected = itemTags.includes(tag.id)
-                      const borderColor = getAllergenBorderColor(tag.name)
-
-                      return (
-                        <Badge
-                          key={tag.id}
-                          variant="outline"
-                          className="cursor-pointer transition-all"
-                          onClick={() => toggleFormTag(tag.id)}
-                          style={{
-                            borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
-                            backgroundColor: isSelected
-                              ? (borderColor || (isDarkBackground ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'))
-                              : 'transparent',
-                            color: contrastColor
-                          }}
-                        >
-                          <Tag className="h-3 w-3 mr-1" />
-                          {tag.name}
-                        </Badge>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className={`p - 6 border - t ${getBorderColor()} flex justify - end gap - 2`}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => closeItemSheet(false)}
-                  className={`${outlineButtonClass} border ${getBorderColor()} `}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={uploading}
-                  className={`${accentButtonClass} border ${getBorderColor()} `}
-                >
-                  {uploading ? 'Saving...' : 'Save Item'}
-                </Button>
-              </div>
-            </form>
-          </SheetContent>
-        </Sheet>
-
-        {/* Item Detail Modal */}
-        <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-          <DialogContent
-            className={`sm: max - w - lg p - 0 overflow - hidden border ${getBorderColor()} `}
-            style={{
-              backgroundColor: menuBackgroundColor,
-              color: contrastColor,
-              fontFamily: menuFontFamily,
-            }}
-          >
-            {selectedItem && (
-              <>
-                {selectedItem.image_url && (
-                  <div className="relative w-full aspect-video">
-                    <Image
-                      src={selectedItem.image_url}
-                      alt={selectedItem.title}
-                      fill
-                      className="object-cover"
+              <form onSubmit={upsertMenuItem} className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className={primaryTextClass}>Item Name *</Label>
+                    <Input
+                      id="title"
+                      value={itemForm.title}
+                      onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
+                      placeholder="e.g., Grilled Salmon"
+                      required
+                      className={`border ${getBorderColor()} bg - transparent`}
                     />
                   </div>
-                )}
-                <div className="p-4 sm:p-6 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <DialogTitle className={`text-xl sm:text-2xl font-bold ${primaryTextClass}`}>
-                      {selectedItem.title}
-                    </DialogTitle>
-                    {selectedItem.price && (
-                      <span className={`text-lg font-semibold ${primaryTextClass} notranslate`}>
-                        {formatPrice(selectedItem.price, profile?.currency)}
-                      </span>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="price" className={primaryTextClass}>Price</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={itemForm.price}
+                      onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
+                      placeholder="0.00"
+                      className={`border ${getBorderColor()} bg - transparent`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className={primaryTextClass}>Description</Label>
+                    <Textarea
+                      id="description"
+                      value={itemForm.description}
+                      onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+                      placeholder="Describe your menu item..."
+                      rows={3}
+                      className={`border ${getBorderColor()} bg - transparent`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={primaryTextClass}>Image</Label>
+                    <div className={`border border - dashed ${getBorderColor()} rounded - md p - 4 text - center`}>
+                      {imageFile ? (
+                        <div className="relative">
+                          <p className={`text - sm ${primaryTextClass} mb - 2`}>{imageFile.name}</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setImageFile(null)}
+                            className={`${outlineButtonClass} border ${getBorderColor()} `}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      ) : itemForm.image_url ? (
+                        <div className="relative">
+                          <div className="relative h-32 w-full mb-2">
+                            <Image
+                              src={itemForm.image_url}
+                              alt="Preview"
+                              fill
+                              className="object-cover rounded-md"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setItemForm({ ...itemForm, image_url: '' })}
+                            className={`${outlineButtonClass} border ${getBorderColor()} `}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Remove Image
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Upload className={`h - 8 w - 8 mb - 2 ${mutedTextClass} `} />
+                          <Label
+                            htmlFor="image-upload"
+                            className={`cursor - pointer ${primaryTextClass} hover: underline`}
+                          >
+                            Click to upload image
+                          </Label>
+                          <input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) setImageFile(file)
+                            }}
+                            className="hidden"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={primaryTextClass}>Category</Label>
+                    <Select value={itemCategory} onValueChange={setItemCategory}>
+                      <SelectTrigger className={`border ${getBorderColor()} bg - transparent`}>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Category</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={primaryTextClass}>Dietary Tags</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => {
+                        const isSelected = itemTags.includes(tag.id)
+                        const borderColor = getAllergenBorderColor(tag.name)
+
+                        return (
+                          <Badge
+                            key={tag.id}
+                            variant="outline"
+                            className="cursor-pointer transition-all"
+                            onClick={() => toggleFormTag(tag.id)}
+                            style={{
+                              borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
+                              backgroundColor: isSelected
+                                ? (borderColor || (isDarkBackground ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'))
+                                : 'transparent',
+                              color: contrastColor
+                            }}
+                          >
+                            <Tag className="h-3 w-3 mr-1" />
+                            {tag.name}
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`p - 6 border - t ${getBorderColor()} flex justify - end gap - 2`}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => closeItemSheet(false)}
+                    className={`${outlineButtonClass} border ${getBorderColor()} `}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={uploading}
+                    className={`${accentButtonClass} border ${getBorderColor()} `}
+                  >
+                    {uploading ? 'Saving...' : 'Save Item'}
+                  </Button>
+                </div>
+              </form>
+            </SheetContent>
+          </Sheet>
+
+          {/* Item Detail Modal - Custom Implementation matching Public Page */}
+          {selectedItem && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+              style={{
+                width: '100vw',
+                overflow: 'auto',
+              }}
+              onClick={() => setSelectedItem(null)}
+            >
+              <div
+                className={`relative border shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ${getBorderColor()}`}
+                style={{
+                  backgroundColor: menuBackgroundColor,
+                  color: contrastColor,
+                  borderColor: isDarkBackground ? '#ffffff' : '#000000',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="private-menu-item-heading"
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 border ${getBorderColor()} transition-colors z-10 ${isDarkBackground
+                    ? 'bg-white/20 hover:bg-white/30 text-white'
+                    : 'bg-white/80 hover:bg-white text-gray-700'
+                    }`}
+                  aria-label="Close"
+                >
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                </button>
+
+                {/* Content */}
+                <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+                  <div
+                    className="relative h-48 sm:h-64 w-full md:h-full md:min-h-[24rem] border-b md:border-b-0 md:border-r"
+                    style={{
+                      borderColor: isDarkBackground ? '#ffffff' : '#000000'
+                    }}
+                  >
+                    {selectedItem.image_url ? (
+                      <Image
+                        src={selectedItem.image_url}
+                        alt={selectedItem.title}
+                        fill
+                        className="object-cover"
+                        sizes="(min-width: 1024px) 40vw, 90vw"
+                      />
+                    ) : (
+                      <div className={`flex h-full w-full items-center justify-center text-xs sm:text-sm ${secondaryTextClass}`}>
+                        Photo coming soon
+                      </div>
                     )}
                   </div>
 
-                  {selectedItem.description && (
-                    <p className={`text - sm sm: text - base ${secondaryTextClass} `}>
-                      {selectedItem.description}
-                    </p>
-                  )}
-
-                  {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {selectedItem.menu_item_tags.map((tagEntry) => (
-                        <Badge
-                          key={tagEntry.tags.id}
-                          variant="outline"
-                          style={{
-                            borderColor: getAllergenBorderColor(tagEntry.tags.name),
-                            color: contrastColor
-                          }}
+                  <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 lg:p-8 md:overflow-y-auto md:max-h-[calc(90vh-3rem)]">
+                    {/* Title and Price */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2">
+                        <h2
+                          id="private-menu-item-heading"
+                          className={`text-xl sm:text-2xl md:text-3xl font-bold ${primaryTextClass}`}
+                          style={{ fontFamily: menuFontFamily }}
                         >
-                          <Tag className="h-3 w-3 mr-1" />
-                          {tagEntry.tags.name}
-                        </Badge>
-                      ))}
+                          {selectedItem.title}
+                        </h2>
+                        {selectedItem.menu_categories && (
+                          <Badge
+                            variant="secondary"
+                            className="self-start border"
+                            style={{
+                              backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                              color: contrastColor,
+                              borderColor: isDarkBackground ? '#ffffff' : '#000000',
+                            }}
+                          >
+                            {/* We know mapped items have name property on menu_categories */}
+                            {selectedItem.menu_categories?.name || 'Category'}
+                          </Badge>
+                        )}
+                      </div>
+                      {typeof selectedItem.price === 'number' && (
+                        <div className={`text-lg sm:text-xl font-semibold ${primaryTextClass} notranslate`}>
+                          {formatPrice(selectedItem.price, profile?.currency)}
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedItem(null)}
-                      className={`${outlineButtonClass} border ${getBorderColor()} `}
-                    >
-                      Close
-                    </Button>
+                    {/* Description */}
+                    {selectedItem.description && (
+                      <div>
+                        <p className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}>
+                          {selectedItem.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Dietary Tags */}
+                    {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
+                      <div>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedItem.menu_item_tags.map((tagEntry) => (
+                            <Badge
+                              key={tagEntry.tags.id}
+                              variant="outline"
+                              className="text-xs border"
+                              style={{
+                                borderColor: getAllergenBorderColor(tagEntry.tags.name) || (isDarkBackground ? '#ffffff' : '#000000'),
+                                color: isDarkBackground ? (getAllergenBorderColor(tagEntry.tags.name) || '#ffffff') : '#1f2937',
+                                backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.05)' : 'transparent',
+                              }}
+                            >
+                              <Tag className="h-3 w-3 mr-1" />
+                              {tagEntry.tags.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-      </section>
-    </DndContext>
+              </div>
+            </div>
+          )}
+        </section>
+      </DndContext>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmation.isOpen} onOpenChange={(open) => setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent
+          className={`sm:max-w-md border ${getBorderColor()}`}
+          style={{
+            backgroundColor: menuBackgroundColor,
+            color: contrastColor,
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 ${primaryTextClass}`}>
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Confirm Deletion
+            </DialogTitle>
+            <DialogDescription className={secondaryTextClass}>
+              Are you sure you want to delete <span className="font-semibold">{deleteConfirmation.title}</span>?
+              {deleteConfirmation.type === 'category' && ' All menu items in this category will become uncategorized.'}
+              <br />
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className={`${outlineButtonClass} border ${getBorderColor()}`}
+              onClick={() => setDeleteConfirmation(prev => ({ ...prev, isOpen: false }))}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 text-white border-none"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

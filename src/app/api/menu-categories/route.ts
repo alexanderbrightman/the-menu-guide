@@ -289,11 +289,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Now delete the category (database foreign key constraint will handle any remaining references)
-    const { error } = await supabase.from('menu_categories').delete().eq('id', sanitizedCategoryId).eq('user_id', user.id)
+    const { data: deleted, error } = await supabase
+      .from('menu_categories')
+      .delete()
+      .eq('id', sanitizedCategoryId)
+      .eq('user_id', user.id)
+      .select()
 
     if (error) {
       console.error('Error deleting category:', error)
       return NextResponse.json({ error: 'An error occurred while deleting the category' }, { status: 500, headers: getSecurityHeaders() })
+    }
+
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: 'Category not found or could not be deleted' }, { status: 404, headers: getSecurityHeaders() })
     }
 
     return NextResponse.json(
