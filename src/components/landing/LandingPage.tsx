@@ -393,11 +393,12 @@ export function LandingPage() {
                 placeholder="Explore menus..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-auto py-2 font-medium"
+                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
                 style={{
                   paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
                   paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
                   fontSize: '16px',
+                  lineHeight: 'normal',
                   border: 'none !important',
                   outline: 'none !important',
                   boxShadow: 'none !important',
