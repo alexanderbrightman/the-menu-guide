@@ -332,9 +332,10 @@ export function LandingPage() {
             </div>
 
             {/* Search bar container - always visible */}
-            <div
+            <label
               id="search-bar-container"
-              className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black"
+              htmlFor="search-input"
+              className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black cursor-text"
               style={{
                 height: 'clamp(2.5rem, 5vw, 3.5rem)',
                 paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',
@@ -383,20 +384,20 @@ export function LandingPage() {
                 }}
               />
               <Input
+                id="search-input"
                 type="text"
                 name="search"
                 autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="Explore menus..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
+                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-auto py-2 font-medium"
                 style={{
                   paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
                   paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
-                  paddingTop: '0',
-                  paddingBottom: '0',
                   fontSize: '16px',
-                  height: '100%',
                   border: 'none !important',
                   outline: 'none !important',
                   boxShadow: 'none !important',
@@ -440,7 +441,7 @@ export function LandingPage() {
                   transformOrigin: 'center center',
                 }}
               />
-            </div>
+            </label>
 
             {/* Search results dropdown - squared off design */}
             {searchQuery.trim().length > 0 && (
