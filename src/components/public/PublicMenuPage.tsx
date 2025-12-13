@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, us
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -488,6 +489,65 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       {/* Large Header Photo */}
       <header className="relative max-w-screen-2xl mx-auto w-full">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          {/* TMG Header */}
+          <div className="flex justify-between items-center mb-4">
+            <Link
+              href="/"
+              className={`text-lg font-bold hover:opacity-80 transition-opacity ${primaryTextClass}`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              The Menu Guide
+            </Link>
+            <div className="flex items-center gap-2">
+              {/* Translate Button */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="border rounded-full flex items-center justify-center transition-colors hover:opacity-70"
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderColor: isDarkBackground ? '#ffffff' : '#000000',
+                      color: isDarkBackground ? '#ffffff' : '#000000',
+                    }}
+                    aria-label="Translate menu"
+                  >
+                    <Globe className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {LANGUAGES.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => handleTranslate(lang.code)}
+                    >
+                      {lang.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {profile.bio && (
+                <button
+                  onClick={() => setIsInfoModalOpen(true)}
+                  className="border rounded-full flex items-center justify-center text-sm font-medium transition-colors hover:opacity-70"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderColor: isDarkBackground ? '#ffffff' : '#000000',
+                    color: isDarkBackground ? '#ffffff' : '#000000',
+                    fontFamily: 'Georgia, serif',
+                    fontStyle: 'italic',
+                    fontWeight: 'normal'
+                  }}
+                  aria-label="Show restaurant information"
+                >
+                  i
+                </button>
+              )}
+            </div>
+          </div>
+
           <div
             className="relative h-[20vh] w-full overflow-hidden border"
             style={{
@@ -646,54 +706,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             >
               Menu
             </h2>
-            <div className="flex items-center gap-2">
-              {/* Translate Button */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="border rounded-full flex items-center justify-center transition-colors hover:opacity-70"
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderColor: isDarkBackground ? '#ffffff' : '#000000',
-                      color: isDarkBackground ? '#ffffff' : '#000000',
-                    }}
-                    aria-label="Translate menu"
-                  >
-                    <Globe className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {LANGUAGES.map((lang) => (
-                    <DropdownMenuItem
-                      key={lang.code}
-                      onClick={() => handleTranslate(lang.code)}
-                    >
-                      {lang.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {profile.bio && (
-                <button
-                  onClick={() => setIsInfoModalOpen(true)}
-                  className="border rounded-full flex items-center justify-center text-sm font-medium transition-colors hover:opacity-70"
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderColor: isDarkBackground ? '#ffffff' : '#000000',
-                    color: isDarkBackground ? '#ffffff' : '#000000',
-                    fontFamily: 'Georgia, serif',
-                    fontStyle: 'italic',
-                    fontWeight: 'normal'
-                  }}
-                  aria-label="Show restaurant information"
-                >
-                  i
-                </button>
-              )}
-            </div>
           </div>
 
           {filteredItems.length === 0 ? (
@@ -757,13 +769,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
         </div>
 
         {/* Footer */}
-        <div className={`mt-12 text-center text-sm ${mutedTextClass}`}>
-          <Link
-            href="/"
-            className={`underline transition-colors ${isDarkBackground ? 'text-white hover:text-gray-100' : 'text-black hover:text-gray-800'}`}
-          >
-            Want to show off your food?
-          </Link>
+        <div className={`mt-12 text-center text-[10px] ${mutedTextClass}`}>
+          Allergen info provided by restaurant, always notify your waiter
         </div>
       </div>
 
@@ -887,6 +894,9 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     </div>
                   </div>
                 )}
+                <div className={`mt-4 text-[10px] leading-tight ${mutedTextClass}`}>
+                  Allergen info provided by restaurant, always notify your waiter
+                </div>
               </div>
             </div>
           </div>
