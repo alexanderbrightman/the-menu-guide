@@ -299,6 +299,16 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     [deferredSelectedTags]
   )
 
+  // Create a lookup map for category sort orders (for efficient sorting)
+  const categorySortOrderMap = useMemo(() => {
+    const map = new Map<string, number>()
+    categories.forEach((cat, index) => {
+      // Use the category's sort_order if available, otherwise fall back to index
+      map.set(cat.id, cat.sort_order ?? index)
+    })
+    return map
+  }, [categories])
+
   // Optimized filtering with Set-based lookups
   const filteredItems = useMemo(() => {
     let filtered = menuItems
@@ -327,8 +337,26 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       })
     }
 
+    // Sort items by category order first, then by item sort_order within each category
+    // This ensures "All Items" reflects the same order as set by restaurant owners
+    filtered = [...filtered].sort((a, b) => {
+      // Get category sort orders (items without a category go to the end)
+      const catOrderA = a.category_id ? (categorySortOrderMap.get(a.category_id) ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER
+      const catOrderB = b.category_id ? (categorySortOrderMap.get(b.category_id) ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER
+
+      // First sort by category order
+      if (catOrderA !== catOrderB) {
+        return catOrderA - catOrderB
+      }
+
+      // If same category, sort by item's sort_order
+      const itemOrderA = a.sort_order ?? Number.MAX_SAFE_INTEGER
+      const itemOrderB = b.sort_order ?? Number.MAX_SAFE_INTEGER
+      return itemOrderA - itemOrderB
+    })
+
     return filtered
-  }, [menuItems, deferredSelectedCategory, selectedTagsSet, itemTagIdSets, favoritedIdsSet])
+  }, [menuItems, deferredSelectedCategory, selectedTagsSet, itemTagIdSets, favoritedIdsSet, categorySortOrderMap])
 
   const toggleTag = useCallback((tagId: number) => {
     startTransition(() => {

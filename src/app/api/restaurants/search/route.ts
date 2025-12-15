@@ -75,9 +75,13 @@ export async function GET(request: NextRequest) {
       return aUser.localeCompare(bUser)
     }).slice(0, 20)
 
+    // Add cache headers for faster repeated searches
+    const headers = new Headers(getSecurityHeaders())
+    headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+
     return NextResponse.json(
       { restaurants: sortedProfiles },
-      { headers: getSecurityHeaders() }
+      { headers }
     )
   } catch (error) {
     console.error('Error in restaurant search:', error)

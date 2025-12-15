@@ -58,7 +58,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .from('menu_categories')
     .select('*')
     .eq('user_id', profile.id)
-    .order('created_at', { ascending: true })
+    .order('sort_order', { ascending: true })
 
   // Fetch menu items with tags
   const { data: menuItems } = await supabase
@@ -71,7 +71,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       )
     `)
     .eq('user_id', profile.id)
-    .order('created_at', { ascending: true })
+    .order('sort_order', { ascending: true })
 
   // Fetch all available tags
   const { data: tags } = await supabase

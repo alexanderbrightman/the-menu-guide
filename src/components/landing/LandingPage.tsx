@@ -40,7 +40,9 @@ export function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Restaurant[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [loadingResult, setLoadingResult] = useState<string | null>(null)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [scrollProgress, setScrollProgress] = useState(0)
   const heroSectionRef = useRef<HTMLDivElement>(null)
   const [arrowAnimationKey, setArrowAnimationKey] = useState(0)
@@ -76,31 +78,52 @@ export function LandingPage() {
   }, [])
 
   const performSearch = useCallback(async (query: string) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
     if (!query || query.trim().length < 1) {
       setSearchResults([])
       setIsSearching(false)
       return
     }
 
+    // Create new abort controller for this request
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setIsSearching(true)
     try {
-      const response = await fetch(`/api/restaurants/search?q=${encodeURIComponent(query.trim())}`)
+      const response = await fetch(
+        `/api/restaurants/search?q=${encodeURIComponent(query.trim())}`,
+        { signal: abortController.signal }
+      )
       const data = await response.json()
 
-      if (response.ok) {
-        const restaurants = data.restaurants || []
-        setSearchResults(restaurants)
-        // Trigger arrow animation when results appear
-        if (restaurants.length > 0) {
-          setArrowAnimationKey(prev => prev + 1)
+      // Only update state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        if (response.ok) {
+          const restaurants = data.restaurants || []
+          setSearchResults(restaurants)
+          // Trigger arrow animation when results appear
+          if (restaurants.length > 0) {
+            setArrowAnimationKey(prev => prev + 1)
+          }
+        } else {
+          setSearchResults([])
         }
-      } else {
+      }
+    } catch (error) {
+      // Ignore abort errors, they're expected
+      if (error instanceof Error && error.name !== 'AbortError') {
         setSearchResults([])
       }
-    } catch {
-      setSearchResults([])
     } finally {
-      setIsSearching(false)
+      // Only clear loading if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setIsSearching(false)
+      }
     }
   }, [])
 
@@ -110,10 +133,11 @@ export function LandingPage() {
       clearTimeout(debounceTimerRef.current)
     }
 
-    // Reduced debounce to 80ms for snappier response
+    // Reduced debounce to 50ms for snappier response
+    // Combined with AbortController, this provides fast feedback
     debounceTimerRef.current = setTimeout(() => {
       performSearch(searchQuery)
-    }, 80)
+    }, 50)
 
     return () => {
       if (debounceTimerRef.current) {
@@ -187,7 +211,7 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ fontFamily: 'var(--font-nunito)' }}>
       {/* Warm white gradient background */}
       <div
         className="fixed inset-0 transition-colors duration-300"
@@ -393,12 +417,11 @@ export function LandingPage() {
                 placeholder="Explore menus..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-full font-medium"
+                className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none focus-visible:outline-none text-gray-900 placeholder:text-gray-600 h-auto py-2 font-medium"
                 style={{
                   paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
                   paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
                   fontSize: '16px',
-                  lineHeight: 'normal',
                   border: 'none !important',
                   outline: 'none !important',
                   boxShadow: 'none !important',
@@ -456,33 +479,59 @@ export function LandingPage() {
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="py-2">
-                    {searchResults.map((restaurant) => (
-                      <Link
-                        key={restaurant.username}
-                        href={`/menu/${restaurant.username}`}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-4"
-                      >
-                        {restaurant.avatar_url ? (
-                          <Image
-                            src={restaurant.avatar_url}
-                            alt={restaurant.display_name}
-                            width={56}
-                            height={56}
-                            className="object-cover flex-shrink-0 border border-black"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 bg-gray-200 flex items-center justify-center flex-shrink-0 border border-black">
-                            <span className="text-gray-900 font-medium text-base">
-                              {restaurant.display_name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex flex-col">
-                          <span className="text-gray-900 font-medium">{restaurant.display_name}</span>
-                          <span className="text-gray-600 text-sm">@{restaurant.username}</span>
+                    {searchResults.map((restaurant) => {
+                      const isLoading = loadingResult === restaurant.username;
+                      return (
+                        <div
+                          key={restaurant.username}
+                          className={`relative transition-all duration-200 ${isLoading ? 'p-[1px]' : ''}`}
+                        >
+                          {/* Animated Rainbow Border Background */}
+                          {isLoading && (
+                            <div className="absolute inset-0 z-0 overflow-hidden rounded-sm">
+                              <div
+                                className="absolute inset-[-150%] w-[400%] h-[400%] animate-spin"
+                                style={{
+                                  background: 'conic-gradient(from 0deg, rgba(255, 182, 193, 0.8), rgba(255, 218, 185, 0.8), rgba(255, 255, 182, 0.8), rgba(182, 255, 182, 0.8), rgba(185, 218, 255, 0.8), rgba(218, 185, 255, 0.8), rgba(255, 182, 218, 0.8), rgba(255, 182, 193, 0.8))',
+                                  animationDuration: '1s',
+                                  left: '-150%',
+                                  top: '-150%',
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          <Link
+                            href={`/menu/${restaurant.username}`}
+                            prefetch={true}
+                            onClick={() => setLoadingResult(restaurant.username)}
+                            className={`relative w-full px-4 py-3 text-left transition-colors flex items-center gap-4 z-10 ${isLoading ? 'bg-white/95' : 'hover:bg-gray-100 bg-transparent'
+                              }`}
+                            onMouseEnter={() => router.prefetch(`/menu/${restaurant.username}`)}
+                          >
+                            {restaurant.avatar_url ? (
+                              <Image
+                                src={restaurant.avatar_url}
+                                alt={restaurant.display_name}
+                                width={56}
+                                height={56}
+                                className="object-cover flex-shrink-0 border border-black"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 bg-gray-200 flex items-center justify-center flex-shrink-0 border border-black">
+                                <span className="text-gray-900 font-medium text-base">
+                                  {restaurant.display_name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="text-gray-900 font-medium">{restaurant.display_name}</span>
+                              <span className="text-gray-600 text-sm">@{restaurant.username}</span>
+                            </div>
+                          </Link>
                         </div>
-                      </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-8 text-center text-gray-700">

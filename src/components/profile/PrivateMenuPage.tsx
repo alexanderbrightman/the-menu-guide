@@ -1564,6 +1564,9 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                         </div>
                       </div>
                     )}
+                    <div className={`mt-4 text-[10px] leading-tight ${mutedTextClass}`}>
+                      Allergen info provided by restaurant, always notify your waiter
+                    </div>
                   </div>
                 </div>
               </div>
