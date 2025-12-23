@@ -23,7 +23,7 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
     if (!user || !supabase) return
 
     setLoading(true)
-    
+
     try {
       // Get the current session token
       const { data: { session } } = await supabase.auth.getSession()
@@ -54,7 +54,7 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
         window.location.href = data.url
       } else {
         console.error('Error creating checkout session:', data.error)
-        
+
         // Check if it's a configuration error
         if (data.error === 'Payment system not configured') {
           alert('Payment system is not configured for local development. Please test payments on the live site or add Stripe test keys to your .env.local file.')
@@ -99,16 +99,16 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
             Premium Member
           </Badge>
           <span className="text-sm text-green-600">
-            $15/month
+            $30/month
           </span>
         </div>
-        
+
         {profile?.subscription_current_period_end && (
           <div className="text-sm text-green-600">
             Next billing: {new Date(profile.subscription_current_period_end).toLocaleDateString()}
           </div>
         )}
-        
+
         {profile?.stripe_customer_id ? (
           <Button
             variant="outline"
@@ -154,13 +154,13 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
             AI menu scanner
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold text-orange-800">$15</div>
+            <div className="text-2xl font-bold text-orange-800">$30</div>
             <div className="text-sm text-orange-600">per month</div>
           </div>
-          <Button 
+          <Button
             onClick={handleUpgrade}
             disabled={loading}
             className="bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -175,11 +175,11 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
   return (
     <>
       {hasPremiumAccess ? premiumCard : upgradeCard}
-      
+
       {/* Subscription Management Modal */}
       {showSubscriptionManagement && (
-        <SubscriptionManagement 
-          onClose={() => setShowSubscriptionManagement(false)} 
+        <SubscriptionManagement
+          onClose={() => setShowSubscriptionManagement(false)}
         />
       )}
     </>

@@ -37,7 +37,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
           },
         })
         const data = await response.json()
-        
+
         if (response.ok) {
           setMessage('Your subscription has been canceled and will end at the end of your current billing period.')
           setShowCancelConfirm(false)
@@ -71,7 +71,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
           },
         })
         const data = await response.json()
-        
+
         if (response.ok) {
           setMessage('Your subscription has been reactivated!')
           setShowReactivateConfirm(false)
@@ -147,7 +147,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
                     {subscriptionStatus.status === 'expired' && <XCircle className="h-4 w-4 text-red-600" />}
                     <span className="font-medium">{subscriptionStatus.message}</span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">$15/month</p>
+                  <p className="text-sm text-gray-600 mt-1">$30/month</p>
                 </div>
                 <div className="text-right">
                   {profile?.subscription_current_period_end && (
@@ -164,7 +164,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
           {/* Management Actions */}
           <div className="space-y-3">
             {subscriptionStatus.status === 'canceling' ? (
-              <Button 
+              <Button
                 onClick={() => setShowReactivateConfirm(true)}
                 disabled={loading}
                 className="w-full"
@@ -173,7 +173,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
                 Reactivate Subscription
               </Button>
             ) : subscriptionStatus.status === 'active' ? (
-              <Button 
+              <Button
                 variant="destructive"
                 onClick={() => setShowCancelConfirm(true)}
                 disabled={loading}
@@ -216,7 +216,7 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
             <DialogHeader>
               <DialogTitle>Cancel Subscription?</DialogTitle>
               <DialogDescription>
-                Your subscription will be canceled and will end at the end of your current billing period. 
+                Your subscription will be canceled and will end at the end of your current billing period.
                 You'll keep access to premium features until then.
               </DialogDescription>
             </DialogHeader>
