@@ -21,6 +21,7 @@ interface MenuCategorySectionProps {
     onEditItem: (item: MenuItemWithRelations) => void
     onDeleteItem: (itemId: string) => void
     onToggleFavorite: (itemId: string) => void
+    onToggleAvailability: (itemId: string) => void
     onItemClick: (item: MenuItemWithRelations) => void
     favoritedIds: Set<string>
     theme: ReturnType<typeof useMenuTheme>
@@ -42,6 +43,7 @@ export function MenuCategorySection({
     onEditItem,
     onDeleteItem,
     onToggleFavorite,
+    onToggleAvailability,
     onItemClick,
     favoritedIds,
     theme,
@@ -243,6 +245,7 @@ export function MenuCategorySection({
                                             onEdit={() => onEditItem(item)}
                                             onDelete={() => onDeleteItem(item.id)}
                                             onToggleFavorite={() => onToggleFavorite(item.id)}
+                                            onToggleAvailability={() => onToggleAvailability(item.id)}
                                             isFavorited={favoritedIds.has(item.id)}
                                             onClick={() => onItemClick(item)}
                                         />

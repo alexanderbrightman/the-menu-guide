@@ -523,6 +523,52 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }, [user, favoritedIds])
 
+  const toggleAvailability = useCallback(async (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+    if (!item) return
+
+    const newStatus = !(item.is_available ?? true)
+
+    // Optimistic update
+    setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, is_available: newStatus } : i)))
+
+    if (!supabase || !user) return
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        // Revert
+        setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, is_available: !newStatus } : i)))
+        setTransientMessage('Error: Not authenticated')
+        return
+      }
+
+      const response = await fetch('/api/menu-items', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token} `,
+        },
+        body: JSON.stringify({ id: itemId, is_available: newStatus }),
+      })
+
+      if (!response.ok) {
+        // Revert
+        setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, is_available: !newStatus } : i)))
+        const data = await response.json()
+        setTransientMessage(`Error: ${data.error || 'Unable to update status'} `)
+      }
+    } catch (error) {
+      console.error('Error updating status:', error)
+      // Revert
+      setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, is_available: !newStatus } : i)))
+      setTransientMessage('Error updating status')
+    }
+  }, [menuItems, user, setTransientMessage])
+
   const groupedItems = useMemo<CategoryMap>(() => {
     const grouped = menuItems.reduce<CategoryMap>((acc, item) => {
       const key = item.category_id || 'uncategorized'
@@ -1055,13 +1101,14 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                   {groupedItems['favorites'] && groupedItems['favorites'].length > 0 && (
                     <MenuCategorySection
                       id="favorites"
-                      title="Our Favorites"
+                      title="Specials"
                       items={groupedItems['favorites']}
                       isOpen={expandedCategories['favorites']}
                       onToggle={() => toggleCategory('favorites')}
                       onEditItem={startEditItem}
                       onDeleteItem={promptDeleteItem}
                       onToggleFavorite={toggleFavorite}
+                      onToggleAvailability={toggleAvailability}
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
@@ -1099,6 +1146,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                               onEditItem={startEditItem}
                               onDeleteItem={promptDeleteItem}
                               onToggleFavorite={toggleFavorite}
+                              onToggleAvailability={toggleAvailability}
                               onItemClick={(item) => setSelectedItem(item)}
                               favoritedIds={favoritedIds}
                               theme={theme}
@@ -1123,6 +1171,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                       onEditItem={startEditItem}
                       onDeleteItem={promptDeleteItem}
                       onToggleFavorite={toggleFavorite}
+                      onToggleAvailability={toggleAvailability}
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
@@ -1163,6 +1212,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                       onEditItem={startEditItem}
                       onDeleteItem={promptDeleteItem}
                       onToggleFavorite={toggleFavorite}
+                      onToggleAvailability={toggleAvailability}
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}

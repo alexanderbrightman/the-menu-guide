@@ -1,129 +1,41 @@
 # The Menu Guide
+**Your Menu. Beautifully Digital.**
 
-A SaaS web platform for restaurant owners to create and manage digital menus with beautiful photo layouts and dietary filtering.
+The **easiest** way for restaurants to manage their menus online. The Menu Guide gives you a stunning, photo-first digital menu that customers can access instantly via QR code—no PDFs, no pinching to zoom, just a seamless mobile experience.
 
-## 🚀 Quick Start
+---
 
-### 1. Environment Setup
+## 📖 User Guide: getting Started
 
-Create a `.env.local` file in the root directory with the following variables:
+### 1. **Create Your Account**
+Sign up in seconds using your email. Once you're in, you'll be greeted by your personal **Admin Dashboard**. This is your command center where you can manage everything about your restaurant's digital presence.
 
-```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+### 2. **Build Your Brand Profile**
+Head to the **Profile** section to set up your restaurant's identity:
+-   **Display Name**: Your restaurant's name as customers will see it.
+-   **Bio/Description**: Tell your story! Add your hours, location, or a warm welcome message.
+-   **Avatar**: Upload your logo for instant brand recognition.
+-   **Social Links**: Connect your Instagram and Website so customers can follow you.
 
-# Stripe Configuration
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+### 3. **Create Your Menu**
+This is where the magic happens. First, try uploading an image of your menu to the scanner to automatically generate your menu catagories and items. Then, you can manually edit and add all the images, and dietary tags.
+-   **Categories**: Click the "+ category" button to add a category. Organize your items into sections like *Appetizers, Mains, Drinks*, etc.
+-   **Add Items**: Click the "+ item" button to add a dish.
+-   **Food Photos**: Upload high-quality photos of your food.
+-   **Dietary Tags**: Mark items as *Gluten-Free, Dairy-Free, Nut-Free, Shellfish-Free, Vegan, Vegetarian, Spicy, Pescatarian*, etc. Customers can filter your menu by these tags to safe-guard their dining experience.
 
-# Next.js Configuration
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_nextauth_secret
-```
 
-### 2. Database Setup
+### 4. **Go Live with Pro**
+To share your menu with the world, upgrade to our **Pro Plan** ($30/month).
+-   **Instant Publishing**: Your public link becomes active immediately.
+-   **QR Code Generator**: We automatically generate a unique, high-resolution QR code for your menu.
+-   **Download & Print**: Download your QR code and place it on your traditional paper menu or displayed publicly. Customers scan it to see your beautiful menu.
 
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Go to the SQL Editor in your Supabase dashboard
-3. Run the following SQL files in order:
-   - `database/schema.sql` - Creates all tables and RLS policies
-   - `database/storage.sql` - Sets up storage buckets and policies
-   - `database/triggers.sql` - Creates automatic profile creation trigger
+### 5. **Managing Your Business**
+-   **Live Updates**: Run out of an item? Hide it instantly from your dashboard with the 86'd button. Changed a price? Update it in seconds. No re-printing paper menus ever again.
+-   **Specials**: By tapping the star button you can add an item to the "Specials" section of your menu. A "Specials" catagory will be automatically added to your menu and made visible to customers.
+-   **Auto-Translation**: Your menu can be translated into the customer's preferred language (Spanish, French, German, Chinese, etc.) so you never miss a sale due to a language barrier.
 
-### 3. Install Dependencies
+---
 
-```bash
-npm install
-```
-
-### 4. Run Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see the application.
-
-## 🏗️ Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── auth/             # Authentication components
-│   ├── dashboard/        # Dashboard components
-│   └── ui/               # shadcn/ui components
-├── contexts/             # React contexts
-├── lib/                  # Utility functions
-└── types/                # TypeScript types
-```
-
-## 🧩 Key Features
-
-- **Authentication**: Supabase Auth with automatic profile creation
-- **Profile Management**: Restaurant owners can edit their profile and upload avatars
-- **Menu Management**: Create categories and add menu items with photos
-- **Dietary Tagging**: Tag items with dietary restrictions (gluten-free, vegan, etc.)
-- **QR Code Generation**: Generate QR codes for public menu access
-- **Subscription Management**: Stripe integration for $25/month Pro plan
-- **Public Menus**: Customers can view published menus with dietary filtering
-
-## 🔒 Security
-
-- Row Level Security (RLS) enabled on all tables
-- Users can only access their own data
-- Public menus only visible with active Pro subscription
-- Secure file uploads to Supabase Storage
-
-## 💳 Subscription Model
-
-- **Free Plan**: Upload and organize menu items privately
-- **Pro Plan ($25/month)**: Publish menu publicly and generate QR codes
-- Stripe webhooks automatically update subscription status
-
-## 🎨 Design Inspiration
-
-The UI is inspired by modern social media layouts with:
-- Clean, minimalist design
-- Grid-based photo layouts
-- Professional restaurant branding
-- Mobile-responsive design
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. Connect your GitHub repository to Vercel
-2. Add environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
-
-### Environment Variables for Production
-
-Make sure to set all environment variables in your deployment platform:
-- Supabase project URL and keys
-- Stripe keys and webhook secret
-- NextAuth configuration
-
-## 📱 Mobile Support
-
-The application is fully responsive and works great on:
-- Desktop computers
-- Tablets
-- Mobile phones
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-This project is licensed under the MIT License.
+*Built with ❤️ for the future of dining.*

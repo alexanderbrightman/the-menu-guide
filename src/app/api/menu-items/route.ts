@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, price, category_id, image_url, tag_ids } = body
+    const { title, description, price, category_id, image_url, tag_ids, is_available } = body
 
     // Sanitize inputs
     const sanitizedTitle = title ? sanitizeTextInput(title) : ''
@@ -172,7 +172,8 @@ export async function POST(request: NextRequest) {
         description: sanitizedDescription,
         price: sanitizedPrice,
         category_id: sanitizedCategoryId,
-        image_url: sanitizedImageUrl
+        image_url: sanitizedImageUrl,
+        is_available: is_available === undefined ? true : !!is_available
       })
       .select()
       .single()
@@ -261,7 +262,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, title, description, price, category_id, image_url, tag_ids } = body
+    const { id, title, description, price, category_id, image_url, tag_ids, is_available } = body
 
     // Validate and sanitize ID (required)
     const sanitizedId = sanitizeUUID(id)
@@ -348,6 +349,7 @@ export async function PATCH(request: NextRequest) {
       price?: number | null
       category_id?: string | null
       image_url?: string | null
+      is_available?: boolean
     } = {}
 
     if (sanitizedTitle !== null) updateData.title = sanitizedTitle
@@ -356,6 +358,7 @@ export async function PATCH(request: NextRequest) {
     if (sanitizedCategoryId !== null) updateData.category_id = sanitizedCategoryId
     // Always update image_url if it's provided in the request (including null to remove it)
     if (image_url !== undefined) updateData.image_url = sanitizedImageUrl
+    if (is_available !== undefined) updateData.is_available = !!is_available
 
     // Update the menu item
     const { data: item, error } = await supabase

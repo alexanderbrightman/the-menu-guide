@@ -654,7 +654,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       style={getCategoryButtonStyle(selectedCategory === 'favorites')}
                       disabled={isPending}
                     >
-                      Our Favorites
+                      Specials
                     </Button>
                   )}
                   {categories.map((category) => (
@@ -773,7 +773,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   className={`text-xl font-semibold ${primaryTextClass}`}
                   style={{ fontFamily: menuFontFamily }}
                 >
-                  Our Favorites
+                  Specials
                 </h3>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">

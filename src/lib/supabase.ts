@@ -120,6 +120,7 @@ export interface MenuItem {
   description?: string
   price?: number
   sort_order?: number
+  is_available?: boolean
   created_at: string
 }
 

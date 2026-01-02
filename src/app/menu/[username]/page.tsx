@@ -71,6 +71,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       )
     `)
     .eq('user_id', profile.id)
+    .eq('is_available', true)
     .order('sort_order', { ascending: true })
 
   // Fetch all available tags
