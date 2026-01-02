@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       .select('username, display_name, avatar_url')
       .eq('is_public', true)
       .eq('subscription_status', 'pro')
-      .ilike('username', `%${sanitizedQuery}%`)
+      .or(`username.ilike.%${sanitizedQuery}%,display_name.ilike.%${sanitizedQuery}%`)
       .limit(50) // Fetch more than needed to ensure we get good candidates
 
     if (error) {
@@ -51,28 +51,31 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort in memory:
-    // 1. Exact match (case-insensitive)
-    // 2. Starts with (case-insensitive)
-    // 3. Alphabetical
+    // 1. Exact match (username or display_name)
+    // 2. Starts with (username or display_name)
+    // 3. Alphabetical (display_name then username)
     const lowerQuery = sanitizedQuery.toLowerCase()
 
     const sortedProfiles = (profiles || []).sort((a, b) => {
       const aUser = a.username.toLowerCase()
       const bUser = b.username.toLowerCase()
+      const aName = a.display_name.toLowerCase()
+      const bName = b.display_name.toLowerCase()
 
-      // Exact match priority
-      if (aUser === lowerQuery && bUser !== lowerQuery) return -1
-      if (bUser === lowerQuery && aUser !== lowerQuery) return 1
+      // 1. Exact Name/Username match
+      const aExact = aUser === lowerQuery || aName === lowerQuery
+      const bExact = bUser === lowerQuery || bName === lowerQuery
+      if (aExact && !bExact) return -1
+      if (!aExact && bExact) return 1
 
-      // Starts with priority
-      const aStarts = aUser.startsWith(lowerQuery)
-      const bStarts = bUser.startsWith(lowerQuery)
-
+      // 2. Starts with Name/Username
+      const aStarts = aUser.startsWith(lowerQuery) || aName.startsWith(lowerQuery)
+      const bStarts = bUser.startsWith(lowerQuery) || bName.startsWith(lowerQuery)
       if (aStarts && !bStarts) return -1
       if (!aStarts && bStarts) return 1
 
-      // Alphabetical fallback
-      return aUser.localeCompare(bUser)
+      // 3. Alphabetical by display_name
+      return aName.localeCompare(bName)
     }).slice(0, 20)
 
     // Add cache headers for faster repeated searches

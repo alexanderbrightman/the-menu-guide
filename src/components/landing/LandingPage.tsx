@@ -133,11 +133,9 @@ export function LandingPage() {
       clearTimeout(debounceTimerRef.current)
     }
 
-    // Reduced debounce to 50ms for snappier response
-    // Combined with AbortController, this provides fast feedback
     debounceTimerRef.current = setTimeout(() => {
       performSearch(searchQuery)
-    }, 50)
+    }, 300)
 
     return () => {
       if (debounceTimerRef.current) {
