@@ -410,7 +410,7 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
         </Button>
       </DialogTrigger>
       <DialogContent
-        className={`w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
+        className={`w-full max-w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
         style={{
           backgroundColor: menuBackgroundColor,
           color: contrastColor,

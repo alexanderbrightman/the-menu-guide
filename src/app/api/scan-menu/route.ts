@@ -131,7 +131,7 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout
     const parseResponse = await openai.chat.completions.create(
       {
-        model: 'gpt-4o-mini', // Using gpt-4o-mini for cost and speed
+        model: 'gpt-4o', // Using gpt-4o for maximum accuracy and premium experience
         messages: [
           {
             role: 'user',
@@ -181,7 +181,7 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     let itemsInserted = 0
     let categoriesCreated = 0
     const categoryMap = new Map<string, string>()
-    
+
     // Extract unique category names from scanned items
     const categoryNames = Array.from(
       new Set(

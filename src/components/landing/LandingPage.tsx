@@ -307,7 +307,7 @@ export function LandingPage() {
           <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10 w-full">
             <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
-                src="/Breakfast.jpeg"
+                src="/Breakfast.png"
                 alt="Breakfast"
                 fill
                 className="object-cover"
@@ -317,7 +317,7 @@ export function LandingPage() {
             </div>
             <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
-                src="/Lunch.jpeg"
+                src="/Lunch.png"
                 alt="Lunch"
                 fill
                 className="object-cover"
@@ -327,7 +327,7 @@ export function LandingPage() {
             </div>
             <div className="relative flex-1 aspect-[4/3] overflow-hidden border border-black">
               <Image
-                src="/Dinner.jpeg"
+                src="/Dinner.png"
                 alt="Dinner"
                 fill
                 className="object-cover"
@@ -342,7 +342,7 @@ export function LandingPage() {
             {/* Rainbow border wrapper - appears on focus, positioned behind */}
             <div
               id="rainbow-border-wrapper"
-              className="absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none"
+              className="absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none rounded-lg"
               style={{
                 background: 'linear-gradient(135deg, rgba(255, 182, 193, 0.8) 0%, rgba(255, 218, 185, 0.8) 14%, rgba(255, 255, 182, 0.8) 28%, rgba(182, 255, 182, 0.8) 42%, rgba(185, 218, 255, 0.8) 57%, rgba(218, 185, 255, 0.8) 71%, rgba(255, 182, 218, 0.8) 85%, rgba(255, 182, 193, 0.8) 100%)',
                 padding: '2px',
@@ -357,7 +357,7 @@ export function LandingPage() {
             <label
               id="search-bar-container"
               htmlFor="search-input"
-              className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black cursor-text"
+              className="relative w-full flex items-center transition-all duration-500 ease-out backdrop-blur-xl border border-black cursor-text rounded-md"
               style={{
                 height: 'clamp(2.5rem, 5vw, 3.5rem)',
                 paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',

@@ -1232,7 +1232,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
             }
           }}>
             <DialogContent
-              className={`sm:max-w-md border-0 sm:border ${getBorderColor()} p-0 gap-0 overflow-hidden`}
+              className={`sm:max-w-md border ${getBorderColor()} p-0 gap-0 overflow-hidden`}
               showCloseButton={false}
               style={{
                 backgroundColor: menuBackgroundColor,
