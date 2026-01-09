@@ -64,7 +64,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   // File input refs
   const createFileInputRef = useRef<HTMLInputElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
-  
+
   // Use optimized image upload hook
   const { uploading, uploadImage, resetProgress } = useImageUpload()
 
@@ -140,9 +140,9 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   useEffect(() => {
     if (showCreateDialog || editingItem) {
       // Check if we're on a mobile device
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                       ('ontouchstart' in window || navigator.maxTouchPoints > 0)
-      
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+        ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+
       if (isMobile) {
         // Function to blur focused inputs
         const blurFocusedInputs = () => {
@@ -221,7 +221,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!formData.title.trim()) return
     if (!supabase) {
       setMessage('Error: Supabase client not available')
@@ -297,7 +297,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
   const handleEditItem = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!editingItem || !formData.title.trim()) return
     if (!supabase) {
       setMessage('Error: Supabase client not available')
@@ -315,18 +315,18 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
       const currentItem = editingItem
       setEditingItem(null)
       resetForm()
-      
+
       // Optimistically update UI
-      setItems(prevItems => 
-        prevItems.map(item => 
-          item.id === currentItem.id 
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === currentItem.id
             ? {
-                ...item,
-                title: formData.title,
-                description: formData.description,
-                price: formData.price ? Number(formData.price) : undefined,
-                category_id: selectedCategory === 'none' ? undefined : selectedCategory,
-              }
+              ...item,
+              title: formData.title,
+              description: formData.description,
+              price: formData.price ? Number(formData.price) : undefined,
+              category_id: selectedCategory === 'none' ? undefined : selectedCategory,
+            }
             : item
         )
       )
@@ -366,7 +366,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
 
         if (response.ok) {
           // Update with server response (includes complete data with tags/categories)
-          setItems(prevItems => prevItems.map(item => 
+          setItems(prevItems => prevItems.map(item =>
             item.id === currentItem.id ? { ...item, ...data.item } : item
           ))
           setMessage('Menu item updated successfully!')
@@ -374,8 +374,8 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
           onDataChange?.()
         } else {
           // Revert optimistic update on error
-          setItems(prevItems => 
-            prevItems.map(item => 
+          setItems(prevItems =>
+            prevItems.map(item =>
               item.id === currentItem.id ? currentItem : item
             )
           )
@@ -388,8 +388,8 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         console.error('Error updating menu item:', error)
         setMessage('Error updating menu item')
         // Revert optimistic update on error
-        setItems(prevItems => 
-          prevItems.map(item => 
+        setItems(prevItems =>
+          prevItems.map(item =>
             item.id === currentItem.id ? currentItem : item
           )
         )
@@ -522,95 +522,94 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
         </CardHeader>
         {!isMinimized && (
           <CardContent>
-          {message && (
-            <div className={`mb-4 p-3 text-sm rounded-md ${
-              message.includes('Error') 
-                ? 'text-red-600 bg-red-50' 
-                : 'text-green-600 bg-green-50'
-            }`}>
-              {message}
-            </div>
-          )}
+            {message && (
+              <div className={`mb-4 p-3 text-sm rounded-md ${message.includes('Error')
+                  ? 'text-red-600 bg-red-50'
+                  : 'text-green-600 bg-green-50'
+                }`}>
+                {message}
+              </div>
+            )}
 
-          {items.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <ImageIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>No menu items yet</p>
-              <p className="text-sm">Create your first menu item to get started</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {items.map((item) => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden p-0">
-                  <CardContent className="p-0">
-                    {item.image_url && (
-                      <div className="relative aspect-[3/2] overflow-hidden">
-                        <Image
-                          src={item.image_url}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 1024px) 20vw, (min-width: 768px) 30vw, 90vw"
-                        />
+            {items.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <ImageIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No menu items yet</p>
+                <p className="text-sm">Create your first menu item to get started</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {items.map((item) => (
+                  <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden p-0">
+                    <CardContent className="p-0">
+                      {item.image_url && (
+                        <div className="relative aspect-[3/2] overflow-hidden">
+                          <Image
+                            src={item.image_url}
+                            alt={item.title}
+                            fill
+                            className="object-cover"
+                            sizes="(min-width: 1024px) 20vw, (min-width: 768px) 30vw, 90vw"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <h3 className="font-semibold text-lg">{item.title}</h3>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEdit(item)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteItem(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {item.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2 whitespace-pre-wrap">
+                            {item.description}
+                          </p>
+                        )}
+
+                        {item.price && (
+                          <div className="flex items-center gap-1 text-gray-900 font-semibold">
+                            <DollarSign className="h-4 w-4" />
+                            {item.price.toFixed(2)}
+                          </div>
+                        )}
+
+                        {item.menu_categories && (
+                          <Badge variant="secondary">
+                            {item.menu_categories.name}
+                          </Badge>
+                        )}
+
+                        {item.menu_item_tags && item.menu_item_tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {item.menu_item_tags.map((itemTag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                <Tag className="h-3 w-3 mr-1" />
+                                {itemTag.tags.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="p-4 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-semibold text-lg">{item.title}</h3>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEdit(item)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteItem(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {item.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-                      
-                      {item.price && (
-                        <div className="flex items-center gap-1 text-gray-900 font-semibold">
-                          <DollarSign className="h-4 w-4" />
-                          {item.price.toFixed(2)}
-                        </div>
-                      )}
-                      
-                      {item.menu_categories && (
-                        <Badge variant="secondary">
-                          {item.menu_categories.name}
-                        </Badge>
-                      )}
-                      
-                      {item.menu_item_tags && item.menu_item_tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {item.menu_item_tags.map((itemTag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              <Tag className="h-3 w-3 mr-1" />
-                              {itemTag.tags.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
         )}
       </Card>
 
@@ -630,7 +629,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g., Grilled Salmon"
                   required
                 />
@@ -642,23 +641,23 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                   type="number"
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   placeholder="0.00"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe your menu item..."
                 rows={3}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Image</Label>
               <input
@@ -695,7 +694,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 <p className="text-sm text-gray-600">{imageFile.name}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label>Category</Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -712,7 +711,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Dietary Tags</Label>
@@ -739,7 +738,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 ))}
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
                 Cancel
@@ -768,7 +767,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 <Input
                   id="edit-title"
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g., Grilled Salmon"
                   required
                 />
@@ -780,23 +779,23 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                   type="number"
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   placeholder="0.00"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="edit-description">Description</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe your menu item..."
                 rows={3}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Image</Label>
               <input
@@ -833,7 +832,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 <p className="text-sm text-gray-600">{imageFile.name}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label>Category</Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -850,7 +849,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Dietary Tags</Label>
@@ -877,7 +876,7 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 ))}
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>
                 Cancel

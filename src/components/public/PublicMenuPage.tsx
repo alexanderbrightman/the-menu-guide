@@ -194,7 +194,7 @@ const MenuItemCard = memo(({
         )}
       </div>
       {item.description && (
-        <p className={`text-xs line-clamp-2 ${descriptionClass}`}>
+        <p className={`text-xs line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
           {item.description}
         </p>
       )}
@@ -895,7 +895,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 {/* Description */}
                 {selectedItem.description && (
                   <div>
-                    <p className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}>
+                    <p className={`text-sm sm:text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
                       {selectedItem.description}
                     </p>
                   </div>

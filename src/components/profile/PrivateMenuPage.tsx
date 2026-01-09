@@ -1586,7 +1586,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
                     {/* Description */}
                     {selectedItem.description && (
                       <div>
-                        <p className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}>
+                        <p className={`text-sm sm:text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
                           {selectedItem.description}
                         </p>
                       </div>
