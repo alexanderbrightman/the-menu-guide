@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 
 // Maximum file size (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024
-const MIN_FILE_SIZE = 200 * 1024
+const MIN_FILE_SIZE = 5 * 1024
 
 // Initialize OpenAI client lazily (only when needed)
 const getOpenAIClient = () => {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     if (file.size < MIN_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'Image too small or low resolution. Upload a clearer photo.' },
+        { error: 'Image too small. Please upload a valid image file.' },
         { status: 400, headers: getSecurityHeaders() }
       )
     }
