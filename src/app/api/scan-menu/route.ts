@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     {"title": "string", "description": "string | null", "price": number | null, "category": "string | null"}
   ]
 }
-Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories from section headers. No markdown, no extra text.`
+Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories from section headers. If an item has multiple price options (e.g., small/large, lunch/dinner), set price to the lowest option and append all pricing options to the description (e.g., "Small: $8 | Medium: $10 | Large: $12"). No markdown, no extra text.`
 
     const imageData = {
       type: 'image_url' as const,
