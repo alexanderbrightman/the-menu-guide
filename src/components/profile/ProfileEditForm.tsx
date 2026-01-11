@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Upload, RefreshCw, X, Check } from 'lucide-react'
+import { Upload, RefreshCw, X, Check, Palette } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
@@ -400,8 +400,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
               <Label className={`${primaryTextClass} text-base font-semibold`}>Appearance</Label>
 
               {/* Preview Card */}
+              {/* Preview Card */}
               <div
-                className="rounded-lg p-4 text-center transition-colors border shadow-sm"
+                className="rounded-lg p-8 text-center transition-colors border-2 shadow-md flex items-center justify-center min-h-[120px]"
                 style={{
                   backgroundColor: formData.menu_background_color,
                   color: getContrastColor(formData.menu_background_color),
@@ -409,17 +410,19 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                   borderColor: getBorderColor()
                 }}
               >
-                <p className="text-sm font-medium tracking-wide">Preview: {formData.display_name || 'Restaurant Name'}</p>
+                <p className="text-xl sm:text-2xl font-medium tracking-wide">
+                  {formData.display_name || 'Restaurant Name'}
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className={primaryTextClass}>Avg Font</Label>
+                  <Label className={primaryTextClass}>Font Style</Label>
                   <Select
                     value={formData.menu_font}
                     onValueChange={(value) => setFormData((prev) => ({ ...prev, menu_font: value }))}
                   >
-                    <SelectTrigger className={`w-full h-11 border ${getBorderColor()} bg-transparent`}>
+                    <SelectTrigger className={`w-full h-12 border-2 ${getBorderColor()} bg-transparent`}>
                       <SelectValue placeholder="Select font" />
                     </SelectTrigger>
                     <SelectContent>
@@ -435,25 +438,30 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className={primaryTextClass}>Background</Label>
+                  <Label className={primaryTextClass}>Background Color</Label>
                   <div className="flex gap-2">
-                    <div className="flex-1 h-11 relative rounded-md overflow-hidden border" style={{ borderColor: getBorderColor() }}>
+                    <div className="flex-1 h-12 relative rounded-md overflow-hidden border-2 shadow-sm transition-transform hover:scale-[1.01] active:scale-[0.99] bg-white dark:bg-zinc-900 group" style={{ borderColor: getBorderColor() }}>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <Palette className="h-6 w-6 text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-200 transition-colors" />
+                      </div>
                       <input
                         type="color"
                         value={formData.menu_background_color}
                         onChange={(event) =>
                           setFormData((prev) => ({ ...prev, menu_background_color: event.target.value }))
                         }
-                        className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        title="Choose color"
                       />
                     </div>
                     <Button
                       type="button"
                       variant="outline"
-                      className={`${outlineButtonClass} border ${getBorderColor()} h-11`}
+                      className={`${outlineButtonClass} border-2 ${getBorderColor()} h-12 w-12 px-0`}
                       onClick={handleResetTheme}
+                      title="Reset details"
                     >
-                      <RefreshCw className="h-4 w-4" />
+                      <RefreshCw className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>

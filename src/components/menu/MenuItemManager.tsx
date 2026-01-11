@@ -524,8 +524,8 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
           <CardContent>
             {message && (
               <div className={`mb-4 p-3 text-sm rounded-md ${message.includes('Error')
-                  ? 'text-red-600 bg-red-50'
-                  : 'text-green-600 bg-green-50'
+                ? 'text-red-600 bg-red-50'
+                : 'text-green-600 bg-green-50'
                 }`}>
                 {message}
               </div>

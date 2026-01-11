@@ -442,156 +442,167 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
               <User className={`h-4 w-4 ${mutedTextClass}`} />
               <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Restaurant Username</h3>
             </div>
-            <div className="pl-6 space-y-3">
-              <Label htmlFor="username" className={`text-sm ${secondaryTextClass}`}>
-                Your public menu URL: themenuguide.com/menu/<strong>{username || 'username'}</strong>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={`pr-10 h-11 border ${getBorderColor()} bg-transparent text-base ${usernameStatus === 'taken' || usernameStatus === 'invalid'
-                    ? 'border-red-500/50 focus:border-red-500'
-                    : usernameStatus === 'available'
-                      ? 'border-green-500/50 focus:border-green-500'
-                      : ''
-                    }`}
-                />
-                {usernameStatus === 'checking' && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="h-4 w-4 animate-spin border border-blue-600 border-t-transparent"></div>
-                  </div>
+            <div className={`p-4 rounded-lg border bg-transparent`} style={{ borderColor: getBorderColor() }}>
+              <div className="pl-0 space-y-3">
+                <div className={`text-sm ${secondaryTextClass}`}>
+                  Your public menu URL:{' '}
+                  <a
+                    href={`/menu/${username || ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`hover:underline whitespace-nowrap ${primaryTextClass}`}
+                  >
+                    themenuguide.com/menu/<strong>{username || 'username'}</strong>
+                  </a>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className={`pr-10 h-11 border ${getBorderColor()} bg-transparent text-base ${usernameStatus === 'taken' || usernameStatus === 'invalid'
+                      ? 'border-red-500/50 focus:border-red-500'
+                      : usernameStatus === 'available'
+                        ? 'border-green-500/50 focus:border-green-500'
+                        : ''
+                      }`}
+                  />
+                  {usernameStatus === 'checking' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin border border-blue-600 border-t-transparent"></div>
+                    </div>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✓</div>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">✗</div>
+                  )}
+                </div>
+                {usernameMessage && (
+                  <p className={`text-xs ${usernameStatus === 'available'
+                    ? 'text-green-600'
+                    : usernameStatus === 'taken' || usernameStatus === 'invalid'
+                      ? 'text-red-600'
+                      : secondaryTextClass
+                    }`}>
+                    {usernameMessage}
+                  </p>
                 )}
-                {usernameStatus === 'available' && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✓</div>
-                )}
-                {usernameStatus === 'taken' && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">✗</div>
+                {(usernameStatus === 'available' && username !== profile?.username) && (
+                  <Button
+                    onClick={handleUpdateUsername}
+                    disabled={usernameLoading}
+                    className="w-full sm:w-auto"
+                  >
+                    {usernameLoading ? 'Updating...' : 'Save New Username'}
+                  </Button>
                 )}
               </div>
-              {usernameMessage && (
-                <p className={`text-xs ${usernameStatus === 'available'
-                  ? 'text-green-600'
-                  : usernameStatus === 'taken' || usernameStatus === 'invalid'
-                    ? 'text-red-600'
-                    : secondaryTextClass
-                  }`}>
-                  {usernameMessage}
-                </p>
-              )}
-              {(usernameStatus === 'available' && username !== profile?.username) && (
-                <Button
-                  onClick={handleUpdateUsername}
-                  disabled={usernameLoading}
-                  className="w-full sm:w-auto"
-                >
-                  {usernameLoading ? 'Updating...' : 'Save New Username'}
-                </Button>
-              )}
             </div>
           </div>
 
-          <div className={`border-t ${getBorderColor()}`} />
+
 
           {/* Menu Visibility Settings */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Menu Configuration</h3>
-
-            {/* Currency Selector */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Coins className={`h-4 w-4 ${mutedTextClass}`} />
-                  <span className={`text-sm font-medium ${primaryTextClass}`}>Currency</span>
+            <div className="space-y-3">
+              {/* Currency Selector */}
+              <div className={`flex items-center justify-between p-3 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Coins className={`h-4 w-4 ${mutedTextClass}`} />
+                    <span className={`text-sm font-medium ${primaryTextClass}`}>Currency</span>
+                  </div>
+                </div>
+                <div className="w-[120px]">
+                  <Select
+                    value={currency}
+                    onValueChange={handleUpdateCurrency}
+                    disabled={currencyLoading}
+                  >
+                    <SelectTrigger className={`border ${getBorderColor()} bg-transparent h-9`}>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.code} ({c.symbol})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              <div className="w-[120px]">
-                <Select
-                  value={currency}
-                  onValueChange={handleUpdateCurrency}
-                  disabled={currencyLoading}
-                >
-                  <SelectTrigger className={`border ${getBorderColor()} bg-transparent h-9`}>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.code} ({c.symbol})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Show Prices Toggle */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <DollarSign className={`h-4 w-4 ${mutedTextClass}`} />
-                  <span className={`text-sm font-medium ${primaryTextClass}`}>
-                    Show Prices
+              {/* Show Prices Toggle */}
+              <div className={`flex items-center justify-between p-3 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className={`h-4 w-4 ${mutedTextClass}`} />
+                    <span className={`text-sm font-medium ${primaryTextClass}`}>
+                      Show Prices
+                    </span>
+                  </div>
+                  <p className={`text-xs ${secondaryTextClass}`}>
+                    {showPrices ? 'Visible on menu' : 'Hidden on menu'}
+                  </p>
+                </div>
+                <Switch
+                  checked={showPrices}
+                  onCheckedChange={handleToggleShowPrices}
+                  disabled={priceLoading}
+                  className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
+                />
+              </div>
+
+              {/* Menu is Public Toggle */}
+              <div className={`flex items-center justify-between p-3 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {isPublic && hasPremiumAccess ? (
+                      <Eye className={`h-4 w-4 ${mutedTextClass}`} />
+                    ) : (
+                      <EyeOff className={`h-4 w-4 ${mutedTextClass}`} />
+                    )}
+                    <span className={`text-sm font-medium ${primaryTextClass}`}>
+                      Public Visibility
+                    </span>
+                  </div>
+                  <p className={`text-xs ${secondaryTextClass}`}>
+                    {isPublic && hasPremiumAccess ? 'Menu is live' : 'Menu is private'}
+                  </p>
+                </div>
+                <Switch
+                  checked={isPublic && hasPremiumAccess}
+                  onCheckedChange={handleTogglePublic}
+                  disabled={loading || !hasPremiumAccess}
+                  className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
+                />
+              </div>
+
+              {!hasPremiumAccess && (
+                <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-md flex gap-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-500 flex-none" />
+                  <span className="text-xs text-orange-600">
+                    Premium required for public visibility.
                   </span>
                 </div>
-                <p className={`text-xs ${secondaryTextClass}`}>
-                  {showPrices ? 'Visible on menu' : 'Hidden on menu'}
-                </p>
-              </div>
-              <Switch
-                checked={showPrices}
-                onCheckedChange={handleToggleShowPrices}
-                disabled={priceLoading}
-                className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
-              />
+              )}
             </div>
-
-            {/* Menu is Public Toggle */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  {isPublic && hasPremiumAccess ? (
-                    <Eye className={`h-4 w-4 ${mutedTextClass}`} />
-                  ) : (
-                    <EyeOff className={`h-4 w-4 ${mutedTextClass}`} />
-                  )}
-                  <span className={`text-sm font-medium ${primaryTextClass}`}>
-                    Public Visibility
-                  </span>
-                </div>
-                <p className={`text-xs ${secondaryTextClass}`}>
-                  {isPublic && hasPremiumAccess ? 'Menu is live' : 'Menu is private'}
-                </p>
-              </div>
-              <Switch
-                checked={isPublic && hasPremiumAccess}
-                onCheckedChange={handleTogglePublic}
-                disabled={loading || !hasPremiumAccess}
-                className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
-              />
-            </div>
-
-            {!hasPremiumAccess && (
-              <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-md flex gap-2">
-                <AlertTriangle className="h-4 w-4 text-orange-500 flex-none" />
-                <span className="text-xs text-orange-600">
-                  Premium required for public visibility.
-                </span>
-              </div>
-            )}
           </div>
 
-          <div className={`border-t ${getBorderColor()}`} />
+
 
           {/* Subscription Details */}
           <div className="space-y-4">
             <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Subscription</h3>
             {hasPremiumAccess ? (
-              <>
+              <div className={`p-4 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
                 <SubscriptionExpiryWarning />
                 <SubscriptionDetailsCard />
-              </>
+              </div>
             ) : (
               <UpgradeCard />
             )}
@@ -618,8 +629,8 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
 
           <div className="pb-10 sm:pb-0" />
         </div>
-      </DialogContent>
-    </Dialog>
+      </DialogContent >
+    </Dialog >
   )
 }
 
