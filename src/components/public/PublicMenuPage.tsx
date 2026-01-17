@@ -9,14 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { X, Filter, Instagram, Globe } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
+import { CategoryDivider } from './CategoryDivider'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -42,17 +37,7 @@ const FONT_FAMILY_MAP: Record<string, string> = {
   'Courier New': '"Courier New", monospace',
 }
 
-const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Spanish' },
-  { code: 'fr', name: 'French' },
-  { code: 'de', name: 'German' },
-  { code: 'it', name: 'Italian' },
-  { code: 'pt', name: 'Portuguese' },
-  { code: 'zh-CN', name: 'Chinese (Simplified)' },
-  { code: 'ja', name: 'Japanese' },
-  { code: 'ko', name: 'Korean' },
-]
+
 
 const getContrastColor = (hexColor: string) => {
   if (!hexColor) return '#1f2937'
@@ -210,7 +195,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
+
+  const [activeSection, setActiveSection] = useState<'none' | 'filters' | 'info'>('none')
+
+  const toggleSection = (section: 'filters' | 'info') => {
+    setActiveSection(prev => prev === section ? 'none' : section)
+  }
+
 
   // Create a Set for efficient lookup
   const favoritedIdsSet = useMemo(() => new Set(favoritedIds), [favoritedIds])
@@ -449,65 +440,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     }
   }, [menuBackgroundColor])
 
-  useEffect(() => {
-    // Check if we should maintain the translation
-    const shouldTranslate = sessionStorage.getItem('should_translate')
 
-    if (shouldTranslate) {
-      // We just reloaded to apply a translation, so we keep the cookie
-      // and remove the flag for the next refresh
-      sessionStorage.removeItem('should_translate')
-    } else {
-      // We are on a fresh load or refresh, so we clear the translation cookie
-      // to ensure we start in English (or original language)
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    }
-
-    // Initialize Google Translate
-    // @ts-expect-error - Google Translate API adds properties to window
-    window.googleTranslateElementInit = () => {
-      // @ts-expect-error - Google Translate API is loaded at runtime
-      new window.google.translate.TranslateElement(
-        { pageLanguage: 'en', autoDisplay: false },
-        'google_translate_element'
-      )
-    }
-
-    // Load the script
-    const script = document.createElement('script')
-    script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-    script.async = true
-    document.body.appendChild(script)
-
-    // Add styles to hide the Google Translate banner and widget
-    const style = document.createElement('style')
-    style.innerHTML = `
-      .goog-te-banner-frame.skiptranslate { display: none !important; }
-      body { top: 0px !important; }
-      .goog-te-gadget { display: none !important; }
-      #google_translate_element { display: none !important; }
-      .skiptranslate { display: none !important; }
-    `
-    document.head.appendChild(style)
-
-    return () => {
-      // Cleanup if needed
-      if (document.body.contains(script)) {
-        document.body.removeChild(script)
-      }
-    }
-  }, [])
-
-  const handleTranslate = useCallback((langCode: string) => {
-    // Set the googtrans cookie which the script reads to determine target language
-    // Format: /source_lang/target_lang
-    document.cookie = `googtrans=/auto/${langCode}; path=/`
-
-    // Set a flag to tell the next load that this was an intentional translation
-    sessionStorage.setItem('should_translate', 'true')
-
-    window.location.reload()
-  }, [])
 
   return (
     <div className="min-h-screen transition-colors" style={themeStyle}>
@@ -527,55 +460,184 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
               The Menu Guide
             </Link>
             <div className="flex items-center gap-2">
-              {/* Translate Button */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="border rounded-full flex items-center justify-center transition-colors hover:opacity-70"
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderColor: isDarkBackground ? '#ffffff' : '#000000',
-                      color: isDarkBackground ? '#ffffff' : '#000000',
-                    }}
-                    aria-label="Translate menu"
-                  >
-                    <Globe className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {LANGUAGES.map((lang) => (
-                    <DropdownMenuItem
-                      key={lang.code}
-                      onClick={() => handleTranslate(lang.code)}
-                    >
-                      {lang.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button
+                onClick={() => toggleSection('filters')}
+                className="border rounded-full flex items-center justify-center text-xs font-medium transition-colors hover:opacity-70 px-3 py-1"
+                style={{
+                  height: '32px',
+                  borderColor: isDarkBackground ? '#ffffff' : '#000000',
+                  color: isDarkBackground ? '#ffffff' : '#000000',
+                  backgroundColor: activeSection === 'filters' ? (isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'transparent',
+                  fontFamily: menuFontFamily
+                }}
+                aria-label="Toggle filters"
+              >
+                Allergens
+              </button>
 
-              {profile.bio && (
+              {(profile.bio || profile.instagram_url || profile.website_url) && (
                 <button
-                  onClick={() => setIsInfoModalOpen(true)}
-                  className="border rounded-full flex items-center justify-center text-sm font-medium transition-colors hover:opacity-70"
+                  onClick={() => toggleSection('info')}
+                  className="border rounded-full flex items-center justify-center text-xs font-medium transition-colors hover:opacity-70 px-3 py-1"
                   style={{
-                    width: '32px',
                     height: '32px',
                     borderColor: isDarkBackground ? '#ffffff' : '#000000',
                     color: isDarkBackground ? '#ffffff' : '#000000',
-                    fontFamily: 'Georgia, serif',
-                    fontStyle: 'italic',
-                    fontWeight: 'normal'
+                    backgroundColor: activeSection === 'info' ? (isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'transparent',
+                    fontFamily: menuFontFamily
                   }}
                   aria-label="Show restaurant information"
                 >
-                  i
+                  Info
                 </button>
               )}
             </div>
           </div>
 
+          {/* Expandable Sections Container */}
+          <div className={`relative overflow-hidden transition-all duration-500 ease-in-out ${activeSection !== 'none' ? 'max-h-[1000px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}>
+            <div className="pt-2">
+              {/* Filters Section Content */}
+              <div className={`${activeSection === 'filters' ? 'block' : 'hidden'} space-y-4 animate-in fade-in slide-in-from-top-2 duration-300`}>
+                {/* Category Filter */}
+                <div>
+                  <div className="overflow-x-auto scrollbar-hide scroll-smooth">
+                    <div className="flex flex-nowrap gap-1.5 pb-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCategoryChange('all')}
+                        className={getCategoryButtonClass(selectedCategory === 'all')}
+                        style={getCategoryButtonStyle(selectedCategory === 'all')}
+                        disabled={isPending}
+                      >
+                        All Items
+                      </Button>
+                      {favoritedItems.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCategoryChange('favorites')}
+                          className={getCategoryButtonClass(selectedCategory === 'favorites')}
+                          style={getCategoryButtonStyle(selectedCategory === 'favorites')}
+                          disabled={isPending}
+                        >
+                          Specials
+                        </Button>
+                      )}
+                      {categories.map((category) => (
+                        <Button
+                          key={category.id}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCategoryChange(category.id)}
+                          className={getCategoryButtonClass(selectedCategory === category.id)}
+                          style={getCategoryButtonStyle(selectedCategory === category.id)}
+                          disabled={isPending}
+                        >
+                          {category.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dietary Tags Filter */}
+                <div>
+                  <div className="overflow-x-auto scrollbar-hide scroll-smooth">
+                    <div className="flex flex-nowrap gap-1.5 pb-1">
+                      {tags.map((tag) => {
+                        const isSelected = selectedTagsSetForButtons.has(tag.id)
+                        return (
+                          <Button
+                            key={tag.id}
+                            variant="outline"
+                            size="sm"
+                            className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-full ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
+                              } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                            onClick={() => toggleTag(tag.id)}
+                            disabled={isPending}
+                            style={buildTagStyles(tag.name, { isDarkBackground, isSelected })}
+                          >
+                            {tag.name}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <div className={`pt-1.5 border-t ${dividerBorderClass}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      className={`py-[3.74px] px-[7.48px] text-[9.9px] rounded-full`}
+                      style={isDarkBackground ? {
+                        borderColor: '#ffffff',
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(255,255,255,0.05)'
+                      } : {
+                        borderColor: '#000000',
+                        color: '#1f2937',
+                        backgroundColor: 'rgba(17,24,39,0.05)'
+                      }}
+                      disabled={isPending}
+                    >
+                      Clear All Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Info Section Content */}
+              <div className={`${activeSection === 'info' ? 'block' : 'hidden'} space-y-4 pb-1 animate-in fade-in slide-in-from-top-2 duration-300`}>
+                <div className={`text-center space-y-3`}>
+                  <h2
+                    className={`text-2xl font-bold ${primaryTextClass}`}
+                    style={{ fontFamily: menuFontFamily }}
+                  >
+                    {profile.display_name}
+                  </h2>
+
+                  {profile.bio && (
+                    <p className={`text-sm max-w-lg mx-auto whitespace-pre-wrap ${secondaryTextClass}`}>
+                      {profile.bio}
+                    </p>
+                  )}
+
+                  <div className="flex justify-center gap-4 pt-2">
+                    {profile.instagram_url && (
+                      <a
+                        href={profile.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                        style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
+                        aria-label="Instagram"
+                      >
+                        <Instagram size={20} />
+                      </a>
+                    )}
+                    {profile.website_url && (
+                      <a
+                        href={profile.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                        style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
+                        aria-label="Website"
+                      >
+                        <Globe size={20} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div
             className="relative h-[20vh] w-full overflow-hidden border"
             style={{
@@ -604,137 +666,29 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
           </div>
         </div>
 
+
         {/* Restaurant Name - Large Title Below Photo */}
-        {profile.show_display_name !== false && (
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-            <h1
-              className={`font-bold text-center whitespace-nowrap ${primaryTextClass}`}
-              style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
-            >
-              {profile.display_name}
-            </h1>
-          </div>
-        )}
-      </header>
+        {
+          profile.show_display_name !== false && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+              <h1
+                className={`font-bold text-center whitespace-nowrap ${primaryTextClass}`}
+                style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
+              >
+                {profile.display_name}
+              </h1>
+            </div>
+          )
+        }
+      </header >
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Filters */}
-        <div className="mb-6">
-          <div className="space-y-2">
-            {/* Filter Menu Header */}
-            <div className="mb-0.5">
-              <h3
-                className={`text-sm font-medium ${secondaryTextClass}`}
-                style={{ fontFamily: menuFontFamily }}
-              >
-                Filter Menu
-              </h3>
-            </div>
 
-            {/* Category Filter */}
-            <div>
-              <div className="overflow-x-auto scrollbar-hide scroll-smooth">
-                <div className="flex flex-nowrap gap-1.5 pb-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCategoryChange('all')}
-                    className={getCategoryButtonClass(selectedCategory === 'all')}
-                    style={getCategoryButtonStyle(selectedCategory === 'all')}
-                    disabled={isPending}
-                  >
-                    All Items
-                  </Button>
-                  {favoritedItems.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCategoryChange('favorites')}
-                      className={getCategoryButtonClass(selectedCategory === 'favorites')}
-                      style={getCategoryButtonStyle(selectedCategory === 'favorites')}
-                      disabled={isPending}
-                    >
-                      Specials
-                    </Button>
-                  )}
-                  {categories.map((category) => (
-                    <Button
-                      key={category.id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCategoryChange(category.id)}
-                      className={getCategoryButtonClass(selectedCategory === category.id)}
-                      style={getCategoryButtonStyle(selectedCategory === category.id)}
-                      disabled={isPending}
-                    >
-                      {category.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Dietary Tags Filter */}
-            <div>
-              <div className="overflow-x-auto scrollbar-hide scroll-smooth">
-                <div className="flex flex-nowrap gap-1.5 pb-1">
-                  {tags.map((tag) => {
-                    const isSelected = selectedTagsSetForButtons.has(tag.id)
-                    return (
-                      <Button
-                        key={tag.id}
-                        variant="outline"
-                        size="sm"
-                        className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-full ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
-                          } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-                        onClick={() => toggleTag(tag.id)}
-                        disabled={isPending}
-                        style={buildTagStyles(tag.name, { isDarkBackground, isSelected })}
-                      >
-                        {tag.name}
-                      </Button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <div className={`pt-1.5 border-t ${dividerBorderClass}`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className={`py-[3.74px] px-[7.48px] text-[9.9px] rounded-full`}
-                  style={isDarkBackground ? {
-                    borderColor: '#ffffff',
-                    color: '#ffffff',
-                    backgroundColor: 'rgba(255,255,255,0.05)'
-                  } : {
-                    borderColor: '#000000',
-                    color: '#1f2937',
-                    backgroundColor: 'rgba(17,24,39,0.05)'
-                  }}
-                  disabled={isPending}
-                >
-                  Clear All Filters
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Menu Items */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2
-              className={`text-2xl font-bold ${primaryTextClass}`}
-              style={{ fontFamily: menuFontFamily }}
-            >
-              Menu
-            </h2>
-          </div>
+
 
           {filteredItems.length === 0 ? (
             <div className={`text-center py-12 border-t ${dividerBorderClass}`}>
@@ -776,22 +730,114 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   Specials
                 </h3>
               )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                {filteredItems.map((item) => (
-                  <MenuItemCard
-                    key={item.id}
-                    item={item}
-                    onSelect={handleItemSelect}
-                    priceClass={primaryTextClass}
-                    descriptionClass={secondaryTextClass}
-                    isDarkBackground={isDarkBackground}
-                    headingFontFamily={menuFontFamily}
-                    showPrices={showPrices}
-                    getBorderColor={getBorderColor}
-                    currency={profile.currency}
-                  />
-                ))}
-              </div>
+
+              {selectedCategory === 'all' ? (
+                /* Grouped view for All Items */
+                <div className="space-y-8">
+                  {(() => {
+                    // Group items by category (preserving the sort order from filteredItems)
+                    const groupedItems = new Map<string, MenuItemWithTags[]>()
+                    const uncategorizedItems: MenuItemWithTags[] = []
+
+                    filteredItems.forEach(item => {
+                      if (item.category_id && item.menu_categories) {
+                        if (!groupedItems.has(item.category_id)) {
+                          groupedItems.set(item.category_id, [])
+                        }
+                        groupedItems.get(item.category_id)?.push(item)
+                      } else {
+                        uncategorizedItems.push(item)
+                      }
+                    })
+
+                    // We need to iterate in the order of categories
+                    // filteredItems is already sorted by category order, so we can trust the order of appearance in the map keys
+                    // valid only if we insert in order, which we do because filteredItems is sorted.
+
+                    const sections = []
+
+                    for (const [categoryId, items] of groupedItems.entries()) {
+                      const categoryName = items[0].menu_categories?.name || 'Category'
+                      sections.push(
+                        <div key={categoryId}>
+                          <CategoryDivider
+                            title={categoryName}
+                            isDarkBackground={isDarkBackground}
+                            fontFamily={menuFontFamily}
+                          />
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                            {items.map((item) => (
+                              <MenuItemCard
+                                key={item.id}
+                                item={item}
+                                onSelect={handleItemSelect}
+                                priceClass={primaryTextClass}
+                                descriptionClass={secondaryTextClass}
+                                isDarkBackground={isDarkBackground}
+                                headingFontFamily={menuFontFamily}
+                                showPrices={showPrices}
+                                getBorderColor={getBorderColor}
+                                currency={profile.currency}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Render uncategorized items at the end if any
+                    if (uncategorizedItems.length > 0) {
+                      sections.push(
+                        <div key="uncategorized">
+                          {sections.length > 0 && (
+                            <CategoryDivider
+                              title="Other Items"
+                              isDarkBackground={isDarkBackground}
+                              fontFamily={menuFontFamily}
+                            />
+                          )}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                            {uncategorizedItems.map((item) => (
+                              <MenuItemCard
+                                key={item.id}
+                                item={item}
+                                onSelect={handleItemSelect}
+                                priceClass={primaryTextClass}
+                                descriptionClass={secondaryTextClass}
+                                isDarkBackground={isDarkBackground}
+                                headingFontFamily={menuFontFamily}
+                                showPrices={showPrices}
+                                getBorderColor={getBorderColor}
+                                currency={profile.currency}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return sections
+                  })()}
+                </div>
+              ) : (
+                /* Standard grid for single category view */
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                  {filteredItems.map((item) => (
+                    <MenuItemCard
+                      key={item.id}
+                      item={item}
+                      onSelect={handleItemSelect}
+                      priceClass={primaryTextClass}
+                      descriptionClass={secondaryTextClass}
+                      isDarkBackground={isDarkBackground}
+                      headingFontFamily={menuFontFamily}
+                      showPrices={showPrices}
+                      getBorderColor={getBorderColor}
+                      currency={profile.currency}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -803,243 +849,150 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       </div>
 
       {/* Expanded Menu Item Modal */}
-      {selectedItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-          style={{
-            width: '100vw',
-            overflow: 'hidden',
-          }}
-          onClick={() => setSelectedItem(null)}
-        >
+      {
+        selectedItem && (
           <div
-            className={`relative w-full h-full md:h-[85vh] md:max-h-[800px] md:max-w-md lg:max-w-lg md:rounded-[2rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-12 fade-in duration-300 isolate bg-black`}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="public-menu-item-heading"
+            className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+            style={{
+              width: '100vw',
+              overflow: 'hidden',
+            }}
+            onClick={() => setSelectedItem(null)}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/10"
-              aria-label="Close"
+            <div
+              className={`relative w-full h-full md:h-[85vh] md:max-h-[800px] md:max-w-md lg:max-w-lg md:rounded-[2rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-12 fade-in duration-300 isolate bg-black`}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="public-menu-item-heading"
             >
-              <X className="h-5 w-5" />
-            </button>
-
-            {/* Scroll Container */}
-            <div className="h-full w-full overflow-y-auto no-scrollbar scroll-smooth">
-
-              {/* Image Section - Parallax Sticky */}
-              <div className="sticky top-0 z-0 h-[45vh] w-full backdrop-blur-xl bg-white/0">
-                {selectedItem.image_url ? (
-                  <div className="relative w-full h-full">
-                    {/* Main Image - Uncropped */}
-                    <div className="relative w-full h-full p-6">
-                      <Image
-                        src={selectedItem.image_url}
-                        alt={selectedItem.title}
-                        fill
-                        className="object-contain drop-shadow-lg"
-                        sizes="(min-width: 768px) 600px, 100vw"
-                        priority
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass} bg-black/5`}>
-                    <div className="flex flex-col items-center gap-2 opacity-50">
-                      <span className="text-4xl">🍽️</span>
-                      <span>No image available</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Content Section */}
-              <div
-                className="relative z-10 -mt-6 rounded-t-md px-6 py-8 min-h-[60vh] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] border-t"
-                style={{
-                  backgroundColor: menuBackgroundColor,
-                  color: contrastColor,
-                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                }}
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/10"
+                aria-label="Close"
               >
-                {/* Handle Indicator */}
-                <div
-                  className="w-12 h-1.5 rounded-full mx-auto mb-8 opacity-20"
-                  style={{ backgroundColor: contrastColor }}
-                />
+                <X className="h-5 w-5" />
+              </button>
 
-                <div className="flex flex-col gap-6 pb-20">
-                  {/* Header */}
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <h2
-                        id="public-menu-item-heading"
-                        className={`text-2xl md:text-3xl font-bold leading-tight ${primaryTextClass}`}
-                        style={{ fontFamily: menuFontFamily }}
-                      >
-                        {selectedItem.title}
-                      </h2>
-                      {showPrices && typeof selectedItem.price === 'number' && (
-                        <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
-                          {formatPrice(selectedItem.price, profile.currency)}
-                        </div>
-                      )}
+              {/* Scroll Container */}
+              <div className="h-full w-full overflow-y-auto no-scrollbar scroll-smooth">
+
+                {/* Image Section - Parallax Sticky */}
+                <div className="sticky top-0 z-0 h-[45vh] w-full backdrop-blur-xl bg-white/0">
+                  {selectedItem.image_url ? (
+                    <div className="relative w-full h-full">
+                      {/* Main Image - Uncropped */}
+                      <div className="relative w-full h-full p-6">
+                        <Image
+                          src={selectedItem.image_url}
+                          alt={selectedItem.title}
+                          fill
+                          className="object-contain drop-shadow-lg"
+                          sizes="(min-width: 768px) 600px, 100vw"
+                          priority
+                        />
+                      </div>
                     </div>
-
-                    {selectedItem.menu_categories && (
-                      <Badge
-                        variant="secondary"
-                        className="self-start border"
-                        style={{
-                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                          color: contrastColor,
-                          borderColor: getBorderColor(),
-                        }}
-                      >
-                        {selectedItem.menu_categories.name}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  {selectedItem.description && (
-                    <p className={`text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
-                      {selectedItem.description}
-                    </p>
-                  )}
-
-                  {/* Tags */}
-                  {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                    <div className="pt-2">
-                      <div className="flex flex-wrap gap-2">
-                        {selectedItem.menu_item_tags.map((itemTag, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="text-xs border cursor-pointer hover:opacity-80 transition-opacity py-1.5 px-3"
-                            style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleTagClickFromModal(itemTag.tags.id)
-                            }}
-                          >
-                            {itemTag.tags.name}
-                          </Badge>
-                        ))}
+                  ) : (
+                    <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass} bg-black/5`}>
+                      <div className="flex flex-col items-center gap-2 opacity-50">
+                        <span className="text-4xl">🍽️</span>
+                        <span>No image available</span>
                       </div>
                     </div>
                   )}
-
-                  <div className={`mt-4 text-[10px] leading-tight opacity-50 ${mutedTextClass}`}>
-                    Allergen info provided by restaurant, always notify your waiter
-                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Info Modal */}
-      {isInfoModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-          style={{
-            width: '100vw',
-            overflow: 'auto',
-          }}
-          onClick={() => setIsInfoModalOpen(false)}
-        >
-          <div
-            className={`relative border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ${getBorderColor()}`}
-            style={{
-              backgroundColor: menuBackgroundColor,
-              color: contrastColor,
-              borderColor: isDarkBackground ? '#ffffff' : '#000000',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restaurant-info-heading"
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setIsInfoModalOpen(false)}
-              className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 border ${getBorderColor()} transition-colors z-10 ${isDarkBackground
-                ? 'bg-white/20 hover:bg-white/30 text-white'
-                : 'bg-white/80 hover:bg-white text-gray-700'
-                }`}
-              aria-label="Close"
-            >
-              <X className="h-3 w-3 sm:h-4 sm:w-4" />
-            </button>
-
-            {/* Content */}
-            <div className="flex flex-col">
-              {/* Header Image - smaller size */}
-              {profile.avatar_url && (
-                <div className="relative h-32 sm:h-40 w-full overflow-hidden border-b" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
-                  <Image
-                    src={profile.avatar_url}
-                    alt={profile.display_name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 768px"
+                {/* Content Section */}
+                <div
+                  className="relative z-10 -mt-6 rounded-t-md px-6 py-8 min-h-[60vh] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] border-t"
+                  style={{
+                    backgroundColor: menuBackgroundColor,
+                    color: contrastColor,
+                    borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  }}
+                >
+                  {/* Handle Indicator */}
+                  <div
+                    className="w-12 h-1.5 rounded-full mx-auto mb-8 opacity-20"
+                    style={{ backgroundColor: contrastColor }}
                   />
+
+                  <div className="flex flex-col gap-6 pb-20">
+                    {/* Header */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <h2
+                          id="public-menu-item-heading"
+                          className={`text-2xl md:text-3xl font-bold leading-tight ${primaryTextClass}`}
+                          style={{ fontFamily: menuFontFamily }}
+                        >
+                          {selectedItem.title}
+                        </h2>
+                        {showPrices && typeof selectedItem.price === 'number' && (
+                          <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
+                            {formatPrice(selectedItem.price, profile.currency)}
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedItem.menu_categories && (
+                        <Badge
+                          variant="secondary"
+                          className="self-start border"
+                          style={{
+                            backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            color: contrastColor,
+                            borderColor: getBorderColor(),
+                          }}
+                        >
+                          {selectedItem.menu_categories.name}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    {selectedItem.description && (
+                      <p className={`text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
+                        {selectedItem.description}
+                      </p>
+                    )}
+
+                    {/* Tags */}
+                    {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
+                      <div className="pt-2">
+                        <div className="flex flex-wrap gap-2">
+                          {selectedItem.menu_item_tags.map((itemTag, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs border cursor-pointer hover:opacity-80 transition-opacity py-1.5 px-3"
+                              style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleTagClickFromModal(itemTag.tags.id)
+                              }}
+                            >
+                              {itemTag.tags.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={`mt-4 text-[10px] leading-tight opacity-50 ${mutedTextClass}`}>
+                      Allergen info provided by restaurant, always notify your waiter
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* Info Content - increased padding to maintain card size */}
-              <div className="flex flex-col gap-3 sm:gap-4 p-6 sm:p-8 md:p-10 overflow-y-auto max-h-[calc(90vh-12rem)]">
-                {/* Bio */}
-                {profile.bio && (
-                  <div className="text-center">
-                    <p
-                      className={`text-sm sm:text-base leading-relaxed ${secondaryTextClass}`}
-                      style={{ whiteSpace: 'pre-line' }}
-                    >
-                      {profile.bio}
-                    </p>
-                  </div>
-                )}
-
-                {/* Social Links */}
-                {(profile.instagram_url || profile.website_url) && (
-                  <div className="flex justify-center items-center gap-4 pt-2">
-                    {profile.instagram_url && (
-                      <a
-                        href={profile.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`transition-opacity hover:opacity-70 ${secondaryTextClass}`}
-                        aria-label="Instagram"
-                      >
-                        <Instagram className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </a>
-                    )}
-                    {profile.website_url && (
-                      <a
-                        href={profile.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`transition-opacity hover:opacity-70 ${secondaryTextClass}`}
-                        aria-label="Website"
-                      >
-                        <Globe className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+
+    </div >
   )
 }
