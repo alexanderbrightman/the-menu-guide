@@ -9,12 +9,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Upload, RefreshCw, X, Check, Palette } from 'lucide-react'
+import { Upload, RefreshCw, X, Check, Palette, MapPin } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
 import { getContrastColor } from '@/lib/utils'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
+import { geocodeAddress } from '@/lib/geocoding'
 import {
   DEFAULT_MENU_FONT,
   DEFAULT_MENU_BACKGROUND_COLOR,
@@ -35,6 +36,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     bio: profile?.bio || '',
     instagram_url: profile?.instagram_url || '',
     website_url: profile?.website_url || '',
+    address: profile?.address || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
     menu_background_color: profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR,
     show_display_name: profile?.show_display_name !== false // default to true
@@ -58,6 +60,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         bio: profile.bio || '',
         instagram_url: profile.instagram_url || '',
         website_url: profile.website_url || '',
+        address: profile.address || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
         menu_background_color: profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR,
         show_display_name: profile.show_display_name !== false // default to true
@@ -155,6 +158,26 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         return
       }
 
+      // Geocode address if provided
+      let latitude: number | null = null
+      let longitude: number | null = null
+      const address = formData.address.trim()
+
+      if (address) {
+        setMessage('Geocoding address...')
+        const geocodeResult = await geocodeAddress(address)
+
+        if (geocodeResult) {
+          latitude = geocodeResult.latitude
+          longitude = geocodeResult.longitude
+        } else {
+          clearTimeout(timeoutId)
+          setMessage('Could not find coordinates for this address. Please check the address and try again.')
+          setLoading(false)
+          return
+        }
+      }
+
       // Update profile
       const { error } = await supabase
         .from('profiles')
@@ -163,6 +186,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           bio: formData.bio.trim(),
           instagram_url: instagramUrl || null,
           website_url: websiteUrl || null,
+          address: address || null,
+          latitude: latitude,
+          longitude: longitude,
           menu_font: formData.menu_font,
           menu_background_color: formData.menu_background_color,
           show_display_name: formData.show_display_name
@@ -507,6 +533,28 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                     className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-4 pt-2">
+              <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
+                <MapPin className="h-4 w-4" />
+                Location
+              </Label>
+              <div className="space-y-2">
+                <Label htmlFor="address" className={secondaryTextClass}>Restaurant Address</Label>
+                <Input
+                  id="address"
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="123 Main St, New York, NY 10001"
+                  className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                />
+                <p className={`text-xs ${secondaryTextClass} mt-1`}>
+                  This helps customers find nearby specials on the homepage.
+                </p>
               </div>
             </div>
 

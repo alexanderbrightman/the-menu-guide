@@ -100,6 +100,9 @@ export interface Profile {
   subscription_canceled_at?: string
   view_count?: number
   currency?: string
+  latitude?: number
+  longitude?: number
+  address?: string
   created_at: string
 }
 
