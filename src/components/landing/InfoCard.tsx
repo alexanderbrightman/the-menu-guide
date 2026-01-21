@@ -8,8 +8,8 @@ export function InfoCard() {
 
     return (
         <div className="rounded-lg flex flex-row items-center h-[240px] p-4 gap-4 w-full" style={{ backgroundColor: '#D4D2BF', border: '1px solid #D4D2BF' }}>
-            {/* Illustration - BOH - 4:3 Aspect Ratio Wrapper */}
-            <div className="h-full aspect-[4/3] relative flex-shrink-0 shadow-sm">
+            {/* Illustration - BOH - Square on mobile, 4:3 on larger screens */}
+            <div className="h-full aspect-square sm:aspect-[4/3] relative flex-shrink-0 shadow-sm">
                 {!bohImageError && (
                     <Image
                         src="/BOH.jpeg"

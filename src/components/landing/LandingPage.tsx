@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { SpecialsCard } from '@/components/landing/SpecialsCard'
 import { SpecialItemModal } from '@/components/landing/SpecialItemModal'
@@ -10,9 +9,6 @@ import { TitleCard } from '@/components/landing/TitleCard'
 import { LoginCard } from '@/components/landing/LoginCard'
 import { InfoCard } from '@/components/landing/InfoCard'
 import { ContactLink } from '@/components/landing/ContactLink'
-import { Search, ArrowRight, Loader2, ChevronDown } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
 
 interface Special {
   item: {
@@ -36,15 +32,6 @@ interface Special {
 export function LandingPage() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [selectedSpecial, setSelectedSpecial] = useState<Special | null>(null)
-
-  // Framer Motion Parallax Logic
-  const { scrollY } = useScroll()
-  // Map scroll distance to a slower vertical movement for Part 1. 
-  // As user scrolls down (scrollY increases), move Part 1 up (negative y) but slowly.
-  const y1 = useTransform(scrollY, [0, 1000], [0, -500])
-  const rotateX1 = useTransform(scrollY, [0, 800], [0, 45])
-  const scale1 = useTransform(scrollY, [0, 800], [1, 0.8])
-  const opacity1 = useTransform(scrollY, [0, 600], [1, 0])
 
   return (
     <div
@@ -80,55 +67,30 @@ export function LandingPage() {
         }
       `}</style>
 
-      {/* Mobile Layout (Parallax) - Hidden on Large Screens */}
-      {/* Add perspective to container to make 3D rotation visible */}
-      <div className="lg:hidden relative">
-        {/* Part 1: Slow Moving Layer (Background) */}
-        <div className="fixed top-0 left-0 right-0 z-0 h-[100dvh] bg-[#FAFAFA]" style={{ perspective: '1000px' }}>
-          <motion.div
-            className="w-full h-full p-4 flex flex-col justify-center gap-6"
-            style={{
-              y: y1,
-              rotateX: rotateX1,
-              scale: scale1,
-              opacity: opacity1,
-              transformOrigin: "top center"
-            }}
-          >
-            <div className="flex-none pointer-events-auto">
-              <SearchSection />
-            </div>
-            <div className="flex-none pointer-events-auto">
-              <TitleCard />
-            </div>
-            <div className="flex-none relative w-full pointer-events-auto">
-              {/* Fixed height to match desktop consistency and avoid stretching */}
-              <SpecialsCard
-                onItemClick={setSelectedSpecial}
-                className="h-[340px] w-full"
-              />
-            </div>
-
-            {/* Bouncing Arrow - Hint to scroll */}
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none">
-              <ChevronDown className="w-6 h-6 text-black animate-bounce-slow" />
-            </div>
-          </motion.div>
+      {/* Mobile Layout - Hidden on Large Screens */}
+      <div className="lg:hidden">
+        {/* Part 1: First screen - centered in viewport */}
+        <div className="min-h-[100dvh] bg-[#FAFAFA] p-4 flex flex-col justify-center gap-6">
+          <div className="flex-none">
+            <SearchSection />
+          </div>
+          <div className="flex-none">
+            <TitleCard />
+          </div>
+          <div className="flex-none relative w-full">
+            <SpecialsCard
+              onItemClick={setSelectedSpecial}
+              className="h-[340px] w-full"
+            />
+          </div>
         </div>
 
-        {/* Part 2: Overlay Layer (Foreground) */}
-        <div className="relative z-10 w-full pointer-events-none">
-          {/* Spacer to fully hide Part 2 initially */}
-          <div className="h-[100dvh] w-full pointer-events-none"></div>
-
-          {/* The actual content that slides up */}
-          {/* Removed all borders and shadows to create "continuous background" look */}
-          <div className="bg-[#FAFAFA] min-h-[100dvh] flex flex-col p-4 gap-6 pb-20 justify-center pointer-events-auto">
-            <div className="flex flex-col gap-6 w-full">
-              <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
-              <InfoCard />
-              <ContactLink />
-            </div>
+        {/* Part 2: Second screen - centered in viewport */}
+        <div className="min-h-[100dvh] bg-[#FAFAFA] flex flex-col p-4 gap-6 justify-center">
+          <div className="flex flex-col gap-6 w-full">
+            <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
+            <InfoCard />
+            <ContactLink />
           </div>
         </div>
       </div>

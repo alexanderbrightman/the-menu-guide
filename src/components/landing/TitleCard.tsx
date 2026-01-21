@@ -16,8 +16,8 @@ export function TitleCard() {
                     <div>Guide</div>
                 </h1>
             </div>
-            {/* Illustration - FOH - 4:3 Aspect Ratio Wrapper */}
-            <div className="h-full aspect-[4/3] relative flex-shrink-0 shadow-sm">
+            {/* Illustration - FOH - Square on mobile, 4:3 on larger screens */}
+            <div className="h-full aspect-square sm:aspect-[4/3] relative flex-shrink-0 shadow-sm">
                 {!fohImageError && (
                     <Image
                         src="/FOH.jpeg"
