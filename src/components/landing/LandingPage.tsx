@@ -68,31 +68,16 @@ export function LandingPage() {
       `}</style>
 
       {/* Mobile Layout - Hidden on Large Screens */}
-      <div className="lg:hidden">
-        {/* Part 1: First screen - centered in viewport */}
-        <div className="min-h-[100dvh] bg-[#FAFAFA] p-4 flex flex-col justify-center gap-6">
-          <div className="flex-none">
-            <SearchSection />
-          </div>
-          <div className="flex-none">
-            <TitleCard />
-          </div>
-          <div className="flex-none relative w-full">
-            <SpecialsCard
-              onItemClick={setSelectedSpecial}
-              className="h-[340px] w-full"
-            />
-          </div>
-        </div>
-
-        {/* Part 2: Second screen - centered in viewport */}
-        <div className="min-h-[100dvh] bg-[#FAFAFA] flex flex-col p-4 gap-6 justify-center">
-          <div className="flex flex-col gap-6 w-full">
-            <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
-            <InfoCard />
-            <ContactLink />
-          </div>
-        </div>
+      <div className="lg:hidden min-h-screen bg-[#FAFAFA] p-4 py-8 flex flex-col gap-6">
+        <SearchSection />
+        <TitleCard />
+        <SpecialsCard
+          onItemClick={setSelectedSpecial}
+          className="h-[340px] w-full"
+        />
+        <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
+        <InfoCard />
+        <ContactLink />
       </div>
 
       {/* Desktop Layout - Hidden on Small Screens */}

@@ -26,7 +26,7 @@ export function InfoCard() {
                 )}
             </div>
             {/* Content */}
-            <div className="flex-1 flex items-center justify-center min-w-0">
+            <div className="flex-1 flex items-center justify-center min-w-0 z-10">
                 <p className="text-sm text-gray-900 leading-relaxed text-center">
                     After a decade of waiting tables in NYC, I'm driven to create a platform that empowers everyone in the restaurant industry, and hopefully make your day a bit smoother.
                 </p>

@@ -9,8 +9,8 @@ export function TitleCard() {
     return (
         <div className="rounded-lg flex flex-row items-center h-[240px] p-4 gap-4 w-full" style={{ backgroundColor: '#41766E', border: '1px solid #41766E' }}>
             {/* Title */}
-            <div className="flex-1 min-w-0 z-10 pl-6">
-                <h1 className="font-light text-white leading-tight text-left text-5xl sm:text-6xl">
+            <div className="flex-1 flex items-center justify-center min-w-0 z-10">
+                <h1 className="font-light text-white leading-tight text-5xl sm:text-6xl">
                     <div>The</div>
                     <div>Menu</div>
                     <div>Guide</div>
