@@ -106,7 +106,7 @@ export function SearchSection() {
                     }}
                 >
                     <Search
-                        className="absolute text-gray-700 z-10"
+                        className="absolute text-black z-10"
                         style={{
                             left: 'clamp(0.75rem, 2.5vw, 1.5rem)',
                             width: 'clamp(1rem, 2vw, 1.5rem)',
@@ -123,7 +123,7 @@ export function SearchSection() {
                         placeholder="Search for restaurants..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-600 h-auto py-2 font-medium"
+                        className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-black placeholder:text-black h-auto py-2 font-medium"
                         style={{
                             paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
                             paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
@@ -135,7 +135,7 @@ export function SearchSection() {
                     />
                     <ArrowRight
                         key={arrowAnimationKey}
-                        className={`absolute top-1/2 -translate-y-1/2 text-gray-700 z-10 ${searchResults.length > 0 ? 'arrow-swing-animation text-gray-900' : ''
+                        className={`absolute top-1/2 -translate-y-1/2 text-black z-10 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''
                             }`}
                         style={{
                             right: 'clamp(0.75rem, 2.5vw, 1.5rem)',

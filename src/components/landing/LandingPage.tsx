@@ -65,19 +65,43 @@ export function LandingPage() {
         .animate-bounce-slow {
           animation: bounce 2s infinite;
         }
+        .snap-scroll-container {
+          scroll-behavior: smooth;
+          scroll-snap-type: y mandatory;
+          -webkit-overflow-scrolling: touch;
+        }
+        .snap-scroll-container::-webkit-scrollbar {
+          display: none;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+          .snap-scroll-container {
+            scroll-behavior: auto;
+          }
+        }
       `}</style>
 
       {/* Mobile Layout - Hidden on Large Screens */}
-      <div className="lg:hidden min-h-screen bg-[#FAFAFA] p-4 py-8 flex flex-col gap-6">
-        <SearchSection />
-        <TitleCard />
-        <SpecialsCard
-          onItemClick={setSelectedSpecial}
-          className="h-[340px] w-full"
-        />
-        <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
-        <InfoCard />
-        <ContactLink />
+      <div className="lg:hidden h-screen overflow-y-scroll snap-y snap-mandatory snap-scroll-container" style={{ scrollSnapStop: 'always' }}>
+        {/* First Section - Top 3 Elements */}
+        <div className="h-screen snap-start snap-always flex flex-col justify-center items-center bg-[#FAFAFA] p-4 gap-6">
+          <div className="w-full max-w-md flex flex-col gap-6">
+            <SearchSection />
+            <TitleCard />
+            <SpecialsCard
+              onItemClick={setSelectedSpecial}
+              className="h-[340px] w-full"
+            />
+          </div>
+        </div>
+
+        {/* Second Section - Bottom 3 Elements */}
+        <div className="h-screen snap-start snap-always flex flex-col justify-center items-center bg-[#FAFAFA] p-4 gap-6">
+          <div className="w-full max-w-md flex flex-col gap-6">
+            <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
+            <InfoCard />
+            <ContactLink />
+          </div>
+        </div>
       </div>
 
       {/* Desktop Layout - Hidden on Small Screens */}
