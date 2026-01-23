@@ -81,9 +81,9 @@ export function LandingPage() {
       `}</style>
 
       {/* Mobile Layout - Hidden on Large Screens */}
-      <div className="lg:hidden h-screen overflow-y-scroll snap-y snap-mandatory snap-scroll-container" style={{ scrollSnapStop: 'always' }}>
+      <div className="lg:hidden min-h-[100dvh] overflow-y-scroll snap-y snap-mandatory snap-scroll-container" style={{ scrollSnapStop: 'always' }}>
         {/* First Section - Top 3 Elements */}
-        <div className="h-screen snap-start snap-always flex flex-col justify-center items-center bg-[#FAFAFA] p-4 gap-6">
+        <div className="min-h-[100dvh] snap-start snap-always flex flex-col justify-start items-center bg-[#FAFAFA] px-4 pt-4 pb-4 gap-6">
           <div className="w-full max-w-md flex flex-col gap-6">
             <SearchSection />
             <TitleCard />
@@ -95,7 +95,7 @@ export function LandingPage() {
         </div>
 
         {/* Second Section - Bottom 3 Elements */}
-        <div className="h-screen snap-start snap-always flex flex-col justify-center items-center bg-[#FAFAFA] p-4 gap-6">
+        <div className="min-h-[100dvh] snap-start snap-always flex flex-col justify-start items-center bg-[#FAFAFA] px-4 pt-4 pb-4 gap-6">
           <div className="w-full max-w-md flex flex-col gap-6">
             <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
             <InfoCard />
