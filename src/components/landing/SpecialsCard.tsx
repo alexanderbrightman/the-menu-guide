@@ -78,10 +78,10 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
 
     if (loading) {
         return (
-            <div className={`rounded-lg p-8 flex items-center justify-center min-h-[200px] ${className || ''}`} style={{ backgroundColor: '#AD7167', border: '1px solid #AD7167' }}>
+            <div className={`rounded-lg p-8 flex items-center justify-center min-h-[200px] ${className || ''}`}>
                 <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-white" />
-                    <p className="text-white text-sm">Loading specials...</p>
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-900" />
+                    <p className="text-gray-900 text-sm">Loading specials...</p>
                 </div>
             </div>
         )
@@ -89,9 +89,9 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
 
     if (specials.length === 0) {
         return (
-            <div className={`rounded-lg p-8 ${className || ''}`} style={{ backgroundColor: '#AD7167', border: '1px solid #AD7167' }}>
-                <h2 className="text-2xl font-bold mb-4 text-white">Local Specials</h2>
-                <p className="text-gray-100 text-center">
+            <div className={`rounded-lg p-8 ${className || ''}`}>
+                <h2 className="text-2xl font-bold mb-4 text-gray-900">Local Specials</h2>
+                <p className="text-gray-600 text-center">
                     Looks like you need to ask your favorite restaurant to join The Menu Guide...
                 </p>
             </div>
@@ -99,25 +99,25 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
     }
 
     return (
-        <div className={`rounded-lg p-6 flex flex-col ${className || ''}`} style={{ backgroundColor: '#AD7167', border: '1px solid #AD7167' }}>
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                <h2 className="text-2xl font-light text-white">Local Specials</h2>
+        <div className={`rounded-lg flex flex-col border border-black ${className || ''}`}>
+            <div className="flex items-center justify-between px-6 pt-6 mb-4 flex-shrink-0">
+                <h2 className="text-2xl font-light text-gray-900">Local Specials</h2>
                 {locationDenied && (
-                    <span className="text-xs text-gray-200">Showing all specials</span>
+                    <span className="text-xs text-gray-400">Showing all specials</span>
                 )}
             </div>
 
-            <div className="overflow-y-auto flex-1 -mx-2 px-2 custom-scrollbar">
-                <div className="grid grid-cols-3 gap-3 pb-2">
+            <div className="overflow-y-auto flex-1 px-2 custom-scrollbar">
+                <div className="grid grid-cols-3 gap-3 pb-6">
                     {specials.map((special, index) => (
                         <button
                             key={`${special.item.id}-${index}`}
                             onClick={() => onItemClick(special)}
-                            className="group cursor-pointer transition-transform hover:scale-[1.02]"
+                            className="group cursor-pointer text-left w-full"
                         >
-                            <div className="border border-black overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow rounded-lg">
+                            <div className="border border-black bg-white hover:opacity-80 transition-opacity duration-200">
                                 {/* Image */}
-                                <div className="relative aspect-square bg-gray-100">
+                                <div className="relative aspect-[3/2] border-b border-black overflow-hidden bg-gray-100">
                                     {special.item.image_url && !failedImages.has(special.item.image_url) ? (
                                         <Image
                                             src={special.item.image_url}
@@ -138,7 +138,7 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
                                 </div>
 
                                 {/* Info */}
-                                <div className="p-3 text-left">
+                                <div className="p-3">
                                     <p className="font-bold text-sm text-gray-900 truncate mb-1" title={special.item.title}>
                                         {special.item.title}
                                     </p>
@@ -154,11 +154,18 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
 
             <style jsx global>{`
         .custom-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+          scrollbar-width: thin;
+          scrollbar-color: #E5E7EB transparent;
         }
         .custom-scrollbar::-webkit-scrollbar {
-          display: none;
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #E5E7EB;
+          border-radius: 20px;
         }
       `}</style>
         </div>

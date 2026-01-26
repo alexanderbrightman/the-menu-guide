@@ -5,10 +5,12 @@ import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { SpecialsCard } from '@/components/landing/SpecialsCard'
 import { SpecialItemModal } from '@/components/landing/SpecialItemModal'
 import { SearchSection } from '@/components/landing/SearchSection'
-import { TitleCard } from '@/components/landing/TitleCard'
-import { LoginCard } from '@/components/landing/LoginCard'
-import { InfoCard } from '@/components/landing/InfoCard'
+import { FohImageCard } from '@/components/landing/FohImageCard'
+import { BohImageCard } from '@/components/landing/BohImageCard'
+import { InfoTextCard } from '@/components/landing/InfoTextCard'
 import { ContactLink } from '@/components/landing/ContactLink'
+import { Header } from '@/components/landing/Header'
+import { LoginModal } from '@/components/landing/LoginModal'
 
 interface Special {
   item: {
@@ -30,14 +32,14 @@ interface Special {
 }
 
 export function LandingPage() {
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [selectedSpecial, setSelectedSpecial] = useState<Special | null>(null)
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen flex flex-col"
       style={{
-        fontFamily: 'var(--font-nunito)',
         backgroundColor: '#FAFAFA'
       }}
     >
@@ -65,82 +67,75 @@ export function LandingPage() {
         .animate-bounce-slow {
           animation: bounce 2s infinite;
         }
-        .snap-scroll-container {
-          scroll-behavior: smooth;
-          scroll-snap-type: y mandatory;
-          -webkit-overflow-scrolling: touch;
-        }
-        .snap-scroll-container::-webkit-scrollbar {
-          display: none;
-        }
-        @media (prefers-reduced-motion: no-preference) {
-          .snap-scroll-container {
-            scroll-behavior: auto;
-          }
-        }
       `}</style>
 
-      {/* Mobile Layout - Hidden on Large Screens */}
-      <div className="lg:hidden min-h-[100dvh] overflow-y-scroll snap-y snap-mandatory snap-scroll-container" style={{ scrollSnapStop: 'always' }}>
-        {/* First Section - Top 3 Elements */}
-        <div className="min-h-[100dvh] snap-start snap-always flex flex-col justify-start items-center bg-[#FAFAFA] px-4 pt-4 pb-4 gap-6">
-          <div className="w-full max-w-md flex flex-col gap-6">
+      <Header onLoginClick={() => setShowLoginModal(true)} />
+
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
+          {/* Left Column: Search & Specials */}
+          <div className="flex flex-col gap-6 w-full">
             <SearchSection />
-            <TitleCard />
             <SpecialsCard
               onItemClick={setSelectedSpecial}
-              className="h-[340px] w-full"
-            />
-          </div>
-        </div>
-
-        {/* Second Section - Bottom 3 Elements */}
-        <div className="min-h-[100dvh] snap-start snap-always flex flex-col justify-start items-center bg-[#FAFAFA] px-4 pt-4 pb-4 gap-6">
-          <div className="w-full max-w-md flex flex-col gap-6">
-            <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
-            <InfoCard />
-            <ContactLink />
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Layout - Hidden on Small Screens */}
-      <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-0">
-        {/* Search Bar - Full Width at Top */}
-        <div className="mb-6">
-          <SearchSection />
-        </div>
-
-        {/* Card Grid - Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="flex flex-col gap-6">
-            <TitleCard />
-            <SpecialsCard
-              onItemClick={setSelectedSpecial}
-              className="h-[340px]"
+              className="h-[460px] w-full"
             />
           </div>
 
-          {/* Right Column */}
-          <div className="flex flex-col gap-6">
-            <LoginCard onResetPasswordClick={() => setShowPasswordResetModal(true)} />
-            <InfoCard />
+          {/* Right Column: Images */}
+          <div className="flex flex-col gap-6 w-full">
+            {/* Desktop View: Full Height Images */}
+            <div className="hidden md:flex flex-col w-full h-full">
+              <FohImageCard fill className="flex-1" />
+              <BohImageCard fill className="flex-1" />
+            </div>
+
+            {/* Mobile View: Stacked Images */}
+            <div className="flex md:hidden flex-col w-full">
+              <FohImageCard />
+              <BohImageCard />
+            </div>
           </div>
         </div>
 
-        {/* Contact the Builder Link - Centered Below Cards */}
-        <ContactLink />
-      </div>
+        {/* Info Text */}
+        <div className="w-full">
+          <InfoTextCard />
+        </div>
+
+        {/* Contact Link */}
+        <div className="flex justify-center mt-4">
+          <ContactLink />
+        </div>
+
+      </main>
 
       {/* Modals */}
-      {selectedSpecial && (
-        <SpecialItemModal special={selectedSpecial} onClose={() => setSelectedSpecial(null)} />
-      )}
+      {
+        selectedSpecial && (
+          <SpecialItemModal special={selectedSpecial} onClose={() => setSelectedSpecial(null)} />
+        )
+      }
 
-      {showPasswordResetModal && (
-        <PasswordResetModal onClose={() => setShowPasswordResetModal(false)} />
-      )}
-    </div>
+      {
+        showLoginModal && (
+          <LoginModal
+            onClose={() => setShowLoginModal(false)}
+            onResetPasswordClick={() => {
+              setShowLoginModal(false)
+              setShowPasswordResetModal(true)
+            }}
+          />
+        )
+      }
+
+      {
+        showPasswordResetModal && (
+          <PasswordResetModal onClose={() => setShowPasswordResetModal(false)} />
+        )
+      }
+    </div >
   )
 }

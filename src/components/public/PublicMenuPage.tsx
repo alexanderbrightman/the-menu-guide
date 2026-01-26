@@ -672,7 +672,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
           profile.show_display_name !== false && (
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
               <h1
-                className={`font-bold text-center whitespace-nowrap ${primaryTextClass}`}
+                className={`font-light text-center whitespace-nowrap ${primaryTextClass}`}
                 style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
               >
                 {profile.display_name}
@@ -852,7 +852,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       {
         selectedItem && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
             style={{
               width: '100vw',
               overflow: 'hidden',
@@ -860,130 +860,113 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             onClick={() => setSelectedItem(null)}
           >
             <div
-              className={`relative w-full h-full md:h-[85vh] md:max-h-[800px] md:max-w-md lg:max-w-lg md:rounded-[2rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-12 fade-in duration-300 isolate bg-black`}
+              className={`w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="public-menu-item-heading"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/10"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              {/* Scroll Container */}
-              <div className="h-full w-full overflow-y-auto no-scrollbar scroll-smooth">
-
-                {/* Image Section - Parallax Sticky */}
-                <div className="sticky top-0 z-0 h-[45vh] w-full backdrop-blur-xl bg-white/0">
-                  {selectedItem.image_url ? (
-                    <div className="relative w-full h-full">
-                      {/* Main Image - Uncropped */}
-                      <div className="relative w-full h-full p-6">
-                        <Image
-                          src={selectedItem.image_url}
-                          alt={selectedItem.title}
-                          fill
-                          className="object-contain drop-shadow-lg"
-                          sizes="(min-width: 768px) 600px, 100vw"
-                          priority
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass} bg-black/5`}>
-                      <div className="flex flex-col items-center gap-2 opacity-50">
-                        <span className="text-4xl">🍽️</span>
-                        <span>No image available</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Content Section */}
-                <div
-                  className="relative z-10 -mt-6 rounded-t-md px-6 py-8 min-h-[60vh] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] border-t"
-                  style={{
-                    backgroundColor: menuBackgroundColor,
-                    color: contrastColor,
-                    borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                  }}
+              {/* Image Card */}
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-black/40 backdrop-blur-md border border-white/10 group">
+                {/* Close Button */}
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="absolute top-3 right-3 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20"
+                  aria-label="Close"
                 >
-                  {/* Handle Indicator */}
-                  <div
-                    className="w-12 h-1.5 rounded-full mx-auto mb-8 opacity-20"
-                    style={{ backgroundColor: contrastColor }}
-                  />
+                  <X className="h-5 w-5" />
+                </button>
 
-                  <div className="flex flex-col gap-6 pb-20">
-                    {/* Header */}
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <h2
-                          id="public-menu-item-heading"
-                          className={`text-2xl md:text-3xl font-bold leading-tight ${primaryTextClass}`}
-                          style={{ fontFamily: menuFontFamily }}
-                        >
-                          {selectedItem.title}
-                        </h2>
-                        {showPrices && typeof selectedItem.price === 'number' && (
-                          <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
-                            {formatPrice(selectedItem.price, profile.currency)}
-                          </div>
-                        )}
-                      </div>
+                {selectedItem.image_url ? (
+                  <div className="w-full h-full relative">
+                    <Image
+                      src={selectedItem.image_url}
+                      alt={selectedItem.title}
+                      fill
+                      className="object-contain"
+                      sizes="(min-width: 768px) 600px, 100vw"
+                      priority
+                    />
+                  </div>
+                ) : (
+                  <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass}`}>
+                    <div className="flex flex-col items-center gap-2 opacity-50">
+                      <span className="text-4xl">🍽️</span>
+                      <span>No image available</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                      {selectedItem.menu_categories && (
-                        <Badge
-                          variant="secondary"
-                          className="self-start border"
-                          style={{
-                            backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                            color: contrastColor,
-                            borderColor: getBorderColor(),
-                          }}
-                        >
-                          {selectedItem.menu_categories.name}
-                        </Badge>
+              {/* Info Card */}
+              <div
+                className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
+                style={{
+                  backgroundColor: menuBackgroundColor,
+                  color: contrastColor,
+                }}
+              >
+                <div className="flex flex-col gap-4">
+                  {/* Header */}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <h2
+                        id="public-menu-item-heading"
+                        className={`text-2xl font-bold leading-tight ${primaryTextClass}`}
+                        style={{ fontFamily: menuFontFamily }}
+                      >
+                        {selectedItem.title}
+                      </h2>
+                      {showPrices && typeof selectedItem.price === 'number' && (
+                        <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
+                          {formatPrice(selectedItem.price, profile.currency)}
+                        </div>
                       )}
                     </div>
 
-                    {/* Description */}
-                    {selectedItem.description && (
-                      <p className={`text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
-                        {selectedItem.description}
-                      </p>
+                    {selectedItem.menu_categories && (
+                      <Badge
+                        variant="secondary"
+                        className="self-start border"
+                        style={{
+                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          color: contrastColor,
+                          borderColor: getBorderColor(),
+                        }}
+                      >
+                        {selectedItem.menu_categories.name}
+                      </Badge>
                     )}
+                  </div>
 
-                    {/* Tags */}
-                    {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                      <div className="pt-2">
-                        <div className="flex flex-wrap gap-2">
-                          {selectedItem.menu_item_tags.map((itemTag, index) => (
-                            <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs border cursor-pointer hover:opacity-80 transition-opacity py-1.5 px-3"
-                              style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleTagClickFromModal(itemTag.tags.id)
-                              }}
-                            >
-                              {itemTag.tags.name}
-                            </Badge>
-                          ))}
-                        </div>
+                  {/* Description */}
+                  {selectedItem.description && (
+                    <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
+                      {selectedItem.description}
+                    </p>
+                  )}
+
+                  {/* Tags */}
+                  {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
+                    <div className="pt-2 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {selectedItem.menu_item_tags.map((itemTag, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs border cursor-pointer hover:opacity-80 transition-opacity py-1.5 px-3"
+                            style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTagClickFromModal(itemTag.tags.id)
+                            }}
+                          >
+                            {itemTag.tags.name}
+                          </Badge>
+                        ))}
                       </div>
-                    )}
-
-                    <div className={`mt-4 text-[10px] leading-tight opacity-50 ${mutedTextClass}`}>
-                      Allergen info provided by restaurant, always notify your waiter
                     </div>
+                  )}
+
+                  <div className={`mt-2 text-[10px] leading-tight opacity-50 ${mutedTextClass}`}>
+                    Allergen info provided by restaurant, always notify your waiter
                   </div>
                 </div>
               </div>

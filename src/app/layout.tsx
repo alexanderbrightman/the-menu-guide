@@ -104,7 +104,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontVariables} antialiased`}
+        className={`${fontVariables} antialiased font-mono`}
         suppressHydrationWarning
       >
         <ErrorBoundary>

@@ -92,17 +92,27 @@ export function SearchSection() {
 
     return (
         <div className="w-full">
+            <style jsx global>{`
+                .search-glow:focus-within {
+                    box-shadow: 
+                        0 0 10px rgba(120, 20, 40, 0.5),
+                        0 0 20px rgba(90, 0, 20, 0.3),
+                        0 0 30px rgba(70, 0, 15, 0.2),
+                        0 0 40px rgba(50, 0, 0, 0.15);
+                    border-color: transparent !important;
+                }
+            `}</style>
             <div className="relative w-full max-w-2xl mx-auto">
                 {/* Search bar container */}
                 <label
                     htmlFor="search-input"
-                    className="relative w-full flex items-center transition-all duration-300 cursor-text rounded-lg bg-white hover:shadow-lg"
+                    className="relative w-full flex items-center transition-all duration-300 cursor-text rounded-lg bg-white hover:shadow-lg search-glow"
                     style={{
                         height: 'clamp(3rem, 5.5vw, 4rem)',
                         paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',
                         paddingRight: 'clamp(0.75rem, 2.5vw, 1.5rem)',
-                        boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.08)',
-                        border: '1px solid #C9ABB9'
+                        border: '1px solid #000000',
+                        // Maintain default shadow when not focused, let CSS override on focus
                     }}
                 >
                     <Search
