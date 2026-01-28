@@ -95,7 +95,7 @@ export function MenuCategorySection({
     return (
         <section
             className={`border ${getBorderColor()} ${isDarkBackground ? 'bg-white/5' : 'bg-white/80'
-                }`}
+                } rounded-xl overflow-hidden`}
         >
             <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
                 <div className="flex items-start justify-between">
@@ -117,7 +117,7 @@ export function MenuCategorySection({
                                     e.stopPropagation()
                                     handleSave()
                                 }}
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 rounded-lg"
                             >
                                 <Check className="h-4 w-4 text-green-500" />
                             </Button>
@@ -128,7 +128,7 @@ export function MenuCategorySection({
                                     e.stopPropagation()
                                     handleCancel()
                                 }}
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 rounded-lg"
                             >
                                 <X className="h-4 w-4 text-red-500" />
                             </Button>
@@ -174,7 +174,7 @@ export function MenuCategorySection({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
+                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()} rounded-lg`}
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     onAddItem()
@@ -189,7 +189,7 @@ export function MenuCategorySection({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
+                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()} rounded-lg`}
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     if (onRenameCategory) {
@@ -209,7 +209,7 @@ export function MenuCategorySection({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()}`}
+                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()} rounded-lg`}
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     onDeleteCategory()

@@ -141,17 +141,15 @@ const MenuItemCard = memo(({
       }`}
     onClick={() => onSelect(item)}
   >
-    {item.image_url && (
-      <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-        <Image
-          src={item.image_url}
-          alt={item.title}
-          fill
-          className="object-cover"
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-        />
-      </div>
-    )}
+    <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
+      <Image
+        src={item.image_url || '/placeholder.jpg'}
+        alt={item.title}
+        fill
+        className="object-cover"
+        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+      />
+    </div>
     <div className="flex-1 flex flex-col p-2 sm:p-3">
       <div className="mb-2">
         <h3
@@ -230,7 +228,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     (isSelected: boolean) => {
       const emphasis = isSelected ? 'font-semibold shadow-sm' : 'font-medium'
       const hoverState = isDarkBackground ? 'hover:bg-white/12 text-white' : 'hover:bg-gray-100 text-gray-900'
-      return `${baseCategoryButtonClass} cursor-pointer border rounded-md ${emphasis} ${hoverState}`
+      return `${baseCategoryButtonClass} cursor-pointer border rounded-lg ${emphasis} ${hoverState}`
     },
     [isDarkBackground, baseCategoryButtonClass]
   )
@@ -639,7 +637,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       key={tag.id}
                       variant="outline"
                       size="sm"
-                      className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-md ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
+                      className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-lg ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
                         } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
                       onClick={() => toggleTag(tag.id)}
                       disabled={isPending}
@@ -660,7 +658,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className={`h-7 text-[10px] rounded-md px-3`}
+                className={`h-7 text-[10px] rounded-lg px-3`}
                 style={isDarkBackground ? {
                   borderColor: '#ffffff',
                   color: '#ffffff',
@@ -703,7 +701,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className={isDarkBackground ? 'text-white' : ''}
+                  className={isDarkBackground ? 'text-white rounded-lg' : 'rounded-lg'}
                   style={isDarkBackground ? {
                     borderColor: '#ffffff',
                     backgroundColor: 'rgba(255,255,255,0.05)'

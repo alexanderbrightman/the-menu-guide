@@ -178,7 +178,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
           <Button
             type="button"
             onClick={() => setActiveForm('signin')}
-            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signin' ? 'border-2 border-black' : 'border border-black/30'
+            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signin' ? 'border-2 border-black' : 'border border-black/30'
               }`}
           >
             Sign In
@@ -190,7 +190,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
           <Button
             type="button"
             onClick={() => setActiveForm('signup')}
-            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signup' ? 'border-2 border-black' : 'border border-black/30'
+            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signup' ? 'border-2 border-black' : 'border border-black/30'
               }`}
           >
             Sign Up
@@ -208,7 +208,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
               required
             />
           </div>
@@ -219,13 +219,13 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
               required
             />
           </div>
           <Button
             type="submit"
-            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
@@ -254,7 +254,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
               required
             />
           </div>
@@ -266,7 +266,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className={`pr-10 bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none ${usernameStatus === 'taken' || usernameStatus === 'invalid'
+                className={`pr-10 bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg ${usernameStatus === 'taken' || usernameStatus === 'invalid'
                   ? 'border-red-500 focus:border-red-500'
                   : usernameStatus === 'available'
                     ? 'border-green-500 focus:border-green-500'
@@ -308,7 +308,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
               required
             />
           </div>
@@ -319,13 +319,13 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-none"
+              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
               required
             />
           </div>
           <Button
             type="submit"
-            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-none shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
             disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
           >
             {loading ? 'Signing up...' : 'Sign Up'}
@@ -335,7 +335,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
 
       {message && (
         <div
-          className="mt-4 p-3 text-sm text-center rounded-none text-gray-900 border border-black bg-gray-50/80 backdrop-blur-sm"
+          className="mt-4 p-3 text-sm text-center rounded-lg text-gray-900 border border-black bg-gray-50/80 backdrop-blur-sm"
         >
           {message}
         </div>

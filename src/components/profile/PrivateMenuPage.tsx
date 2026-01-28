@@ -84,10 +84,9 @@ const EMPTY_ITEM_FORM: ItemFormState = {
 }
 
 interface PrivateMenuPageProps {
-  onEditProfile?: () => void
 }
 
-export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
+export function PrivateMenuPage({ }: PrivateMenuPageProps) {
   const { user, profile } = useAuth()
   const [menuItems, setMenuItems] = useState<MenuItemWithRelations[]>([])
   const [categories, setCategories] = useState<MenuCategory[]>([])
@@ -1043,11 +1042,7 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
     }
   }
 
-  const handleOpenScanMenu = useCallback(() => {
-    if (typeof window === 'undefined') return
-    const event = new CustomEvent('open-scan-menu')
-    window.dispatchEvent(event)
-  }, [])
+
 
   const handleConfirmDelete = async () => {
     if (deleteConfirmation.type === 'category') {
@@ -1078,8 +1073,6 @@ export function PrivateMenuPage({ onEditProfile }: PrivateMenuPageProps) {
             <MenuHeader
               profile={profile}
               user={user}
-              onEditProfile={onEditProfile}
-              onScanMenu={handleOpenScanMenu}
               onNewCategory={openCreateCategory}
               onNewItem={startCreateItem}
               message={message}

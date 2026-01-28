@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { LogOut, QrCode } from 'lucide-react'
+import { QrCode, Utensils } from 'lucide-react'
 import Image from 'next/image'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
-import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
+import { DashboardNavigation } from '@/components/dashboard/DashboardNavigation'
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
@@ -59,13 +59,12 @@ export function Dashboard() {
   )
   const subtleTextClass = isDarkBackground ? 'text-white/75' : 'text-gray-600'
   const outlineButtonClass = isDarkBackground
-    ? 'border border-white !text-white hover:bg-white/10 bg-transparent rounded-none'
-    : 'border border-black !text-slate-900 hover:bg-slate-100 bg-transparent rounded-none'
-  const cardSurfaceClass = `rounded-2xl transition-colors ${
-    isDarkBackground
-      ? 'bg-white/10 text-white shadow-xl shadow-black/20'
-      : 'bg-white/95 shadow-sm'
-  }`
+    ? 'border border-white !text-white hover:bg-white/10 bg-transparent rounded-lg'
+    : 'border border-black !text-slate-900 hover:bg-slate-100 bg-transparent rounded-lg'
+  const cardSurfaceClass = `rounded-2xl transition-colors ${isDarkBackground
+    ? 'bg-white/10 text-white shadow-xl shadow-black/20'
+    : 'bg-white/95 shadow-sm'
+    }`
 
   // Premium feature validation
   const qrCodeAccess = usePremiumFeature('QR code generation')
@@ -183,40 +182,64 @@ export function Dashboard() {
           background: menuBackgroundColor, // Matches the page background
         }}
       />
-      
-      <header 
-        className="border-b border-white/10 backdrop-blur-sm" 
-        style={{ 
+
+      <header
+        className="border-b border-white/10 backdrop-blur-sm"
+        style={{
           backgroundColor: menuBackgroundColor,
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
-            <h1
-              className="text-2xl font-semibold"
-              style={{ color: contrastColor, fontFamily: menuFontFamily }}
-            >
-              The Menu Guide
-            </h1>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={signOut}
-                disabled={signingOut}
-                className={outlineButtonClass}
+            <div className="flex items-center gap-3">
+              {profile?.avatar_url && (
+                <div className="relative h-10 w-10 overflow-hidden rounded-full border border-black/10">
+                  <Image
+                    src={profile.avatar_url}
+                    alt={profile.display_name || 'Profile'}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <h1
+                className="text-xl font-bold"
+                style={{ color: contrastColor, fontFamily: menuFontFamily }}
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                {signingOut ? 'Signing Out...' : 'Sign Out'}
-              </Button>
+                {profile?.display_name || 'Your Restaurant'}
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              {profile?.username && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`${outlineButtonClass} flex items-center gap-2 border rounded-lg`}
+                  onClick={() => window.open(`${window.location.origin}/menu/${profile.username}`, '_blank')}
+                >
+                  <Utensils className="h-4 w-4" />
+                  <span className="hidden sm:inline">View Menu</span>
+                </Button>
+              )}
+              <DashboardNavigation
+                signOut={signOut}
+                signingOut={signingOut}
+                onEditProfile={() => setShowProfileEdit(true)}
+                profile={profile}
+                user={user}
+                triggerClassName={outlineButtonClass}
+                contentBackgroundColor={menuBackgroundColor}
+                contentColor={contrastColor}
+                borderColorClass={isDarkBackground ? 'border-white/20' : 'border-black/10'}
+              />
             </div>
           </div>
         </div>
       </header>
 
       <div className="flex flex-col gap-16 pb-20">
-        <PrivateMenuPage onEditProfile={() => setShowProfileEdit(true)} />
+        <PrivateMenuPage />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* QR Code Section */}
@@ -279,11 +302,9 @@ export function Dashboard() {
           )}
 
           <div className="mt-6 space-y-4">
-            <div className={cardSurfaceClass}>
-              <SubscriptionExpiryWarning showCard={true} />
-            </div>
+
             {user && (
-              <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => {}} />
+              <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => { }} profile={profile} />
             )}
           </div>
         </div>

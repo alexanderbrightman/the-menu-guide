@@ -6,16 +6,20 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ScanLine, Upload, X } from 'lucide-react'
+import { ScanLine, Upload, X, Crown } from 'lucide-react'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
+
+import { Profile } from '@/lib/supabase'
+import { useMenuTheme } from '@/hooks/useMenuTheme'
 
 interface ScanMenuModalProps {
   userId: string
   onScanSuccess?: () => void
   hideTrigger?: boolean
+  profile?: Profile | null
 }
 
-export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: ScanMenuModalProps) {
+export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, profile }: ScanMenuModalProps) {
   const [showModal, setShowModal] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
@@ -23,12 +27,19 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const premiumAccess = usePremiumFeature('menu scanning')
 
+  const {
+    menuBackgroundColor,
+    contrastColor,
+    primaryTextClass,
+    secondaryTextClass,
+    getBorderColor,
+    isDarkBackground
+  } = useMenuTheme(profile || null)
+
   useEffect(() => {
     const openHandler = () => {
-      if (!premiumAccess.canAccess) {
-        alert(premiumAccess.message || 'This is a premium feature. Please upgrade to use Scan Menu.')
-        return
-      }
+      // Allow modal to open even without premium access
+      // We will show the UpgradeCard inside instead
       setShowModal(true)
     }
     window.addEventListener('open-scan-menu', openHandler)
@@ -146,10 +157,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
       {!hideTrigger && (
         <Button
           onClick={() => {
-            if (!premiumAccess.canAccess) {
-              alert(premiumAccess.message || 'This is a premium feature. Please upgrade to use Scan Menu.')
-              return
-            }
+            // Allow modal to open even without premium access
             setShowModal(true)
           }}
           variant="outline"
@@ -160,128 +168,226 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false }: Sc
       )}
 
       <Dialog open={showModal} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent
+          className={`w-[90vw] max-w-sm border ${getBorderColor()} p-0 gap-0 rounded-xl overflow-hidden shadow-xl [&>button]:hidden flex flex-col z-[200]`}
+          style={{
+            backgroundColor: menuBackgroundColor,
+            color: contrastColor,
+          }}
+        >
+          <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+            <div />
+            <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass} flex items-center gap-2`}>
               <ScanLine className="h-5 w-5" />
               Scan Your Menu
             </DialogTitle>
-          </DialogHeader>
-          <div className="text-sm text-gray-600 space-y-2 mb-4">
-            <p className="font-medium">Upload a clear, well-lit image of your menu for best results.</p>
-            <ul className="space-y-1 text-sm ml-5">
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>High-quality images process faster and more accurately</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>Menu items will be automatically added to your profile</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>Remember to add photos, allergen tags, and verify all details</span>
-              </li>
-            </ul>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => handleClose(false)}
+              className="h-8 w-8 hover:bg-transparent"
+              style={{ color: contrastColor }}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
 
-          <Input
-            id="menu-file-input"
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-
-          <div className="space-y-4">
-            {!loading && !message && (
+          <div className="flex-1 p-6 flex flex-col justify-center space-y-8">
+            {!premiumAccess.canAccess ? (
+              <div className="flex flex-col items-center justify-center text-center space-y-4 py-4">
+                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                  <Crown className="size-6 text-orange-600" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className={`text-lg font-semibold ${primaryTextClass}`}>Premium Feature</h3>
+                  <p className={`text-sm ${secondaryTextClass} max-w-[250px] mx-auto`}>
+                    Upgrade to Premium to unlock AI Menu Scanning and more.
+                  </p>
+                </div>
+                <div className="flex flex-col w-full gap-2 pt-2">
+                  <Button
+                    onClick={() => {
+                      if (profile?.stripe_customer_id) {
+                        // Redirect to billing portal if they have a customer ID but not active
+                        window.location.href = '/api/stripe/create-portal-session'
+                      } else {
+                        // Or trigger the upgrade card logic elsewhere. 
+                        // For simplicity and "simple pop up" request, we'll link to subscription page 
+                        // or just re-use the upgrade logic if we had it handy.
+                        // But since UpgradeCard logic is complex, let's just use the UpgradeCard's internal logic
+                        // functionality but via a simple button? No, UpgradeCard handles the session creation.
+                        // Let's just create a new checkout session here.
+                        const handleSimpleUpgrade = async () => {
+                          setLoading(true);
+                          try {
+                            if (!supabase) return;
+                            const { data: { session: authSession } } = await supabase.auth.getSession();
+                            if (!authSession) return;
+                            const res = await fetch('/api/stripe/create-checkout-session', {
+                              method: 'POST',
+                              headers: { Authorization: `Bearer ${authSession.access_token}` }
+                            });
+                            const data = await res.json();
+                            if (data.url) window.location.href = data.url;
+                            else alert('Error starting upgrade.');
+                          } catch (e) {
+                            console.error(e);
+                            alert('Error starting upgrade.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        };
+                        handleSimpleUpgrade();
+                      }
+                    }}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Upgrade Now'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowModal(false)}
+                    className={secondaryTextClass}
+                  >
+                    Maybe Later
+                  </Button>
+                </div>
+              </div>
+            ) : (
               <>
-                {filePreview && (
-                  <div className="space-y-3">
-                    <div className="relative w-full max-h-64">
-                      <div className="relative w-full h-64 rounded-xl border border-gray-200/60 overflow-hidden bg-white/80 backdrop-blur-sm">
-                        <Image
-                          src={filePreview}
-                          alt="Menu preview"
-                          fill
-                          className="object-contain"
-                          sizes="100vw"
-                          unoptimized
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 bg-white hover:bg-gray-100 shadow-none rounded-none border border-black p-1 h-auto"
-                        onClick={handleRemoveFile}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {selectedFile?.name} ({((selectedFile?.size || 0) / 1024 / 1024).toFixed(2)} MB)
-                    </p>
+                <div className={`text-sm ${secondaryTextClass} space-y-4 text-center`}>
+                  <p className="font-medium text-lg">Upload a clear, well-lit image of your menu for best results.</p>
+                  <div className="flex justify-center">
+                    <ul className="space-y-2 text-sm text-left inline-block">
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1">•</span>
+                        <span>May take ~1 minute to download details.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1">•</span>
+                        <span>Items are automatically added.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1">•</span>
+                        <span>Verify menu items, then add images and allergen tags!</span>
+                      </li>
+                    </ul>
                   </div>
-                )}
+                </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleClose(false)}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={selectedFile ? handleUpload : () => document.getElementById('menu-file-input')?.click()}
-                    disabled={loading}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload & Scan
-                  </Button>
+                <Input
+                  id="menu-file-input"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                <div className="space-y-6">
+                  {!loading && !message && (
+                    <>
+                      {filePreview ? (
+                        <div className="space-y-4">
+                          <div className="relative w-full h-48 rounded-xl border border-gray-200/60 overflow-hidden bg-white/80 backdrop-blur-sm mx-auto shadow-sm">
+                            <Image
+                              src={filePreview}
+                              alt="Menu preview"
+                              fill
+                              className="object-contain"
+                              sizes="100vw"
+                              unoptimized
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-sm rounded-md border border-gray-200 p-1 h-auto"
+                              onClick={handleRemoveFile}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className={`text-xs text-center ${secondaryTextClass}`}>
+                            {selectedFile?.name} ({((selectedFile?.size || 0) / 1024 / 1024).toFixed(2)} MB)
+                          </p>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => document.getElementById('menu-file-input')?.click()}
+                          className={`border-2 border-dashed ${getBorderColor()} rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
+                        >
+                          <Upload className={`h-8 w-8 ${secondaryTextClass}`} />
+                          <span className={`text-sm font-medium ${secondaryTextClass}`}>Tap to select image</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-center gap-3 pt-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleClose(false)}
+                          disabled={loading}
+                          className={secondaryTextClass}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={selectedFile ? handleUpload : () => document.getElementById('menu-file-input')?.click()}
+                          disabled={loading}
+                          className="bg-green-600 hover:bg-green-700 text-white min-w-[140px]"
+                        >
+                          {selectedFile ? (
+                            <>
+                              <ScanLine className="h-4 w-4 mr-2" />
+                              Scan Menu
+                            </>
+                          ) : (
+                            'Select Image'
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  {loading && (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600 mb-6"></div>
+                      <p className={`font-medium text-lg ${primaryTextClass}`}>
+                        Processing your menu…
+                      </p>
+                      <p className={`text-sm mt-2 ${secondaryTextClass}`}>
+                        This may take a few moments
+                      </p>
+                    </div>
+                  )}
+
+                  {message && (
+                    <div className="py-2">
+                      <div className={`p-4 rounded-lg text-center ${message.includes('✅')
+                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
+                        : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                        }`}>
+                        <p className="text-sm font-medium">{message}</p>
+                      </div>
+                      {!loading && (
+                        <div className="mt-6 flex justify-center">
+                          <Button
+                            onClick={() => handleClose(false)}
+                            className={message.includes('✅') ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                          >
+                            Close
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             )}
-
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-600 mb-4"></div>
-                <p className="text-gray-700 font-medium">
-                  Processing your menu…
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  This may take a few moments
-                </p>
-              </div>
-            )}
-
-            {message && (
-              <div className="py-4">
-                <div className={`p-4 rounded-lg ${message.includes('✅')
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
-                  }`}>
-                  <p className="text-sm font-medium">{message}</p>
-                </div>
-                {!loading && (
-                  <div className="mt-4 flex justify-end">
-                    <Button
-                      onClick={() => handleClose(false)}
-                      variant={message.includes('✅') ? 'default' : 'outline'}
-                      className={message.includes('✅') ? 'bg-green-600 hover:bg-green-700' : ''}
-                    >
-                      Close
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
     </>
   )
 }
-

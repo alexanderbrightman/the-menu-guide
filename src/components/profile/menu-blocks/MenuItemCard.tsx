@@ -41,24 +41,22 @@ export function MenuItemCard({
                 } ${!isAvailable ? 'opacity-60' : ''}`}
             onClick={onClick}
         >
-            {item.image_url && (
-                <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                    <Image
-                        src={item.image_url}
-                        alt={item.title}
-                        fill
-                        className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
-                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                    />
-                    {!isAvailable && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <span className="font-bold text-white tracking-wider border-2 border-white px-2 py-1 rotate-[-15deg]">
-                                86&apos;D
-                            </span>
-                        </div>
-                    )}
-                </div>
-            )}
+            <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
+                <Image
+                    src={item.image_url || '/placeholder.jpg'}
+                    alt={item.title}
+                    fill
+                    className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                />
+                {!isAvailable && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="font-bold text-white tracking-wider border-2 border-white px-2 py-1 rotate-[-15deg]">
+                            86&apos;D
+                        </span>
+                    </div>
+                )}
+            </div>
             <div className="flex-1 flex flex-col p-2 sm:p-3">
                 <div className="mb-2">
                     <h3
@@ -77,7 +75,7 @@ export function MenuItemCard({
                                 onToggleFavorite()
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className={`h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center transition-colors border border-black rounded ${isFavorited
+                            className={`h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center transition-colors border border-black rounded-lg ${isFavorited
                                 ? isDarkBackground
                                     ? 'text-yellow-400 hover:text-yellow-300'
                                     : 'text-yellow-600 hover:text-yellow-700'
@@ -95,7 +93,7 @@ export function MenuItemCard({
                                 onToggleAvailability()
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className={`h-6 sm:h-7 px-1.5 flex items-center justify-center text-[10px] sm:text-xs font-bold border rounded transition-colors ${!isAvailable
+                            className={`h-6 sm:h-7 px-1.5 flex items-center justify-center text-[10px] sm:text-xs font-bold border rounded-lg transition-colors ${!isAvailable
                                 ? 'bg-red-500 text-white border-red-500 hover:bg-red-600'
                                 : 'border-black text-black hover:bg-red-500 hover:text-white hover:border-red-500'
                                 }`}
@@ -107,7 +105,7 @@ export function MenuItemCard({
                         <Button
                             size="icon-sm"
                             variant="outline"
-                            className={`${outlineButtonClass} border ${getBorderColor()}`}
+                            className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg`}
                             onClick={onEdit}
                             onPointerDown={(e) => e.stopPropagation()}
                         >
@@ -116,7 +114,7 @@ export function MenuItemCard({
                         <Button
                             size="icon-sm"
                             variant="outline"
-                            className={`${outlineButtonClass} border ${getBorderColor()}`}
+                            className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg`}
                             onClick={onDelete}
                             onPointerDown={(e) => e.stopPropagation()}
                         >

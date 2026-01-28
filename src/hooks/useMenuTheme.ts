@@ -20,12 +20,12 @@ export function useMenuTheme(profile: Profile | null) {
     const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
 
     const accentButtonClass = isDarkBackground
-        ? 'border border-white/90 bg-transparent !text-white hover:bg-white/15'
-        : 'border border-slate-900 bg-transparent !text-slate-900 hover:bg-slate-100'
+        ? 'border border-white/90 bg-transparent !text-white hover:bg-white/15 rounded-lg'
+        : 'border border-slate-900 bg-transparent !text-slate-900 hover:bg-slate-100 rounded-lg'
 
     const outlineButtonClass = isDarkBackground
-        ? 'border border-white/60 bg-transparent !text-white hover:bg-white/10'
-        : 'border border-slate-400 bg-transparent !text-slate-900 hover:bg-slate-100'
+        ? 'border border-white/60 bg-transparent !text-white hover:bg-white/10 rounded-lg'
+        : 'border border-slate-400 bg-transparent !text-slate-900 hover:bg-slate-100 rounded-lg'
 
     const focusRingClass = isDarkBackground
         ? 'focus-visible:ring-white/60 focus-visible:ring-offset-white/5'

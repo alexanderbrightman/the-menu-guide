@@ -21,9 +21,10 @@ import { useMenuTheme } from '@/hooks/useMenuTheme'
 
 interface SettingsDialogProps {
   triggerClassName?: string
+  children?: React.ReactNode
 }
 
-export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
+export function SettingsDialog({ triggerClassName, children }: SettingsDialogProps) {
   const { user, profile, refreshProfile } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
   const [isPublic, setIsPublic] = useState(profile?.is_public || false)
@@ -403,11 +404,13 @@ export function SettingsDialog({ triggerClassName }: SettingsDialogProps) {
   return (
     <Dialog open={showSettings} onOpenChange={setShowSettings}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={cn(triggerClassName)}>
-          <Settings className="h-4 w-4" />
-          <span className="hidden sm:inline">Settings</span>
-          <span className="sm:hidden">Settings</span>
-        </Button>
+        {children || (
+          <Button variant="outline" size="sm" className={cn(triggerClassName)}>
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sm:hidden">Settings</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent
         className={`w-full max-w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
