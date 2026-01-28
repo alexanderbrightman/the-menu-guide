@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Fjalla_One,
   Plus_Jakarta_Sans,
@@ -64,12 +64,13 @@ const comfortaa = Comfortaa({ variable: "--font-comfortaa", subsets: ["latin"] }
 export const metadata: Metadata = {
   title: "The Menu Guide",
   description: "Create and manage your restaurant's digital menu",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    viewportFit: 'cover', // Enable safe area support for iOS devices
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

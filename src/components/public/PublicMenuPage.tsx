@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { X, Filter, Instagram, Globe } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
+import { getAllergenBorderColor, ALLERGEN_TAGS } from '@/lib/utils'
 import { CategoryDivider } from './CategoryDivider'
 
 interface MenuItemWithTags extends MenuItem {
@@ -56,20 +57,7 @@ const getContrastColor = (hexColor: string) => {
   return luminance > 0.6 ? '#1f2937' : '#ffffff'
 }
 
-// Helper function to get border color for allergen tags
-const getAllergenBorderColor = (tagName: string): string => {
-  const colorMap: Record<string, string> = {
-    'dairy-free': '#B5C1D9',
-    'gluten-free': '#D48963',
-    'nut-free': '#408250',
-    'pescatarian': '#F698A7',
-    'shellfish-free': '#F6D98E',
-    'spicy': '#F04F68',
-    'vegan': '#A9CC66',
-    'vegetarian': '#3B91A2'
-  }
-  return colorMap[tagName.toLowerCase()] || ''
-}
+
 
 const hexToRgba = (hexColor: string, alpha: number) => {
   const cleanHex = hexColor.replace('#', '')
@@ -196,11 +184,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  const [activeSection, setActiveSection] = useState<'none' | 'filters' | 'info'>('none')
 
-  const toggleSection = (section: 'filters' | 'info') => {
-    setActiveSection(prev => prev === section ? 'none' : section)
-  }
 
 
   // Create a Set for efficient lookup
@@ -246,7 +230,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     (isSelected: boolean) => {
       const emphasis = isSelected ? 'font-semibold shadow-sm' : 'font-medium'
       const hoverState = isDarkBackground ? 'hover:bg-white/12 text-white' : 'hover:bg-gray-100 text-gray-900'
-      return `${baseCategoryButtonClass} cursor-pointer border rounded-full ${emphasis} ${hoverState}`
+      return `${baseCategoryButtonClass} cursor-pointer border rounded-md ${emphasis} ${hoverState}`
     },
     [isDarkBackground, baseCategoryButtonClass]
   )
@@ -313,17 +297,40 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     }
     // When viewing "all", show all items (including favorites in their categories)
 
-    // Filter by tags using Set for O(1) lookups instead of O(n) array includes
+    // Filter by tags
     if (selectedTagsSet.size > 0) {
+      // Split selected tags into allergens (exclude) and lifestyle (include)
+      const selectedAllergens = new Set<number>()
+      const selectedLifestyle = new Set<number>()
+
+      tags.forEach(tag => {
+        if (selectedTagsSet.has(tag.id)) {
+          // Case-insensitive check against known allergens
+          if (ALLERGEN_TAGS.some(a => a.toLowerCase() === tag.name.toLowerCase())) {
+            selectedAllergens.add(tag.id)
+          } else {
+            selectedLifestyle.add(tag.id)
+          }
+        }
+      })
+
       filtered = filtered.filter(item => {
-        const itemTagSet = itemTagIdSets.get(item.id)
-        if (!itemTagSet || itemTagSet.size === 0) return false
-        // Check if item has ALL selected tags using Set operations
-        for (const tagId of selectedTagsSet) {
+        const itemTagSet = itemTagIdSets.get(item.id) || new Set()
+
+        // 1. Exclusion: If item has ANY of the selected allergens, hide it
+        for (const tagId of selectedAllergens) {
+          if (itemTagSet.has(tagId)) {
+            return false
+          }
+        }
+
+        // 2. Inclusion: Item must have ALL selected lifestyle tags
+        for (const tagId of selectedLifestyle) {
           if (!itemTagSet.has(tagId)) {
             return false
           }
         }
+
         return true
       })
     }
@@ -447,240 +454,230 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       {/* Hidden Google Translate Element */}
       <div id="google_translate_element" className="hidden"></div>
 
-      {/* Large Header Photo */}
-      <header className="relative max-w-screen-2xl mx-auto w-full">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          {/* TMG Header */}
-          <div className="flex justify-between items-center mb-4">
-            <Link
-              href="/"
-              className={`text-lg font-bold hover:opacity-80 transition-opacity ${primaryTextClass}`}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+      <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-1">
+        {/* TMG Header */}
+        <div className="flex items-center justify-center gap-4 mb-6 w-full overflow-hidden">
+          {/* Left Side: Scroll -> Line */}
+          <div className="flex-1 flex items-center">
+            <svg
+              width="14"
+              height="12"
+              viewBox="0 0 14 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="flex-none"
             >
-              The Menu Guide
-            </Link>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleSection('filters')}
-                className="border rounded-full flex items-center justify-center text-xs font-medium transition-colors hover:opacity-70 px-3 py-1"
-                style={{
-                  height: '32px',
-                  borderColor: isDarkBackground ? '#ffffff' : '#000000',
-                  color: isDarkBackground ? '#ffffff' : '#000000',
-                  backgroundColor: activeSection === 'filters' ? (isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'transparent',
-                  fontFamily: menuFontFamily
-                }}
-                aria-label="Toggle filters"
-              >
-                Allergens
-              </button>
+              <path
+                d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
+                stroke={isDarkBackground ? '#ffffff' : '#000000'}
+                strokeWidth="1"
+                fill="none"
+              />
+              <line x1="12" y1="6" x2="14" y2="6" stroke={isDarkBackground ? '#ffffff' : '#000000'} strokeWidth="1" />
+            </svg>
+            <div className={`flex-1 h-[1px] ${isDarkBackground ? 'bg-white' : 'bg-black'} -ml-[1px]`}></div>
+          </div>
 
-              {(profile.bio || profile.instagram_url || profile.website_url) && (
-                <button
-                  onClick={() => toggleSection('info')}
-                  className="border rounded-full flex items-center justify-center text-xs font-medium transition-colors hover:opacity-70 px-3 py-1"
-                  style={{
-                    height: '32px',
-                    borderColor: isDarkBackground ? '#ffffff' : '#000000',
-                    color: isDarkBackground ? '#ffffff' : '#000000',
-                    backgroundColor: activeSection === 'info' ? (isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'transparent',
-                    fontFamily: menuFontFamily
-                  }}
-                  aria-label="Show restaurant information"
-                >
-                  Info
-                </button>
+          <Link
+            href="/"
+            className={`text-lg font-medium hover:opacity-80 transition-opacity whitespace-nowrap px-2 ${primaryTextClass}`}
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            The Menu Guide
+          </Link>
+
+          {/* Right Side: Line -> Scroll (Rotated 180 of the Left Side) */}
+          <div className="flex-1 flex items-center transform rotate-180">
+            <svg
+              width="14"
+              height="12"
+              viewBox="0 0 14 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="flex-none"
+            >
+              <path
+                d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
+                stroke={isDarkBackground ? '#ffffff' : '#000000'}
+                strokeWidth="1"
+                fill="none"
+              />
+              <line x1="12" y1="6" x2="14" y2="6" stroke={isDarkBackground ? '#ffffff' : '#000000'} strokeWidth="1" />
+            </svg>
+            <div className={`flex-1 h-[1px] ${isDarkBackground ? 'bg-white' : 'bg-black'} -ml-[1px]`}></div>
+          </div>
+        </div>
+
+        {/* Profile Section */}
+        <div className="flex flex-row items-center sm:items-start gap-3 sm:gap-6 mb-6">
+          {/* Profile Image */}
+          <div className="flex-shrink-0">
+            <div
+              className={`relative h-28 w-28 sm:h-40 sm:w-40 overflow-hidden rounded-full`}
+              style={{
+                backgroundColor: menuBackgroundColor
+              }}
+            >
+              {profile.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt={profile.display_name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 112px, 160px"
+                  priority
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-secondary/10">
+                  <span className={`text-4xl sm:text-5xl font-bold opacity-30 ${primaryTextClass}`}>
+                    {profile.display_name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Expandable Sections Container */}
-          <div className={`relative overflow-hidden transition-all duration-500 ease-in-out ${activeSection !== 'none' ? 'max-h-[1000px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}>
-            <div className="pt-2">
-              {/* Filters Section Content */}
-              <div className={`${activeSection === 'filters' ? 'block' : 'hidden'} space-y-4 animate-in fade-in slide-in-from-top-2 duration-300`}>
-                {/* Category Filter */}
-                <div>
-                  <div className="overflow-x-auto scrollbar-hide scroll-smooth">
-                    <div className="flex flex-nowrap gap-1.5 pb-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCategoryChange('all')}
-                        className={getCategoryButtonClass(selectedCategory === 'all')}
-                        style={getCategoryButtonStyle(selectedCategory === 'all')}
-                        disabled={isPending}
-                      >
-                        All Items
-                      </Button>
-                      {favoritedItems.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCategoryChange('favorites')}
-                          className={getCategoryButtonClass(selectedCategory === 'favorites')}
-                          style={getCategoryButtonStyle(selectedCategory === 'favorites')}
-                          disabled={isPending}
-                        >
-                          Specials
-                        </Button>
-                      )}
-                      {categories.map((category) => (
-                        <Button
-                          key={category.id}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCategoryChange(category.id)}
-                          className={getCategoryButtonClass(selectedCategory === category.id)}
-                          style={getCategoryButtonStyle(selectedCategory === category.id)}
-                          disabled={isPending}
-                        >
-                          {category.name}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dietary Tags Filter */}
-                <div>
-                  <div className="overflow-x-auto scrollbar-hide scroll-smooth">
-                    <div className="flex flex-nowrap gap-1.5 pb-1">
-                      {tags.map((tag) => {
-                        const isSelected = selectedTagsSetForButtons.has(tag.id)
-                        return (
-                          <Button
-                            key={tag.id}
-                            variant="outline"
-                            size="sm"
-                            className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-full ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
-                              } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-                            onClick={() => toggleTag(tag.id)}
-                            disabled={isPending}
-                            style={buildTagStyles(tag.name, { isDarkBackground, isSelected })}
-                          >
-                            {tag.name}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Clear Filters */}
-                {hasActiveFilters && (
-                  <div className={`pt-1.5 border-t ${dividerBorderClass}`}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearFilters}
-                      className={`py-[3.74px] px-[7.48px] text-[9.9px] rounded-full`}
-                      style={isDarkBackground ? {
-                        borderColor: '#ffffff',
-                        color: '#ffffff',
-                        backgroundColor: 'rgba(255,255,255,0.05)'
-                      } : {
-                        borderColor: '#000000',
-                        color: '#1f2937',
-                        backgroundColor: 'rgba(17,24,39,0.05)'
-                      }}
-                      disabled={isPending}
-                    >
-                      Clear All Filters
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Info Section Content */}
-              <div className={`${activeSection === 'info' ? 'block' : 'hidden'} space-y-4 pb-1 animate-in fade-in slide-in-from-top-2 duration-300`}>
-                <div className={`text-center space-y-3`}>
-                  <h2
-                    className={`text-2xl font-bold ${primaryTextClass}`}
-                    style={{ fontFamily: menuFontFamily }}
-                  >
-                    {profile.display_name}
-                  </h2>
-
-                  {profile.bio && (
-                    <p className={`text-sm max-w-lg mx-auto whitespace-pre-wrap ${secondaryTextClass}`}>
-                      {profile.bio}
-                    </p>
-                  )}
-
-                  <div className="flex justify-center gap-4 pt-2">
-                    {profile.instagram_url && (
-                      <a
-                        href={profile.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-                        style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
-                        aria-label="Instagram"
-                      >
-                        <Instagram size={20} />
-                      </a>
-                    )}
-                    {profile.website_url && (
-                      <a
-                        href={profile.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-                        style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
-                        aria-label="Website"
-                      >
-                        <Globe size={20} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            className="relative h-[20vh] w-full overflow-hidden border"
-            style={{
-              backgroundColor: menuBackgroundColor,
-              borderColor: isDarkBackground ? '#ffffff' : '#000000'
-            }}
-          >
-            {profile.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt={profile.display_name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 1024px"
-                priority
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Avatar className="h-32 w-32">
-                  <AvatarFallback className="text-6xl">
-                    {profile.display_name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            )}
-          </div>
-        </div>
-
-
-        {/* Restaurant Name - Large Title Below Photo */}
-        {
-          profile.show_display_name !== false && (
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+          {/* Info Section */}
+          <div className="flex-1 text-left space-y-1.5 sm:space-y-3 pt-1 sm:pt-2">
+            <div>
               <h1
-                className={`font-light text-center whitespace-nowrap ${primaryTextClass}`}
-                style={{ fontFamily: menuFontFamily, fontSize: '42px', lineHeight: 1.1 }}
+                className={`text-2xl sm:text-4xl font-bold leading-tight ${primaryTextClass}`}
+                style={{ fontFamily: menuFontFamily }}
               >
                 {profile.display_name}
               </h1>
             </div>
-          )
-        }
-      </header >
+
+            {profile.bio && (
+              <p className={`text-xs sm:text-base max-w-lg whitespace-pre-wrap ${secondaryTextClass} line-clamp-2 sm:line-clamp-none`}>
+                {profile.bio}
+              </p>
+            )}
+
+            <div className="flex justify-start gap-3">
+              {profile.instagram_url && (
+                <a
+                  href={profile.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`p-1.5 sm:p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                  style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
+                  aria-label="Instagram"
+                >
+                  <Instagram size={16} className="sm:w-5 sm:h-5" />
+                </a>
+              )}
+              {profile.website_url && (
+                <a
+                  href={profile.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`p-1.5 sm:p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                  style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
+                  aria-label="Website"
+                >
+                  <Globe size={16} className="sm:w-5 sm:h-5" />
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filters Section - Always Visible */}
+        <div className="space-y-2 sm:space-y-4">
+          {/* Category Filter */}
+          <div>
+            <div className="overflow-x-auto scrollbar-hide scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex flex-nowrap gap-2 pb-1 sm:pb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCategoryChange('all')}
+                  className={getCategoryButtonClass(selectedCategory === 'all')}
+                  style={getCategoryButtonStyle(selectedCategory === 'all')}
+                  disabled={isPending}
+                >
+                  All Items
+                </Button>
+                {favoritedItems.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCategoryChange('favorites')}
+                    className={getCategoryButtonClass(selectedCategory === 'favorites')}
+                    style={getCategoryButtonStyle(selectedCategory === 'favorites')}
+                    disabled={isPending}
+                  >
+                    Specials
+                  </Button>
+                )}
+                {categories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCategoryChange(category.id)}
+                    className={getCategoryButtonClass(selectedCategory === category.id)}
+                    style={getCategoryButtonStyle(selectedCategory === category.id)}
+                    disabled={isPending}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Dietary Tags Filter */}
+          <div>
+            <div className="overflow-x-auto scrollbar-hide scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex flex-nowrap gap-2 pb-1 sm:pb-2">
+                {tags.map((tag) => {
+                  const isSelected = selectedTagsSetForButtons.has(tag.id)
+                  return (
+                    <Button
+                      key={tag.id}
+                      variant="outline"
+                      size="sm"
+                      className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-md ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
+                        } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+                      onClick={() => toggleTag(tag.id)}
+                      disabled={isPending}
+                      style={buildTagStyles(tag.name, { isDarkBackground, isSelected })}
+                    >
+                      {tag.name}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <div className={`pt-2`}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className={`h-7 text-[10px] rounded-md px-3`}
+                style={isDarkBackground ? {
+                  borderColor: '#ffffff',
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255,255,255,0.05)'
+                } : {
+                  borderColor: '#000000',
+                  color: '#1f2937',
+                  backgroundColor: 'rgba(17,24,39,0.05)'
+                }}
+                disabled={isPending}
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          )}
+        </div>
+      </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Filters */}
@@ -938,7 +935,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
                   {/* Description */}
                   {selectedItem.description && (
-                    <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
+                    <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${primaryTextClass}`}>
                       {selectedItem.description}
                     </p>
                   )}
@@ -965,7 +962,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     </div>
                   )}
 
-                  <div className={`mt-2 text-[10px] leading-tight opacity-50 ${mutedTextClass}`}>
+                  <div className={`mt-2 text-[10px] leading-tight ${primaryTextClass}`}>
                     Allergen info provided by restaurant, always notify your waiter
                   </div>
                 </div>

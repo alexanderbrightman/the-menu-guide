@@ -13,7 +13,7 @@ export function Header({ onLoginClick }: HeaderProps) {
             <div className="flex justify-between items-center bg-[#FAFAFA]">
                 <Link
                     href="/"
-                    className="text-3xl font-light hover:opacity-80 transition-opacity text-slate-900 font-mono"
+                    className="text-2xl md:text-3xl font-light hover:opacity-80 transition-opacity text-slate-900 font-mono"
                 >
                     The Menu Guide
                 </Link>

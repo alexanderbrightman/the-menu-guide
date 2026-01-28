@@ -9,7 +9,7 @@ export function BohImageCard({ fill = false, className = '' }: { fill?: boolean;
     if (fill) {
         return (
             <div className={`relative w-full overflow-hidden ${className}`}>
-                <div className="relative w-full h-full rounded-b-2xl overflow-hidden shadow-lg">
+                <div className="relative w-full h-full rounded-b-2xl overflow-hidden">
                     {!bohImageError && (
                         <Image
                             src="/BOH.jpeg"
@@ -31,7 +31,7 @@ export function BohImageCard({ fill = false, className = '' }: { fill?: boolean;
 
     return (
         <div className={`w-full h-auto ${className}`}>
-            <div className="relative w-full rounded-b-2xl overflow-hidden shadow-lg">
+            <div className="relative w-full rounded-b-2xl overflow-hidden">
                 {!bohImageError && (
                     <Image
                         src="/BOH.jpeg"

@@ -45,16 +45,42 @@ export const hexToRgba = (hexColor: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+export const ALLERGEN_TAGS = [
+  'Peanuts',
+  'Tree Nuts',
+  'Dairy',
+  'Gluten',
+  'Shellfish',
+  'Eggs',
+  'Soy',
+  'Fish',
+  'Sesame',
+  'Nuts'
+]
+
 export const getAllergenBorderColor = (tagName: string): string => {
   const colorMap: Record<string, string> = {
+    // Lifestyle tags (Include logic)
     'dairy-free': '#B5C1D9',
     'gluten-free': '#D48963',
     'nut-free': '#408250',
-    pescatarian: '#F698A7',
+    'pescatarian': '#F698A7',
     'shellfish-free': '#F6D98E',
-    spicy: '#F04F68',
-    vegan: '#A9CC66',
-    vegetarian: '#3B91A2',
+    'spicy': '#F04F68',
+    'vegan': '#A9CC66',
+    'vegetarian': '#3B91A2',
+
+    // Allergen tags (Exclude logic) - Cohesive Palette
+    'peanuts': '#D4A373',      // Warm Sand
+    'tree nuts': '#BC6C25',    // Earthy Brown
+    'nuts': '#BC6C25',         // Earthy Brown
+    'dairy': '#A8DADC',        // Soft Blue
+    'gluten': '#E9C46A',       // Muted Yellow
+    'shellfish': '#E76F51',    // Muted Red
+    'eggs': '#F4A261',         // Soft Orange
+    'soy': '#BDB2FF',          // Soft Purple
+    'fish': '#457B9D',         // Deep Blue
+    'sesame': '#A5A58D',       // Muted Olive
   }
   return colorMap[tagName.toLowerCase()] || ''
 }

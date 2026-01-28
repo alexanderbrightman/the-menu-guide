@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag, ChevronDown, ChevronUp, Upload, X } from 'lucide-react'
 import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
+import { getAllergenBorderColor } from '@/lib/utils'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -22,21 +23,6 @@ interface MenuItemWithTags extends MenuItem {
 
 interface MenuItemManagerProps {
   onDataChange?: () => void
-}
-
-// Helper function to get border color for allergen tags
-const getAllergenBorderColor = (tagName: string): string => {
-  const colorMap: Record<string, string> = {
-    'dairy-free': '#B5C1D9',
-    'gluten-free': '#D48963',
-    'nut-free': '#408250',
-    'pescatarian': '#F698A7',
-    'shellfish-free': '#317987',
-    'spicy': '#F04F68',
-    'vegan': '#5F3196',
-    'vegetarian': '#3B91A2'
-  }
-  return colorMap[tagName.toLowerCase()] || ''
 }
 
 export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {

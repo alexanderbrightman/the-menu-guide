@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Special {
     item: {
@@ -23,16 +23,20 @@ interface Special {
     distance: number | null
 }
 
-interface SpecialsCardProps {
+export interface SpecialsCardProps {
     onItemClick: (special: Special) => void
     className?: string
+    mobileFullHeight?: boolean
 }
 
-export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
+const ITEMS_PER_PAGE = 6
+
+export function SpecialsCard({ onItemClick, className, mobileFullHeight }: SpecialsCardProps) {
     const [specials, setSpecials] = useState<Special[]>([])
     const [loading, setLoading] = useState(true)
     const [locationDenied, setLocationDenied] = useState(false)
     const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+    const [currentPage, setCurrentPage] = useState(0)
 
     // Request location and fetch specials
     useEffect(() => {
@@ -76,6 +80,20 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
         }
     }, [])
 
+    const totalPages = Math.ceil(specials.length / ITEMS_PER_PAGE)
+    const currentSpecials = specials.slice(
+        currentPage * ITEMS_PER_PAGE,
+        (currentPage + 1) * ITEMS_PER_PAGE
+    )
+
+    const handlePrevPage = () => {
+        setCurrentPage((prev) => Math.max(0, prev - 1))
+    }
+
+    const handleNextPage = () => {
+        setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))
+    }
+
     if (loading) {
         return (
             <div className={`rounded-lg p-8 flex items-center justify-center min-h-[200px] ${className || ''}`}>
@@ -99,25 +117,73 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
     }
 
     return (
-        <div className={`rounded-lg flex flex-col border border-black ${className || ''}`}>
-            <div className="flex items-center justify-between px-6 pt-6 mb-4 flex-shrink-0">
-                <h2 className="text-2xl font-light text-gray-900">Local Specials</h2>
+        <div className={`rounded-lg flex flex-col h-full ${className || ''}`}>
+            <div className="flex flex-col items-center justify-center pt-2 mb-4 flex-shrink-0 w-full">
+                {/* Scroll Divider Title */}
+                <div className="flex items-center justify-center gap-4 w-full overflow-hidden px-4">
+                    {/* Left Side: Scroll -> Line */}
+                    <div className="flex-1 flex items-center">
+                        <svg
+                            width="14"
+                            height="12"
+                            viewBox="0 0 14 12"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="flex-none"
+                        >
+                            <path
+                                d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
+                                stroke="#000000"
+                                strokeWidth="1"
+                                fill="none"
+                            />
+                            <line x1="12" y1="6" x2="14" y2="6" stroke="#000000" strokeWidth="1" />
+                        </svg>
+                        <div className="flex-1 h-[1px] bg-black -ml-[1px]"></div>
+                    </div>
+
+                    <h2 className="text-[18px] font-medium tracking-widest uppercase whitespace-nowrap text-slate-900">
+                        Local Specials
+                    </h2>
+
+                    {/* Right Side: Line -> Scroll */}
+                    <div className="flex-1 flex items-center transform rotate-180">
+                        <svg
+                            width="14"
+                            height="12"
+                            viewBox="0 0 14 12"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="flex-none"
+                        >
+                            <path
+                                d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
+                                stroke="#000000"
+                                strokeWidth="1"
+                                fill="none"
+                            />
+                            <line x1="12" y1="6" x2="14" y2="6" stroke="#000000" strokeWidth="1" />
+                        </svg>
+                        <div className="flex-1 h-[1px] bg-black -ml-[1px]"></div>
+                    </div>
+                </div>
+
                 {locationDenied && (
-                    <span className="text-xs text-gray-400">Showing all specials</span>
+                    <span className="text-xs text-gray-400 mt-2">Showing all specials</span>
                 )}
             </div>
 
-            <div className="overflow-y-auto flex-1 px-2 custom-scrollbar">
-                <div className="grid grid-cols-3 gap-3 pb-6">
-                    {specials.map((special, index) => (
+            <div className="flex-1 px-2 flex flex-col justify-between">
+                <div className={`grid gap-3 grid-cols-2 md:grid-cols-3`}>
+                    {currentSpecials.map((special, index) => (
                         <button
                             key={`${special.item.id}-${index}`}
                             onClick={() => onItemClick(special)}
-                            className="group cursor-pointer text-left w-full"
+                            className="group cursor-pointer text-left w-full h-full"
                         >
-                            <div className="border border-black bg-white hover:opacity-80 transition-opacity duration-200">
+                            <div className="border border-black bg-white hover:opacity-80 transition-opacity duration-200 h-full flex flex-col">
                                 {/* Image */}
-                                <div className="relative aspect-[3/2] border-b border-black overflow-hidden bg-gray-100">
+                                <div className="relative aspect-[3/2] border-b border-black overflow-hidden bg-gray-100 flex-shrink-0">
                                     {special.item.image_url && !failedImages.has(special.item.image_url) ? (
                                         <Image
                                             src={special.item.image_url}
@@ -138,36 +204,64 @@ export function SpecialsCard({ onItemClick, className }: SpecialsCardProps) {
                                 </div>
 
                                 {/* Info */}
-                                <div className="p-3">
+                                <div className="p-3 flex flex-col flex-1">
                                     <p className="font-bold text-sm text-gray-900 truncate mb-1" title={special.item.title}>
                                         {special.item.title}
                                     </p>
-                                    <p className="text-xs text-gray-600 truncate" title={special.restaurant.display_name}>
-                                        {special.restaurant.display_name}
-                                    </p>
+
+                                    {/* Description */}
+                                    {special.item.description && (
+                                        <p className="text-xs text-gray-500 line-clamp-2 mb-2 flex-1 break-words">
+                                            {special.item.description}
+                                        </p>
+                                    )}
+
+                                    <div className="mt-auto pt-1 border-t border-gray-100">
+                                        <p className="text-xs font-medium text-gray-800 truncate" title={special.restaurant.display_name}>
+                                            {special.restaurant.display_name}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </button>
                     ))}
+                    {/* Add empty placeholders to maintain grid structure if fewer than 6 items */}
+                    {Array.from({ length: ITEMS_PER_PAGE - currentSpecials.length }).map((_, i) => (
+                        <div key={`empty-${i}`} className="hidden md:block" />
+                    ))}
                 </div>
-            </div>
 
-            <style jsx global>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #E5E7EB transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #E5E7EB;
-          border-radius: 20px;
-        }
-      `}</style>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-8 mt-4 pb-2">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 0}
+                            className={`p-2 rounded-full transition-colors ${currentPage === 0
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-900 hover:bg-gray-100'
+                                }`}
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
+
+                        <span className="text-sm font-medium text-gray-600">
+                            {currentPage + 1} / {totalPages}
+                        </span>
+
+                        <button
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages - 1}
+                            className={`p-2 rounded-full transition-colors ${currentPage === totalPages - 1
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-900 hover:bg-gray-100'
+                                }`}
+                        >
+                            <ChevronRight className="w-6 h-6" />
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

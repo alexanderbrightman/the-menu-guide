@@ -38,10 +38,7 @@ export function LandingPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{
-        backgroundColor: '#FAFAFA'
-      }}
+      className="min-h-screen bg-[#FAFAFA]"
     >
       <style jsx global>{`
         @keyframes swing {
@@ -69,48 +66,89 @@ export function LandingPage() {
         }
       `}</style>
 
-      <Header onLoginClick={() => setShowLoginModal(true)} />
+      {/* Desktop View */}
+      <div className="hidden md:flex flex-col min-h-screen">
+        <Header onLoginClick={() => setShowLoginModal(true)} />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6 flex flex-col gap-6 justify-center">
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
-          {/* Left Column: Search & Specials */}
-          <div className="flex flex-col gap-6 w-full">
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
+            {/* Left Column: Search & Specials */}
+            <div className="flex flex-col gap-6 w-full">
+              <SearchSection />
+              <SpecialsCard
+                onItemClick={setSelectedSpecial}
+                className="h-[460px] w-full"
+              />
+            </div>
+
+            {/* Right Column: Images */}
+            <div className="flex flex-col gap-6 w-full">
+              <div className="flex flex-col w-full h-full">
+                <FohImageCard fill className="flex-1" />
+                <BohImageCard fill className="flex-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Info Text */}
+          <div className="w-full">
+            <InfoTextCard />
+          </div>
+
+          {/* Contact Link */}
+          <div className="flex justify-center mt-4">
+            <ContactLink />
+          </div>
+
+        </main>
+      </div>
+
+      {/* Mobile View - Scroll Snap */}
+      <div className="md:hidden h-[100dvh] overflow-y-auto snap-y snap-mandatory scroll-smooth">
+
+        {/* Section 1: Header + Search */}
+        <section className="h-[100dvh] w-full snap-start flex flex-col relative">
+          <div className="absolute top-0 left-0 right-0 z-50">
+            <Header onLoginClick={() => setShowLoginModal(true)} />
+          </div>
+          <div className="flex-1 flex items-center justify-center px-4 w-full">
             <SearchSection />
-            <SpecialsCard
-              onItemClick={setSelectedSpecial}
-              className="h-[460px] w-full"
-            />
+          </div>
+          {/* Visual cue to scroll */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center animate-bounce-slow text-gray-400">
+            <span className="text-sm">Scroll for Local Specials</span>
+          </div>
+        </section>
+
+        {/* Section 2: Specials */}
+        <section className="h-[100dvh] w-full snap-start flex flex-col p-4 py-12">
+          <SpecialsCard
+            onItemClick={setSelectedSpecial}
+            className="w-full h-full"
+            mobileFullHeight
+          />
+        </section>
+
+        {/* Section 3: Info + Image + Contact */}
+        <section className="h-[100dvh] w-full snap-start flex flex-col p-4 justify-between py-8 gap-4">
+          <div className="flex-shrink-0">
+            <InfoTextCard />
           </div>
 
-          {/* Right Column: Images */}
-          <div className="flex flex-col gap-6 w-full">
-            {/* Desktop View: Full Height Images */}
-            <div className="hidden md:flex flex-col w-full h-full">
-              <FohImageCard fill className="flex-1" />
-              <BohImageCard fill className="flex-1" />
-            </div>
-
-            {/* Mobile View: Stacked Images */}
-            <div className="flex md:hidden flex-col w-full">
-              <FohImageCard />
-              <BohImageCard />
+          <div className="flex-1 flex items-center justify-center min-h-0 py-4">
+            <div className="relative w-full h-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-black">
+              <FohImageCard fill className="h-full" />
             </div>
           </div>
-        </div>
 
-        {/* Info Text */}
-        <div className="w-full">
-          <InfoTextCard />
-        </div>
+          <div className="flex-shrink-0 flex justify-center pb-8">
+            <ContactLink />
+          </div>
+        </section>
 
-        {/* Contact Link */}
-        <div className="flex justify-center mt-4">
-          <ContactLink />
-        </div>
-
-      </main>
+      </div>
 
       {/* Modals */}
       {

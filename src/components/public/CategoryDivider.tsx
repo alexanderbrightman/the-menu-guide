@@ -12,7 +12,7 @@ export function CategoryDivider({ title, isDarkBackground, fontFamily }: Categor
     const lineBgClass = isDarkBackground ? 'bg-white' : 'bg-black'
 
     return (
-        <div className="flex items-center justify-center gap-4 my-8 w-full overflow-hidden">
+        <div className="flex items-center justify-center gap-4 my-4 w-full overflow-hidden">
 
             {/* Left Side: Scroll -> Line */}
             <div className="flex-1 flex items-center">
