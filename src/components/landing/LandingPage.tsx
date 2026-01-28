@@ -6,7 +6,7 @@ import { SpecialsCard } from '@/components/landing/SpecialsCard'
 import { SpecialItemModal } from '@/components/landing/SpecialItemModal'
 import { SearchSection } from '@/components/landing/SearchSection'
 import { FohImageCard } from '@/components/landing/FohImageCard'
-import { BohImageCard } from '@/components/landing/BohImageCard'
+
 import { InfoTextCard } from '@/components/landing/InfoTextCard'
 import { ContactLink } from '@/components/landing/ContactLink'
 import { Header } from '@/components/landing/Header'
@@ -70,36 +70,31 @@ export function LandingPage() {
       <div className="hidden md:flex flex-col min-h-screen">
         <Header onLoginClick={() => setShowLoginModal(true)} />
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6 flex flex-col gap-6 justify-center">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6 flex flex-col justify-center">
 
           {/* Content Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
             {/* Left Column: Search & Specials */}
-            <div className="flex flex-col gap-6 w-full">
+            <div className="flex flex-col gap-6 w-full h-full">
               <SearchSection />
               <SpecialsCard
                 onItemClick={setSelectedSpecial}
-                className="h-[460px] w-full"
+                className="flex-1 w-full"
               />
             </div>
 
-            {/* Right Column: Images */}
-            <div className="flex flex-col gap-6 w-full">
-              <div className="flex flex-col w-full h-full">
-                <FohImageCard fill className="flex-1" />
-                <BohImageCard fill className="flex-1" />
+            {/* Right Column: Info, FOH Image, Contact */}
+            <div className="flex flex-col gap-6 w-full h-full">
+              <div className="w-full">
+                <InfoTextCard />
+              </div>
+              <div className="flex-1 w-full relative min-h-[300px]">
+                <FohImageCard fill className="rounded-lg object-cover h-full" />
+              </div>
+              <div className="flex justify-center">
+                <ContactLink />
               </div>
             </div>
-          </div>
-
-          {/* Info Text */}
-          <div className="w-full">
-            <InfoTextCard />
-          </div>
-
-          {/* Contact Link */}
-          <div className="flex justify-center mt-4">
-            <ContactLink />
           </div>
 
         </main>
