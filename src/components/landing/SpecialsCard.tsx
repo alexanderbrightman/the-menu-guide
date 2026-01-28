@@ -173,16 +173,16 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                 )}
             </div>
 
-            <div className="flex-1 px-2 flex flex-col justify-between">
-                <div className={`grid gap-3 grid-cols-2 md:grid-cols-3`}>
+            <div className="flex-1 px-2 flex flex-col">
+                <div className={`grid gap-2 md:gap-3 grid-cols-2 md:grid-cols-3`}>
                     {currentSpecials.map((special, index) => (
                         <button
                             key={`${special.item.id}-${index}`}
                             onClick={() => onItemClick(special)}
                             className="group cursor-pointer text-left w-full h-full"
                         >
-                            <div className="border border-black bg-white hover:opacity-80 transition-opacity duration-200 h-full flex flex-col">
-                                {/* Image */}
+                            <div className="border border-black bg-white hover:opacity-80 transition-opacity duration-200 flex flex-col h-full">
+                                {/* Image - smaller aspect ratio on mobile */}
                                 <div className="relative aspect-[3/2] border-b border-black overflow-hidden bg-gray-100 flex-shrink-0">
                                     {special.item.image_url && !failedImages.has(special.item.image_url) ? (
                                         <Image
@@ -203,21 +203,21 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                                     )}
                                 </div>
 
-                                {/* Info */}
-                                <div className="p-3 flex flex-col flex-1">
-                                    <p className="font-bold text-sm text-gray-900 truncate mb-1" title={special.item.title}>
+                                {/* Info - reduced padding on mobile */}
+                                <div className="p-1.5 md:p-3 flex flex-col flex-1">
+                                    <p className="font-bold text-xs md:text-sm text-gray-900 truncate mb-0.5 md:mb-1" title={special.item.title}>
                                         {special.item.title}
                                     </p>
 
-                                    {/* Description */}
+                                    {/* Description - hidden on mobile to save space */}
                                     {special.item.description && (
-                                        <p className="text-xs text-gray-500 line-clamp-2 mb-2 flex-1 break-words">
+                                        <p className="hidden md:line-clamp-1 text-xs text-gray-500 mb-2 break-words">
                                             {special.item.description}
                                         </p>
                                     )}
 
-                                    <div className="mt-auto pt-1 border-t border-gray-100">
-                                        <p className="text-xs font-medium text-gray-800 truncate" title={special.restaurant.display_name}>
+                                    <div className="mt-auto pt-0.5 md:pt-1">
+                                        <p className="text-[10px] md:text-xs font-medium text-gray-800 truncate" title={special.restaurant.display_name}>
                                             {special.restaurant.display_name}
                                         </p>
                                     </div>
@@ -233,7 +233,7 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-8 mt-4 pb-2">
+                    <div className="flex items-center justify-center gap-4 mt-2 pb-2">
                         <button
                             onClick={handlePrevPage}
                             disabled={currentPage === 0}
