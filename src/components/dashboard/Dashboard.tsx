@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { QrCode, Utensils } from 'lucide-react'
+import { QrCode, Utensils, Check, Copy } from 'lucide-react'
 import Image from 'next/image'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
@@ -44,6 +44,7 @@ export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const menuBackgroundColor = profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
   const menuFont = profile?.menu_font || DEFAULT_MENU_FONT
@@ -57,6 +58,7 @@ export function Dashboard() {
     () => FONT_FAMILY_MAP[menuFont] ?? menuFont,
     [menuFont]
   )
+  const primaryTextClass = isDarkBackground ? 'text-white' : 'text-gray-900'
   const subtleTextClass = isDarkBackground ? 'text-white/75' : 'text-gray-600'
   const outlineButtonClass = isDarkBackground
     ? 'border border-white !text-white hover:bg-white/10 bg-transparent rounded-lg'
@@ -244,59 +246,77 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* QR Code Section */}
           {qrCodeUrl && (
-            <div className="mt-6 space-y-4">
-              <div className="flex flex-col items-center text-center gap-1.5">
-                <div className="flex items-center gap-2" style={{ color: contrastColor }}>
-                  <QrCode className="h-5 w-5" />
-                  <span className="text-lg font-semibold">Your Menu QR Code</span>
-                </div>
-                <p className={`text-sm max-w-2xl ${subtleTextClass}`}>
-                  Download this QR code to add to your physical menu. Customers can scan it to view your digital menu.
-                </p>
-              </div>
-              <div className="flex flex-col items-center space-y-3">
-                <div className="bg-white/80 backdrop-blur-md p-4 rounded-xl shadow-lg shadow-gray-200/12 border border-gray-200/60">
+            <div className={`mt-8 max-w-3xl mx-auto rounded-xl border shadow-sm overflow-hidden flex flex-row items-stretch ${isDarkBackground ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}`}>
+              {/* QR Side - Fixed width, stays side-by-side on mobile */}
+              <div className={`relative w-32 sm:w-48 flex-shrink-0 flex items-center justify-center p-4 border-r ${isDarkBackground ? 'bg-white/10 border-white/20' : 'bg-gray-50 border-gray-100'}`}>
+                <div className="relative bg-white p-2 rounded-lg shadow-sm w-full aspect-square">
                   <Image
                     src={qrCodeUrl}
                     alt="Menu QR Code"
-                    width={256}
-                    height={256}
-                    className="h-64 w-64 object-contain"
+                    fill
+                    className="object-contain"
                     unoptimized
                     priority
                   />
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-3">
+              </div>
+
+              {/* Content Side */}
+              <div className="flex-1 p-4 sm:p-6 flex flex-col justify-center gap-3 sm:gap-4 min-w-0">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <QrCode className={`h-4 w-4 ${primaryTextClass}`} />
+                    <h3 className={`font-bold text-base sm:text-lg leading-tight ${primaryTextClass}`}>
+                      Menu QR Code
+                    </h3>
+                  </div>
+                  <p className={`text-xs sm:text-sm ${subtleTextClass} line-clamp-2`}>
+                    Scan to view your digital menu immediately.
+                  </p>
+                </div>
+
+                {/* Link Box */}
+                <div className={`flex items-center gap-2 p-2 rounded-lg border ${isDarkBackground ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                  <code className={`text-[10px] sm:text-xs flex-1 truncate font-mono ${contrastColor === '#ffffff' ? 'text-white/90' : 'text-gray-600'}`}>
+                    {typeof window !== 'undefined' ? window.location.origin : ''}/menu/{profile.username}
+                  </code>
                   <Button
-                    variant="outline"
-                    className={`${outlineButtonClass} flex items-center gap-2`}
-                    onClick={downloadQRCode}
-                  >
-                    <QrCode className="h-4 w-4" />
-                    Download PNG
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className={outlineButtonClass}
+                    size="icon"
+                    variant="ghost"
+                    className={`h-6 w-6 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-200 text-gray-500'}`}
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
                     }}
                   >
-                    Copy Link
+                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                   </Button>
                 </div>
-                <p className={`text-sm text-center max-w-md ${subtleTextClass}`}>
-                  The QR code links to: <br />
-                  <code
-                    className="px-2 py-1 rounded text-xs"
-                    style={{
-                      backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.12)' : 'rgba(17,24,39,0.08)',
-                      color: contrastColor,
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={`flex-1 text-xs h-8 ${outlineButtonClass}`}
+                    onClick={downloadQRCode}
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={`flex-1 text-xs h-8 ${outlineButtonClass}`}
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
                     }}
                   >
-                    {window.location.origin}/menu/{profile.username}
-                  </code>
-                </p>
+                    {copied ? 'Copied' : 'Copy Link'}
+                  </Button>
+                </div>
               </div>
             </div>
           )}

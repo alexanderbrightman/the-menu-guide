@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { X, Filter, Instagram, Globe } from 'lucide-react'
+import { X, Filter, Instagram, Globe, Utensils } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
 import { getAllergenBorderColor, ALLERGEN_TAGS } from '@/lib/utils'
@@ -125,6 +125,8 @@ const MenuItemCard = memo(({
 
   getBorderColor,
   currency,
+  failedImages,
+  onImageError,
 }: {
   item: MenuItemWithTags
   onSelect: (item: MenuItemWithTags) => void
@@ -135,44 +137,67 @@ const MenuItemCard = memo(({
   showPrices: boolean
   getBorderColor: () => string
   currency?: string
-}) => (
-  <div
-    className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${isDarkBackground ? 'bg-white/5' : 'bg-white'
-      }`}
-    onClick={() => onSelect(item)}
-  >
-    <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-      <Image
-        src={item.image_url || '/placeholder.jpg'}
-        alt={item.title}
-        fill
-        className="object-cover"
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-      />
-    </div>
-    <div className="flex-1 flex flex-col p-2 sm:p-3">
-      <div className="mb-2">
-        <h3
-          className={`font-semibold text-xs sm:text-sm md:text-base ${priceClass}`}
-          style={{ fontFamily: headingFontFamily }}
-        >
-          {item.title}
-        </h3>
-        {showPrices && item.price && (
-          <div className={`font-semibold text-xs mt-1 ${priceClass} notranslate`}>
-            {formatPrice(item.price, currency)}
-          </div>
+  failedImages: Set<string>
+  onImageError: (url: string) => void
+}) => {
+  // Determine if we should show placeholder
+  const hasValidImage = item.image_url && !failedImages.has(item.image_url)
+
+  return (
+    <div
+      className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${isDarkBackground ? 'bg-white/5' : 'bg-white'
+        }`}
+      onClick={() => onSelect(item)}
+    >
+      <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
+        {hasValidImage ? (
+          <Image
+            src={item.image_url!}
+            alt={item.title}
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            onError={() => {
+              if (item.image_url) {
+                console.warn(`Failed to load menu item image: ${item.image_url}`)
+                onImageError(item.image_url)
+              }
+            }}
+          />
+        ) : (
+          <Image
+            src="/placeholder.jpg"
+            alt={item.title}
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          />
         )}
       </div>
-      {item.description && (
-        <p className={`text-xs line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
-          {item.description}
-        </p>
-      )}
-      {/* Allergen tags removed from cards - only show in modal */}
+      <div className="flex-1 flex flex-col p-2 sm:p-3">
+        <div className="mb-2">
+          <h3
+            className={`font-semibold text-xs sm:text-sm md:text-base ${priceClass}`}
+            style={{ fontFamily: headingFontFamily }}
+          >
+            {item.title}
+          </h3>
+          {showPrices && item.price && (
+            <div className={`font-semibold text-xs mt-1 ${priceClass} notranslate`}>
+              {formatPrice(item.price, currency)}
+            </div>
+          )}
+        </div>
+        {item.description && (
+          <p className={`text-xs line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
+            {item.description}
+          </p>
+        )}
+        {/* Allergen tags removed from cards - only show in modal */}
+      </div>
     </div>
-  </div>
-))
+  )
+})
 
 MenuItemCard.displayName = 'MenuItemCard'
 
@@ -181,6 +206,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+
+  // Handler for image load errors
+  const handleImageError = useCallback((url: string) => {
+    setFailedImages(prev => new Set(prev).add(url))
+  }, [])
 
 
 
@@ -453,57 +484,15 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       <div id="google_translate_element" className="hidden"></div>
 
       <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-1">
-        {/* TMG Header */}
-        <div className="flex items-center justify-center gap-4 mb-6 w-full overflow-hidden">
-          {/* Left Side: Scroll -> Line */}
-          <div className="flex-1 flex items-center">
-            <svg
-              width="14"
-              height="12"
-              viewBox="0 0 14 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="flex-none"
-            >
-              <path
-                d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
-                stroke={isDarkBackground ? '#ffffff' : '#000000'}
-                strokeWidth="1"
-                fill="none"
-              />
-              <line x1="12" y1="6" x2="14" y2="6" stroke={isDarkBackground ? '#ffffff' : '#000000'} strokeWidth="1" />
-            </svg>
-            <div className={`flex-1 h-[1px] ${isDarkBackground ? 'bg-white' : 'bg-black'} -ml-[1px]`}></div>
-          </div>
-
+        {/* Home Link Icon */}
+        <div className="flex justify-end mb-4">
           <Link
             href="/"
-            className={`text-lg font-medium hover:opacity-80 transition-opacity whitespace-nowrap px-2 ${primaryTextClass}`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            className={`p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+            aria-label="Go to The Menu Guide home"
           >
-            The Menu Guide
+            <Utensils className="h-5 w-5" strokeWidth={1.5} style={{ color: isDarkBackground ? '#ffffff' : '#000000' }} />
           </Link>
-
-          {/* Right Side: Line -> Scroll (Rotated 180 of the Left Side) */}
-          <div className="flex-1 flex items-center transform rotate-180">
-            <svg
-              width="14"
-              height="12"
-              viewBox="0 0 14 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="flex-none"
-            >
-              <path
-                d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
-                stroke={isDarkBackground ? '#ffffff' : '#000000'}
-                strokeWidth="1"
-                fill="none"
-              />
-              <line x1="12" y1="6" x2="14" y2="6" stroke={isDarkBackground ? '#ffffff' : '#000000'} strokeWidth="1" />
-            </svg>
-            <div className={`flex-1 h-[1px] ${isDarkBackground ? 'bg-white' : 'bg-black'} -ml-[1px]`}></div>
-          </div>
         </div>
 
         {/* Profile Section */}
@@ -516,7 +505,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 backgroundColor: menuBackgroundColor
               }}
             >
-              {profile.avatar_url ? (
+              {profile.avatar_url && !failedImages.has(profile.avatar_url) ? (
                 <Image
                   src={profile.avatar_url}
                   alt={profile.display_name}
@@ -524,6 +513,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   className="object-cover"
                   sizes="(max-width: 640px) 112px, 160px"
                   priority
+                  onError={() => {
+                    if (profile.avatar_url) {
+                      console.warn(`Failed to load avatar image: ${profile.avatar_url}`)
+                      handleImageError(profile.avatar_url)
+                    }
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-secondary/10">
@@ -773,6 +768,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 showPrices={showPrices}
                                 getBorderColor={getBorderColor}
                                 currency={profile.currency}
+                                failedImages={failedImages}
+                                onImageError={handleImageError}
                               />
                             ))}
                           </div>
@@ -804,6 +801,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 showPrices={showPrices}
                                 getBorderColor={getBorderColor}
                                 currency={profile.currency}
+                                failedImages={failedImages}
+                                onImageError={handleImageError}
                               />
                             ))}
                           </div>
@@ -829,6 +828,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       showPrices={showPrices}
                       getBorderColor={getBorderColor}
                       currency={profile.currency}
+                      failedImages={failedImages}
+                      onImageError={handleImageError}
                     />
                   ))}
                 </div>
@@ -869,7 +870,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   <X className="h-5 w-5" />
                 </button>
 
-                {selectedItem.image_url ? (
+                {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
                   <div className="w-full h-full relative">
                     <Image
                       src={selectedItem.image_url}
@@ -878,6 +879,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       className="object-contain"
                       sizes="(min-width: 768px) 600px, 100vw"
                       priority
+                      onError={() => {
+                        if (selectedItem.image_url) {
+                          console.warn(`Failed to load modal image: ${selectedItem.image_url}`)
+                          handleImageError(selectedItem.image_url)
+                        }
+                      }}
                     />
                   </div>
                 ) : (

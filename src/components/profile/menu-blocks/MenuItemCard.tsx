@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Image from 'next/image'
 import { Edit, Trash2, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,10 @@ export function MenuItemCard({
     } = theme
 
     const isAvailable = item.is_available ?? true
+    const [imageError, setImageError] = useState(false)
+
+    // Determine image source - use placeholder if no URL or if image failed to load
+    const imageSrc = (!item.image_url || imageError) ? '/placeholder.jpg' : item.image_url
 
     return (
         <div
@@ -43,11 +48,18 @@ export function MenuItemCard({
         >
             <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
                 <Image
-                    src={item.image_url || '/placeholder.jpg'}
+                    key={item.image_url || 'placeholder'} // Reset error state when URL changes
+                    src={imageSrc}
                     alt={item.title}
                     fill
                     className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                    onError={() => {
+                        if (item.image_url) {
+                            console.warn(`Failed to load menu item image: ${item.image_url}`)
+                            setImageError(true)
+                        }
+                    }}
                 />
                 {!isAvailable && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">

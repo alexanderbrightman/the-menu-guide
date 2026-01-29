@@ -43,6 +43,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [avatarError, setAvatarError] = useState(false)
 
   // Address editing state
   const [view, setView] = useState<'MAIN' | 'ADDRESS'>('MAIN')
@@ -349,6 +350,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         console.error('Profile update error:', error)
         setMessage(`Error updating avatar: ${error.message}`)
       } else {
+        setAvatarError(false) // Reset error state for new avatar
         await refreshProfile()
         setMessage('Avatar updated successfully!')
       }
@@ -424,13 +426,18 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                 <Label className={primaryTextClass}>Profile Image</Label>
                 <div className="flex justify-center sm:justify-start">
                   <div className={`relative h-32 w-32 sm:h-40 sm:w-40 overflow-hidden rounded-full bg-secondary/20 group`}>
-                    {profile?.avatar_url ? (
+                    {profile?.avatar_url && !avatarError ? (
                       <Image
+                        key={profile.avatar_url} // Reset error state when URL changes
                         src={profile.avatar_url}
                         alt="Profile image"
                         fill
                         className="object-cover transition-opacity group-hover:opacity-90"
                         priority
+                        onError={() => {
+                          console.warn(`Failed to load avatar image: ${profile.avatar_url}`)
+                          setAvatarError(true)
+                        }}
                       />
                     ) : (
                       <div className={`flex h-full w-full items-center justify-center text-xs sm:text-sm ${secondaryTextClass}`}>
