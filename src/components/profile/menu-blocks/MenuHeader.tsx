@@ -46,8 +46,7 @@ export function MenuHeader({
 
                     <Button
                         variant="outline"
-                        size="sm"
-                        className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()} rounded-lg`}
+                        className={`${outlineButtonClass} flex items-center gap-1.5 border ${getBorderColor()} rounded-lg px-4 py-2 text-sm`}
                         onClick={onNewCategory}
                     >
                         <Plus className="h-4 w-4" />
@@ -56,8 +55,7 @@ export function MenuHeader({
                     </Button>
                     <Button
                         variant="outline"
-                        size="sm"
-                        className={`${outlineButtonClass} flex items-center gap-[3px] border ${getBorderColor()} rounded-lg`}
+                        className={`${outlineButtonClass} flex items-center gap-1.5 border ${getBorderColor()} rounded-lg px-4 py-2 text-sm`}
                         onClick={onNewItem}
                     >
                         <Plus className="h-4 w-4" />
