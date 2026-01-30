@@ -38,7 +38,8 @@ export function LandingPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#FAFAFA]"
+      className="min-h-screen"
+      style={{ backgroundImage: 'linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)' }}
     >
       <style jsx global>{`
         @keyframes swing {

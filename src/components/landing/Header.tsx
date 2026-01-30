@@ -10,7 +10,7 @@ interface HeaderProps {
 export function Header({ onLoginClick }: HeaderProps) {
     return (
         <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-            <div className="flex justify-between items-center bg-[#FAFAFA]">
+            <div className="flex justify-between items-center">
                 <Link
                     href="/"
                     className="text-2xl md:text-3xl font-light hover:opacity-80 transition-opacity text-slate-900 font-mono"
