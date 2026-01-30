@@ -81,7 +81,7 @@ export function DashboardNavigation({
                     <SheetTitle>Tools Menu</SheetTitle>
                 </SheetHeader>
 
-                <div className="flex flex-col items-center justify-center min-h-full py-12 px-6 gap-4">
+                <div className="flex flex-col py-12 px-6 gap-4">
 
                     {/* Title Area */}
                     <div className="w-full">
