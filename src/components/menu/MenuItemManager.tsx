@@ -15,6 +15,7 @@ import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag, ChevronDown, C
 import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { getAllergenBorderColor } from '@/lib/utils'
+import { verifyUploadedImage } from '@/lib/image-utils'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -235,6 +236,13 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
           try {
             const result = await uploadImage(imageFile, user.id, 'menu_items')
             imageUrl = result.url
+
+            // Async verification - runs in background after upload
+            verifyUploadedImage(
+              result.url,
+              formData.title,
+              (errorMsg) => setMessage(errorMsg)
+            )
           } catch (error) {
             console.error('Image upload failed:', error)
             setMessage('Error uploading image. Menu item saved but image upload failed.')
@@ -326,6 +334,13 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
           try {
             const result = await uploadImage(imageFile, user.id, 'menu_items')
             imageUrl = result.url
+
+            // Async verification - runs in background after upload
+            verifyUploadedImage(
+              result.url,
+              formData.title,
+              (errorMsg) => setMessage(errorMsg)
+            )
           } catch (error) {
             console.error('Image upload failed:', error)
             setMessage('Error uploading image. Menu item saved but image upload failed.')

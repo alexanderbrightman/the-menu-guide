@@ -48,6 +48,7 @@ const nextConfig: NextConfig = {
   },
   // Image optimization
   images: {
+    unoptimized: true, // Bypass Next.js image optimization to prevent 400 errors with external images
     remotePatterns: [
       {
         protocol: 'https',

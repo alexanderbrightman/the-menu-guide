@@ -23,6 +23,7 @@ import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
 import { getAllergenBorderColor } from '@/lib/utils'
+import { verifyUploadedImage } from '@/lib/image-utils'
 
 // Drag and Drop Imports
 import {
@@ -949,6 +950,13 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
           try {
             const result = await uploadImage(imageFile, user.id, 'menu_items')
             imageUrl = result.url
+
+            // Async verification - runs in background after upload
+            verifyUploadedImage(
+              result.url,
+              itemForm.title,
+              (errorMsg) => setTransientMessage(errorMsg)
+            )
           } catch (error) {
             console.error('Image upload failed:', error)
             setTransientMessage('Error uploading image. The menu item was saved but image upload failed.')
