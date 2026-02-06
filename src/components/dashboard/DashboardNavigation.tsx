@@ -88,7 +88,7 @@ export function DashboardNavigation({
                         <CategoryDivider title="TOOLS" isDarkBackground={isDarkBackground} />
                     </div>
 
-                    <div className="flex flex-col w-full gap-6 max-w-sm">
+                    <div className="flex flex-col w-full gap-6 max-w-sm mx-auto">
                         <div className="space-y-4 w-full">
                             {/* Edit Profile */}
                             <Button

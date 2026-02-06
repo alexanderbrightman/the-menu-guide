@@ -12,7 +12,7 @@ import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
 import { DashboardNavigation } from '@/components/dashboard/DashboardNavigation'
 
-const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
+const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
 const FONT_FAMILY_MAP: Record<string, string> = {
   'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',

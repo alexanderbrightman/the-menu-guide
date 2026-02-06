@@ -38,11 +38,12 @@ export function MenuItemCard({
     const [imageError, setImageError] = useState(false)
 
     // Determine image source - use placeholder if no URL or if image failed to load
-    const imageSrc = (!item.image_url || imageError) ? '/placeholder.jpg' : item.image_url
+    const showPlaceholder = !item.image_url || imageError
+    const imageSrc = showPlaceholder ? '/MenuImgPlaceholder.png' : item.image_url!
 
     return (
         <div
-            className={`group relative flex flex-col cursor-pointer border h-full ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${isDarkBackground ? 'bg-white/5' : 'bg-white'
+            className={`group relative flex flex-col cursor-pointer border h-full ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${showPlaceholder ? '' : (isDarkBackground ? 'bg-white/5' : 'bg-white')
                 } ${!isAvailable ? 'opacity-60' : ''}`}
             onClick={onClick}
         >
@@ -52,7 +53,8 @@ export function MenuItemCard({
                     src={imageSrc}
                     alt={item.title}
                     fill
-                    className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
+                    className={`object-cover ${showPlaceholder ? 'scale-125' : ''} ${!isAvailable ? 'grayscale' : ''}`}
+                    style={showPlaceholder && isDarkBackground ? { filter: 'invert(1)' } : undefined}
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                     onError={() => {
                         if (item.image_url) {
@@ -87,16 +89,18 @@ export function MenuItemCard({
                                 onToggleFavorite()
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className={`h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center transition-colors border border-black rounded-lg ${isFavorited
+                            className={`h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center transition-colors border ${getBorderColor()} rounded-lg ${isFavorited
                                 ? isDarkBackground
                                     ? 'text-yellow-400 hover:text-yellow-300'
                                     : 'text-yellow-600 hover:text-yellow-700'
-                                : 'text-black hover:text-gray-700'
+                                : isDarkBackground
+                                    ? 'text-white hover:text-gray-300'
+                                    : 'text-black hover:text-gray-700'
                                 }`}
                             aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                         >
                             <Star
-                                className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : 'text-black'}`}
+                                className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : ''}`}
                             />
                         </button>
                         <button
@@ -107,7 +111,9 @@ export function MenuItemCard({
                             onPointerDown={(e) => e.stopPropagation()}
                             className={`h-6 sm:h-7 px-1.5 flex items-center justify-center text-[10px] sm:text-xs font-bold border rounded-lg transition-colors ${!isAvailable
                                 ? 'bg-red-500 text-white border-red-500 hover:bg-red-600'
-                                : 'border-black text-black hover:bg-red-500 hover:text-white hover:border-red-500'
+                                : isDarkBackground
+                                    ? 'border-white text-white hover:bg-red-500 hover:text-white hover:border-red-500'
+                                    : 'border-black text-black hover:bg-red-500 hover:text-white hover:border-red-500'
                                 }`}
                         >
                             86&apos;D

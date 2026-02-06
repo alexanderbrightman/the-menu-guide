@@ -445,7 +445,7 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
               <User className={`h-4 w-4 ${mutedTextClass}`} />
               <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Restaurant Username</h3>
             </div>
-            <div className={`p-4 rounded-lg border bg-transparent`} style={{ borderColor: getBorderColor() }}>
+            <div className={`p-4 rounded-lg border bg-transparent ${getBorderColor()}`}>
               <div className="pl-0 space-y-3">
                 <div className={`text-sm ${secondaryTextClass}`}>
                   Your public menu URL:{' '}
@@ -512,35 +512,33 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
             <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Menu Configuration</h3>
             <div className="space-y-3">
               {/* Currency Selector */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+              <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <Coins className={`h-4 w-4 ${mutedTextClass}`} />
                     <span className={`text-sm font-medium ${primaryTextClass}`}>Currency</span>
                   </div>
                 </div>
-                <div className="w-[120px]">
-                  <Select
-                    value={currency}
-                    onValueChange={handleUpdateCurrency}
-                    disabled={currencyLoading}
-                  >
-                    <SelectTrigger className={`border ${getBorderColor()} bg-transparent h-9`}>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CURRENCIES.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          {c.code} ({c.symbol})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  value={currency}
+                  onValueChange={handleUpdateCurrency}
+                  disabled={currencyLoading}
+                >
+                  <SelectTrigger className="w-auto border-0 bg-transparent h-9 shadow-none focus:ring-0 gap-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} ({c.symbol})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Show Prices Toggle */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+              <div className={`flex items-center justify-between p-3 rounded-lg border ${getBorderColor()}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <DollarSign className={`h-4 w-4 ${mutedTextClass}`} />
@@ -556,12 +554,12 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
                   checked={showPrices}
                   onCheckedChange={handleToggleShowPrices}
                   disabled={priceLoading}
-                  className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
+                  className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600" : ""}
                 />
               </div>
 
               {/* Menu is Public Toggle */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+              <div className={`flex items-center justify-between p-3 rounded-lg border ${getBorderColor()}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     {isPublic && hasPremiumAccess ? (
@@ -581,7 +579,7 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
                   checked={isPublic && hasPremiumAccess}
                   onCheckedChange={handleTogglePublic}
                   disabled={loading || !hasPremiumAccess}
-                  className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600 border-2" : ""}
+                  className={isDarkBackground ? "data-[state=unchecked]:bg-zinc-700 data-[state=unchecked]:border-zinc-600" : ""}
                 />
               </div>
 
@@ -602,7 +600,7 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
           <div className="space-y-4">
             <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Subscription</h3>
             {hasPremiumAccess ? (
-              <div className={`p-4 rounded-lg border`} style={{ borderColor: getBorderColor() }}>
+              <div className={`p-4 rounded-lg border ${getBorderColor()}`}>
                 <SubscriptionExpiryWarning />
                 <SubscriptionDetailsCard />
               </div>

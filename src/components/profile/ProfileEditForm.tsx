@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Upload, RefreshCw, X, Check, Palette, MapPin, ArrowLeft } from 'lucide-react'
+import { Upload, X, Check, MapPin, ArrowLeft } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
@@ -18,7 +18,8 @@ import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { geocodeAddress } from '@/lib/geocoding'
 import {
   DEFAULT_MENU_FONT,
-  DEFAULT_MENU_BACKGROUND_COLOR,
+  LIGHT_MODE_BACKGROUND,
+  DARK_MODE_BACKGROUND,
   FONT_OPTIONS,
   FONT_FAMILY_MAP
 } from '@/lib/fonts'
@@ -31,6 +32,12 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const { profile, refreshProfile } = useAuth()
   const { uploadImage, uploading } = useImageUpload()
 
+  // Determine if current background is dark mode based on stored color
+  const isDarkModeFromColor = (color?: string | null) => {
+    if (!color) return false
+    return color === DARK_MODE_BACKGROUND || color.toLowerCase() === '#1a1a1a'
+  }
+
   const [formData, setFormData] = useState({
     display_name: profile?.display_name || '',
     bio: profile?.bio || '',
@@ -38,7 +45,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     website_url: profile?.website_url || '',
     address: profile?.address || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
-    menu_background_color: profile?.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR,
+    is_dark_mode: isDarkModeFromColor(profile?.menu_background_color),
     show_display_name: profile?.show_display_name !== false // default to true
   })
   const [loading, setLoading] = useState(false)
@@ -108,7 +115,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     setFormData(prev => ({
       ...prev,
       menu_font: DEFAULT_MENU_FONT,
-      menu_background_color: DEFAULT_MENU_BACKGROUND_COLOR
+      is_dark_mode: false
     }))
   }, [])
 
@@ -122,7 +129,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         website_url: profile.website_url || '',
         address: profile.address || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
-        menu_background_color: profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR,
+        is_dark_mode: isDarkModeFromColor(profile.menu_background_color),
         show_display_name: profile.show_display_name !== false // default to true
       })
     }
@@ -250,7 +257,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           latitude: latitude,
           longitude: longitude,
           menu_font: formData.menu_font,
-          menu_background_color: formData.menu_background_color,
+          menu_background_color: formData.is_dark_mode ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND,
           show_display_name: formData.show_display_name
         })
         .eq('id', profile.id)
@@ -420,12 +427,12 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
               {/* Header Photo */}
               <div className="space-y-2">
                 <Label className={primaryTextClass}>Profile Image</Label>
-                <div className="flex justify-center sm:justify-start">
-                  <div className={`relative h-32 w-32 sm:h-40 sm:w-40 overflow-hidden rounded-full bg-secondary/20 group`}>
+                <div className="flex justify-center">
+                  <div className={`relative h-36 w-36 overflow-hidden rounded-full bg-secondary/20 group`}>
                     {profile?.avatar_url && !avatarError ? (
                       <Image
                         key={profile.avatar_url} // Reset error state when URL changes
@@ -440,7 +447,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                         }}
                       />
                     ) : (
-                      <div className={`flex h-full w-full items-center justify-center text-xs sm:text-sm ${secondaryTextClass}`}>
+                      <div className={`flex h-full w-full items-center justify-center text-sm ${secondaryTextClass}`}>
                         No image
                       </div>
                     )}
@@ -473,18 +480,18 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                     value={formData.display_name}
                     onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                     required
-                    className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg border" style={{ borderColor: getBorderColor() }}>
+                <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
                   <Label htmlFor="show_display_name" className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>
                     Show name on public page
                   </Label>
                   <Switch
                     id="show_display_name"
                     checked={formData.show_display_name}
-                    onCheckedChange={(checked) => setFormData({ ...formData, show_display_name: checked })}
+                    onCheckedChange={(checked) => setTimeout(() => setFormData({ ...formData, show_display_name: checked }), 0)}
                   />
                 </div>
               </div>
@@ -493,72 +500,61 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
               <div className="space-y-4 pt-2">
                 <Label className={`${primaryTextClass} text-base font-semibold`}>Appearance</Label>
 
-                {/* Preview Card */}
-                {/* Preview Card */}
-                <div
-                  className="rounded-lg p-8 text-center transition-colors border-2 shadow-md flex items-center justify-center min-h-[120px]"
-                  style={{
-                    backgroundColor: formData.menu_background_color,
-                    color: getContrastColor(formData.menu_background_color),
-                    fontFamily: FONT_FAMILY_MAP[formData.menu_font] ?? formData.menu_font,
-                    borderColor: getBorderColor()
-                  }}
-                >
-                  <p className="text-xl sm:text-2xl font-medium tracking-wide">
-                    {formData.display_name || 'Restaurant Name'}
-                  </p>
+                <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
+                  <Label className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>Font Style</Label>
+                  <Select
+                    value={formData.menu_font}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, menu_font: value }))}
+                  >
+                    <SelectTrigger className="w-auto h-9 border-0 bg-transparent shadow-none focus:ring-0 gap-1">
+                      <SelectValue placeholder="Select font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <span style={{ fontFamily: FONT_FAMILY_MAP[option.value] }}>
+                            {option.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className={primaryTextClass}>Font Style</Label>
-                    <Select
-                      value={formData.menu_font}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, menu_font: value }))}
-                    >
-                      <SelectTrigger className={`w-full h-12 border-2 ${getBorderColor()} bg-transparent`}>
-                        <SelectValue placeholder="Select font" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FONT_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <span style={{ fontFamily: FONT_FAMILY_MAP[option.value] }}>
-                              {option.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
+                  <Label htmlFor="dark_mode" className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>
+                    Menu Dark Mode
+                  </Label>
+                  <Switch
+                    id="dark_mode"
+                    checked={formData.is_dark_mode}
+                    onCheckedChange={(checked) => setTimeout(() => setFormData(prev => ({ ...prev, is_dark_mode: checked })), 0)}
+                  />
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label className={primaryTextClass}>Background Color</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1 h-12 relative rounded-md overflow-hidden border-2 shadow-sm transition-transform hover:scale-[1.01] active:scale-[0.99] bg-white dark:bg-zinc-900 group" style={{ borderColor: getBorderColor() }}>
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                          <Palette className="h-6 w-6 text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-200 transition-colors" />
-                        </div>
-                        <input
-                          type="color"
-                          value={formData.menu_background_color}
-                          onChange={(event) =>
-                            setFormData((prev) => ({ ...prev, menu_background_color: event.target.value }))
-                          }
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          title="Choose color"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={`${outlineButtonClass} border-2 ${getBorderColor()} h-12 w-12 px-0`}
-                        onClick={handleResetTheme}
-                        title="Reset details"
-                      >
-                        <RefreshCw className="h-5 w-5" />
-                      </Button>
-                    </div>
+              {/* Location */}
+              <div className="space-y-4 pt-2">
+                <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="address" className={secondaryTextClass}>Restaurant Address</Label>
+                  <div
+                    id="address"
+                    onClick={handleOpenAddress}
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base md:text-sm flex items-center px-3 cursor-pointer overflow-hidden hover:bg-secondary/10 transition-colors`}
+                  >
+                    {formData.address ? (
+                      <span className="truncate">{formData.address}</span>
+                    ) : (
+                      <span className={`opacity-50 ${secondaryTextClass}`}>Tap to add address...</span>
+                    )}
                   </div>
+                  <p className={`text-xs ${secondaryTextClass} mt-1`}>
+                    This helps customers find nearby specials on the homepage.
+                  </p>
                 </div>
               </div>
 
@@ -571,7 +567,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   placeholder="Tell customers about your restaurant..."
                   rows={3}
-                  className={`resize-none border ${getBorderColor()} bg-transparent text-base`}
+                  className={`resize-none border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                 />
               </div>
 
@@ -587,7 +583,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                       value={formData.instagram_url}
                       onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
                       placeholder="https://instagram.com/..."
-                      className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -598,34 +594,9 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                       value={formData.website_url}
                       onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
                       placeholder="https://..."
-                      className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                     />
                   </div>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="space-y-4 pt-2">
-                <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
-                  <MapPin className="h-4 w-4" />
-                  Location
-                </Label>
-                <div className="space-y-2">
-                  <Label htmlFor="address" className={secondaryTextClass}>Restaurant Address</Label>
-                  <div
-                    id="address"
-                    onClick={handleOpenAddress}
-                    className={`h-11 border ${getBorderColor()} bg-transparent text-base flex items-center px-3 cursor-pointer overflow-hidden rounded-md hover:bg-secondary/10 transition-colors`}
-                  >
-                    {formData.address ? (
-                      <span className="truncate">{formData.address}</span>
-                    ) : (
-                      <span className={`opacity-50 ${secondaryTextClass}`}>Tap to add address...</span>
-                    )}
-                  </div>
-                  <p className={`text-xs ${secondaryTextClass} mt-1`}>
-                    This helps customers find nearby specials on the homepage.
-                  </p>
                 </div>
               </div>
 
@@ -672,7 +643,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
             </div>
 
             {/* Address Form Fields */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="addr_street" className={primaryTextClass}>Street Address</Label>
@@ -681,7 +652,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                     value={addressForm.street}
                     onChange={e => setAddressForm({ ...addressForm, street: e.target.value })}
                     placeholder="123 Main St"
-                    className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                     autoFocus
                   />
                 </div>
@@ -692,7 +663,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                     value={addressForm.unit}
                     onChange={e => setAddressForm({ ...addressForm, unit: e.target.value })}
                     placeholder="Apt 4B"
-                    className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -703,7 +674,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                       value={addressForm.city}
                       onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
                       placeholder="New York"
-                      className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -713,7 +684,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                       value={addressForm.state}
                       onChange={e => setAddressForm({ ...addressForm, state: e.target.value })}
                       placeholder="NY"
-                      className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                     />
                   </div>
                 </div>
@@ -724,7 +695,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                     value={addressForm.zip}
                     onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
                     placeholder="10001"
-                    className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
                   />
                 </div>
               </div>

@@ -15,17 +15,17 @@ export function useMenuTheme(profile: Profile | null) {
         [menuFont]
     )
 
-    const primaryTextClass = isDarkBackground ? 'text-white' : 'text-slate-900'
-    const secondaryTextClass = isDarkBackground ? 'text-gray-100/90' : 'text-slate-600'
-    const mutedTextClass = isDarkBackground ? 'text-gray-200/80' : 'text-slate-500'
+    const primaryTextClass = isDarkBackground ? 'text-white' : 'text-black'
+    const secondaryTextClass = isDarkBackground ? 'text-white' : 'text-black'
+    const mutedTextClass = isDarkBackground ? 'text-white/80' : 'text-black'
 
     const accentButtonClass = isDarkBackground
         ? 'border border-white/90 bg-transparent !text-white hover:bg-white/15 rounded-lg'
-        : 'border border-slate-900 bg-transparent !text-slate-900 hover:bg-slate-100 rounded-lg'
+        : 'border border-black bg-transparent !text-black hover:bg-slate-100 rounded-lg'
 
     const outlineButtonClass = isDarkBackground
         ? 'border border-white/60 bg-transparent !text-white hover:bg-white/10 rounded-lg'
-        : 'border border-slate-400 bg-transparent !text-slate-900 hover:bg-slate-100 rounded-lg'
+        : 'border border-black bg-transparent !text-black hover:bg-slate-100 rounded-lg'
 
     const focusRingClass = isDarkBackground
         ? 'focus-visible:ring-white/60 focus-visible:ring-offset-white/5'

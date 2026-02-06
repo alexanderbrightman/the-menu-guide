@@ -1,5 +1,9 @@
 export const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
-export const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
+export const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
+
+// Light/Dark mode background colors
+export const LIGHT_MODE_BACKGROUND = '#F5F5F5' // Warm off-white
+export const DARK_MODE_BACKGROUND = '#1A1A1A'  // Rich dark grey
 
 export const FONT_OPTIONS = [
     { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans' },

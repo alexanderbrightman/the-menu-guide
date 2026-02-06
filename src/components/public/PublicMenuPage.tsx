@@ -27,7 +27,7 @@ interface PublicMenuPageProps {
   favoritedIds?: string[]
 }
 
-const DEFAULT_MENU_BACKGROUND_COLOR = '#F4F2EE'
+const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
 const FONT_FAMILY_MAP: Record<string, string> = {
   'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
@@ -145,7 +145,7 @@ const MenuItemCard = memo(({
 
   return (
     <div
-      className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${isDarkBackground ? 'bg-white/5' : 'bg-white'
+      className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${hasValidImage ? (isDarkBackground ? 'bg-white/5' : 'bg-white') : ''
         }`}
       onClick={() => onSelect(item)}
     >
@@ -166,10 +166,11 @@ const MenuItemCard = memo(({
           />
         ) : (
           <Image
-            src="/placeholder.jpg"
+            src="/MenuImgPlaceholder.png"
             alt={item.title}
             fill
-            className="object-cover"
+            className="object-cover scale-125"
+            style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           />
         )}
@@ -253,7 +254,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   }), [menuBackgroundColor, contrastColor, menuFontFamily])
 
   const baseCategoryButtonClass =
-    'flex-shrink-0 py-[3.74px] px-[7.48px] text-[9.9px] transition-colors'
+    'flex-shrink-0 py-[3.74px] px-[7.48px] sm:py-2.5 sm:px-2.5 text-xs sm:text-base transition-colors'
 
   const getCategoryButtonClass = useCallback(
     (isSelected: boolean) => {
@@ -632,7 +633,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       key={tag.id}
                       variant="outline"
                       size="sm"
-                      className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] text-[10.89px] transition-colors rounded-lg ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
+                      className={`cursor-pointer flex-shrink-0 py-[3.74px] px-[7.48px] sm:py-2.5 sm:px-2.5 text-xs sm:text-base transition-colors rounded-lg ${isSelected ? 'font-semibold shadow-sm' : 'font-medium'
                         } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
                       onClick={() => toggleTag(tag.id)}
                       disabled={isPending}
@@ -860,7 +861,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image Card */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-black/40 backdrop-blur-md border border-white/10 group">
+              <div
+                className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border group ${selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? 'bg-black/40 backdrop-blur-md border-white/10' : ''}`}
+                style={!(selectedItem.image_url && !failedImages.has(selectedItem.image_url)) ? {
+                  backgroundColor: menuBackgroundColor,
+                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                } : undefined}
+              >
                 {/* Close Button */}
                 <button
                   onClick={() => setSelectedItem(null)}
@@ -888,11 +895,15 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     />
                   </div>
                 ) : (
-                  <div className={`flex h-full w-full items-center justify-center text-sm ${mutedTextClass}`}>
-                    <div className="flex flex-col items-center gap-2 opacity-50">
-                      <span className="text-4xl">🍽️</span>
-                      <span>No image available</span>
-                    </div>
+                  <div className="relative w-full h-full">
+                    <Image
+                      src="/MenuImgPlaceholder.png"
+                      alt={selectedItem.title}
+                      fill
+                      className="object-cover scale-125"
+                      style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
+                      sizes="(min-width: 768px) 600px, 100vw"
+                    />
                   </div>
                 )}
               </div>
