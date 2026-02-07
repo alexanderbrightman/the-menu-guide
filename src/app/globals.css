@@ -117,42 +117,58 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body), sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading), sans-serif;
   }
 }
 
 @layer utilities {
+
   /* Arrow swing animation for search results */
   @keyframes arrow-swing {
     0% {
       transform: translateY(-50%) translateX(0) rotate(0deg);
     }
+
     30% {
       transform: translateY(-50%) translateX(0) rotate(120deg);
     }
+
     40% {
       transform: translateY(-50%) translateX(0) rotate(70deg);
     }
+
     50% {
       transform: translateY(-50%) translateX(0) rotate(110deg);
     }
+
     60% {
       transform: translateY(-50%) translateX(0) rotate(85deg);
     }
+
     70% {
       transform: translateY(-50%) translateX(0) rotate(95deg);
     }
+
     80% {
       transform: translateY(-50%) translateX(0) rotate(88deg);
     }
+
     90% {
       transform: translateY(-50%) translateX(0) rotate(92deg);
     }
+
     100% {
       transform: translateY(-50%) translateX(0) rotate(90deg);
     }
@@ -168,26 +184,29 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   /* Show thin scrollbar on mobile */
   @media (max-width: 768px) {
     .scrollbar-mobile {
       scrollbar-width: thin;
       scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
     }
+
     .scrollbar-mobile::-webkit-scrollbar {
       display: block;
       height: 4px;
     }
+
     .scrollbar-mobile::-webkit-scrollbar-thumb {
       background: rgba(0, 0, 0, 0.2);
       border-radius: 2px;
     }
   }
-  
+
   /* Full viewport height for mobile modals (iOS Safari support) */
   .full-vh-mobile {
     height: 100dvh;
@@ -205,7 +224,7 @@
     -webkit-appearance: none !important;
     appearance: none !important;
   }
-  
+
   input[type="search"][name="search"]:focus,
   input[type="search"][name="search"]:focus-visible,
   input[type="text"][name="search"]:focus,
@@ -227,7 +246,7 @@
     appearance: none;
     display: none;
   }
-  
+
   input[type="search"][name="search"]::-ms-clear,
   input[type="search"][name="search"]::-ms-reveal {
     display: none;

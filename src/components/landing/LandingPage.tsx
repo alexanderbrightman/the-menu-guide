@@ -6,11 +6,8 @@ import { SpecialsCard } from '@/components/landing/SpecialsCard'
 import { SpecialItemModal } from '@/components/landing/SpecialItemModal'
 import { SearchSection } from '@/components/landing/SearchSection'
 import { FohImageCard } from '@/components/landing/FohImageCard'
-
 import { InfoTextCard } from '@/components/landing/InfoTextCard'
-import { ContactLink } from '@/components/landing/ContactLink'
 import { Header } from '@/components/landing/Header'
-import { LoginModal } from '@/components/landing/LoginModal'
 
 interface Special {
   item: {
@@ -32,7 +29,6 @@ interface Special {
 }
 
 export function LandingPage() {
-  const [showLoginModal, setShowLoginModal] = useState(false)
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [selectedSpecial, setSelectedSpecial] = useState<Special | null>(null)
 
@@ -67,38 +63,37 @@ export function LandingPage() {
         }
       `}</style>
 
-      {/* Desktop View */}
-      <div className="hidden md:flex flex-col min-h-screen">
-        <Header onLoginClick={() => setShowLoginModal(true)} />
+      {/* Desktop View - Scroll Snap */}
+      <div className="hidden md:block h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6 flex flex-col justify-center">
+        {/* Fixed Header */}
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <Header
+            onResetPasswordClick={() => setShowPasswordResetModal(true)}
+          />
+        </div>
 
-          {/* Content Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
-            {/* Left Column: Search & Specials */}
-            <div className="flex flex-col gap-6 w-full h-full">
-              <SearchSection />
-              <SpecialsCard
-                onItemClick={setSelectedSpecial}
-                className="flex-1 w-full"
-              />
-            </div>
+        {/* Section 1: Search & Specials */}
+        <section className="min-h-screen w-full snap-start flex flex-col items-center justify-center px-4 pt-20 pb-8">
+          <div className="w-full max-w-2xl flex flex-col items-center gap-8">
+            <SearchSection />
+            <SpecialsCard
+              onItemClick={setSelectedSpecial}
+              className="w-full"
+            />
+          </div>
+        </section>
 
-            {/* Right Column: Info, FOH Image, Contact */}
-            <div className="flex flex-col gap-6 w-full h-full">
-              <div className="w-full">
-                <InfoTextCard />
-              </div>
-              <div className="flex-1 w-full relative min-h-[300px]">
-                <FohImageCard fill className="rounded-lg object-cover h-full" />
-              </div>
-              <div className="flex justify-center">
-                <ContactLink />
-              </div>
+        {/* Section 2: Info, FOH Image */}
+        <section className="min-h-screen w-full snap-start flex flex-col items-center justify-center px-4 py-8">
+          <div className="w-full max-w-2xl flex flex-col items-center gap-8">
+            <InfoTextCard />
+            <div className="relative w-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-black">
+              <FohImageCard fill className="rounded-lg object-cover h-full" />
             </div>
           </div>
+        </section>
 
-        </main>
       </div>
 
       {/* Mobile View - Scroll Snap */}
@@ -107,7 +102,9 @@ export function LandingPage() {
         {/* Section 1: Header + Search */}
         <section className="h-[100dvh] w-full snap-start flex flex-col relative">
           <div className="absolute top-0 left-0 right-0 z-50">
-            <Header onLoginClick={() => setShowLoginModal(true)} />
+            <Header
+              onResetPasswordClick={() => setShowPasswordResetModal(true)}
+            />
           </div>
           <div className="flex-1 flex items-center justify-center px-4 w-full">
             <SearchSection />
@@ -127,8 +124,8 @@ export function LandingPage() {
           />
         </section>
 
-        {/* Section 3: Info + Image + Contact */}
-        <section className="h-[100dvh] w-full snap-start flex flex-col p-4 justify-between py-8 gap-4">
+        {/* Section 3: Info + Image */}
+        <section className="h-[100dvh] w-full snap-start flex flex-col p-4 justify-center py-8 gap-4">
           <div className="flex-shrink-0">
             <InfoTextCard />
           </div>
@@ -137,10 +134,6 @@ export function LandingPage() {
             <div className="relative w-full h-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-black">
               <FohImageCard fill className="h-full" />
             </div>
-          </div>
-
-          <div className="flex-shrink-0 flex justify-center pb-8">
-            <ContactLink />
           </div>
         </section>
 
@@ -153,17 +146,7 @@ export function LandingPage() {
         )
       }
 
-      {
-        showLoginModal && (
-          <LoginModal
-            onClose={() => setShowLoginModal(false)}
-            onResetPasswordClick={() => {
-              setShowLoginModal(false)
-              setShowPasswordResetModal(true)
-            }}
-          />
-        )
-      }
+
 
       {
         showPasswordResetModal && (
