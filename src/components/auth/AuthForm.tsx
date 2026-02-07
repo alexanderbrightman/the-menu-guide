@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-900' }: { onSuccess?: () => void; onForgotPassword?: () => void; labelColor?: string }) {
+export function AuthForm({ onSuccess, onForgotPassword, labelColor, variant = 'default' }: { onSuccess?: () => void; onForgotPassword?: () => void; labelColor?: string; variant?: 'default' | 'glass-dark' }) {
   const [activeForm, setActiveForm] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -16,6 +16,27 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
   const [message, setMessage] = useState('')
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
   const [usernameMessage, setUsernameMessage] = useState('')
+
+  // Define styles based on variant
+  const isGlassDark = variant === 'glass-dark'
+
+  const inputClasses = isGlassDark
+    ? "bg-white/10 border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 rounded-lg transition-all"
+    : "bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
+
+  const primaryButtonClasses = isGlassDark
+    ? "w-full h-9 border border-white text-white hover:bg-white/10 bg-transparent backdrop-blur-md rounded-lg shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+    : "w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+
+  const toggleButtonActiveClasses = isGlassDark
+    ? "bg-white/20 text-white shadow-md border-transparent"
+    : "border-2 border-black bg-white/80 text-gray-900"
+
+  const toggleButtonInactiveClasses = isGlassDark
+    ? "text-white/70 hover:bg-white/10 hover:text-white border-transparent"
+    : "border border-black/30 bg-white/80 text-gray-900"
+
+  const finalLabelColor = labelColor || (isGlassDark ? "text-white/80" : "text-gray-900")
 
   // Username validation for sign-up
   const validateUsername = useCallback(async (username: string) => {
@@ -178,7 +199,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
           <Button
             type="button"
             onClick={() => setActiveForm('signin')}
-            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signin' ? 'border-2 border-black' : 'border border-black/30'
+            className={`w-full backdrop-blur-md rounded-lg transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signin' ? toggleButtonActiveClasses : toggleButtonInactiveClasses
               }`}
           >
             Sign In
@@ -190,7 +211,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
           <Button
             type="button"
             onClick={() => setActiveForm('signup')}
-            className={`w-full text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12 transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signup' ? 'border-2 border-black' : 'border border-black/30'
+            className={`w-full backdrop-blur-md rounded-lg transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signup' ? toggleButtonActiveClasses : toggleButtonInactiveClasses
               }`}
           >
             Sign Up
@@ -202,30 +223,30 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
       {activeForm === 'signin' && (
         <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="signin-email" className={labelColor}>Email</Label>
+            <Label htmlFor="signin-email" className={finalLabelColor}>Email</Label>
             <Input
               id="signin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
+              className={inputClasses}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="signin-password" className={labelColor}>Password</Label>
+            <Label htmlFor="signin-password" className={finalLabelColor}>Password</Label>
             <Input
               id="signin-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
+              className={inputClasses}
               required
             />
           </div>
           <Button
             type="submit"
-            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+            className={primaryButtonClasses}
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
@@ -235,7 +256,7 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               <button
                 type="button"
                 onClick={onForgotPassword}
-                className={`text-sm hover:text-gray-900 underline ${labelColor}`}
+                className={`text-sm hover:underline ${finalLabelColor}`}
               >
                 Forgot Password?
               </button>
@@ -248,25 +269,25 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
       {activeForm === 'signup' && (
         <form onSubmit={handleSignUp} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="signup-email" className={labelColor}>Email</Label>
+            <Label htmlFor="signup-email" className={finalLabelColor}>Email</Label>
             <Input
               id="signup-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
+              className={inputClasses}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="signup-username" className={labelColor}>Username</Label>
+            <Label htmlFor="signup-username" className={finalLabelColor}>Username</Label>
             <div className="relative">
               <Input
                 id="signup-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className={`pr-10 bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg ${usernameStatus === 'taken' || usernameStatus === 'invalid'
+                className={`pr-10 ${inputClasses} ${usernameStatus === 'taken' || usernameStatus === 'invalid'
                   ? 'border-red-500 focus:border-red-500'
                   : usernameStatus === 'available'
                     ? 'border-green-500 focus:border-green-500'
@@ -276,56 +297,56 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
               />
               {usernameStatus === 'checking' && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                  <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${isGlassDark ? 'border-white' : 'border-gray-600'}`}></div>
                 </div>
               )}
               {usernameStatus === 'available' && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="text-green-600">✓</div>
+                  <div className="text-green-500">✓</div>
                 </div>
               )}
               {usernameStatus === 'taken' && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="text-red-600">✗</div>
+                  <div className="text-red-500">✗</div>
                 </div>
               )}
             </div>
             {usernameMessage && (
               <p className={`text-sm ${usernameStatus === 'available'
-                ? 'text-green-600'
+                ? 'text-green-500'
                 : usernameStatus === 'taken' || usernameStatus === 'invalid'
-                  ? 'text-red-600'
-                  : 'text-gray-600'
+                  ? 'text-red-500'
+                  : isGlassDark ? 'text-white/60' : 'text-gray-600'
                 }`}>
                 {usernameMessage}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="signup-display-name" className={labelColor}>Restaurant Name</Label>
+            <Label htmlFor="signup-display-name" className={finalLabelColor}>Restaurant Name</Label>
             <Input
               id="signup-display-name"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
+              className={inputClasses}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="signup-password" className={labelColor}>Password</Label>
+            <Label htmlFor="signup-password" className={finalLabelColor}>Password</Label>
             <Input
               id="signup-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-black text-gray-900 placeholder:text-gray-500 focus:border-black rounded-lg"
+              className={inputClasses}
               required
             />
           </div>
           <Button
             type="submit"
-            className="w-full border border-black text-gray-900 hover:bg-white/90 bg-white/80 backdrop-blur-md rounded-lg shadow-lg shadow-gray-200/12 hover:shadow-xl hover:shadow-gray-300/12"
+            className={primaryButtonClasses}
             disabled={loading || usernameStatus === 'checking' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
           >
             {loading ? 'Signing up...' : 'Sign Up'}
@@ -335,7 +356,10 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor = 'text-gray-
 
       {message && (
         <div
-          className="mt-4 p-3 text-sm text-center rounded-lg text-gray-900 border border-black bg-gray-50/80 backdrop-blur-sm"
+          className={`mt-4 p-3 text-sm text-center rounded-lg border backdrop-blur-sm ${isGlassDark
+              ? 'text-white border-white/20 bg-white/10'
+              : 'text-gray-900 border-black bg-gray-50/80'
+            }`}
         >
           {message}
         </div>

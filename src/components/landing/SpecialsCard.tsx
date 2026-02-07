@@ -98,8 +98,8 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
         return (
             <div className={`rounded-lg p-8 flex items-center justify-center min-h-[200px] ${className || ''}`}>
                 <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-900" />
-                    <p className="text-gray-900 text-sm">Loading specials...</p>
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-white" />
+                    <p className="text-white/70 text-sm">Loading specials...</p>
                 </div>
             </div>
         )
@@ -108,8 +108,8 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
     if (specials.length === 0) {
         return (
             <div className={`rounded-lg p-8 ${className || ''}`}>
-                <h2 className="text-2xl font-bold mb-4 text-gray-900">Local Specials</h2>
-                <p className="text-gray-600 text-center">
+                <h2 className="text-2xl font-bold mb-4 text-white">Local Specials</h2>
+                <p className="text-white/70 text-center">
                     Looks like you need to ask your favorite restaurant to join The Menu Guide...
                 </p>
             </div>
@@ -133,16 +133,16 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                         >
                             <path
                                 d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
-                                stroke="#000000"
+                                stroke="#ffffff"
                                 strokeWidth="1"
                                 fill="none"
                             />
-                            <line x1="12" y1="6" x2="14" y2="6" stroke="#000000" strokeWidth="1" />
+                            <line x1="12" y1="6" x2="14" y2="6" stroke="#ffffff" strokeWidth="1" />
                         </svg>
-                        <div className="flex-1 h-[1px] bg-black -ml-[1px]"></div>
+                        <div className="flex-1 h-[1px] bg-white -ml-[1px]"></div>
                     </div>
 
-                    <h2 className="text-[18px] font-medium tracking-widest uppercase whitespace-nowrap text-slate-900">
+                    <h2 className="text-[18px] font-medium tracking-widest uppercase whitespace-nowrap text-white">
                         Local Specials
                     </h2>
 
@@ -158,18 +158,18 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                         >
                             <path
                                 d="M12 6 C 6 6 2 9 4 11 C 6 13 10 9 8 5 C 6 1 1 3 1 6"
-                                stroke="#000000"
+                                stroke="#ffffff"
                                 strokeWidth="1"
                                 fill="none"
                             />
-                            <line x1="12" y1="6" x2="14" y2="6" stroke="#000000" strokeWidth="1" />
+                            <line x1="12" y1="6" x2="14" y2="6" stroke="#ffffff" strokeWidth="1" />
                         </svg>
-                        <div className="flex-1 h-[1px] bg-black -ml-[1px]"></div>
+                        <div className="flex-1 h-[1px] bg-white -ml-[1px]"></div>
                     </div>
                 </div>
 
                 {locationDenied && (
-                    <span className="text-xs text-gray-400 mt-2">Showing all specials</span>
+                    <span className="text-xs text-white/50 mt-2">Showing all specials</span>
                 )}
             </div>
 
@@ -181,9 +181,9 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                             onClick={() => onItemClick(special)}
                             className="group cursor-pointer text-left w-full h-full"
                         >
-                            <div className="border border-black bg-white hover:opacity-80 transition-opacity duration-200 flex flex-col h-full">
+                            <div className="border border-white/20 bg-white/5 hover:opacity-80 transition-opacity duration-200 flex flex-col h-full">
                                 {/* Image - smaller aspect ratio on mobile */}
-                                <div className="relative aspect-[3/2] border-b border-black overflow-hidden bg-gray-100 flex-shrink-0">
+                                <div className="relative aspect-[3/2] border-b border-white/20 overflow-hidden bg-white/5 flex-shrink-0">
                                     {special.item.image_url && !failedImages.has(special.item.image_url) ? (
                                         <Image
                                             src={special.item.image_url}
@@ -191,13 +191,14 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                                             fill
                                             className="object-cover"
                                             sizes="(max-width: 768px) 50vw, 33vw"
+                                            style={{ filter: 'invert(0)' }}
                                             onError={() => {
                                                 console.warn(`Failed to load special item image: ${special.item.image_url}`)
                                                 setFailedImages(prev => new Set(prev).add(special.item.image_url!))
                                             }}
                                         />
                                     ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center text-2xl">
+                                        <div className="absolute inset-0 flex items-center justify-center text-2xl filter invert">
                                             🍽️
                                         </div>
                                     )}
@@ -205,19 +206,19 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
 
                                 {/* Info - reduced padding on mobile */}
                                 <div className="p-1.5 md:p-3 flex flex-col flex-1">
-                                    <p className="font-bold text-xs md:text-sm text-gray-900 truncate mb-0.5 md:mb-1" title={special.item.title}>
+                                    <p className="font-bold text-xs md:text-sm text-white truncate mb-0.5 md:mb-1" title={special.item.title}>
                                         {special.item.title}
                                     </p>
 
                                     {/* Description - hidden on mobile to save space */}
                                     {special.item.description && (
-                                        <p className="hidden md:line-clamp-1 text-xs text-gray-500 mb-2 break-words">
+                                        <p className="hidden md:line-clamp-1 text-xs text-white/60 mb-2 break-words">
                                             {special.item.description}
                                         </p>
                                     )}
 
                                     <div className="mt-auto pt-0.5 md:pt-1">
-                                        <p className="text-[10px] md:text-xs font-medium text-gray-800 truncate" title={special.restaurant.display_name}>
+                                        <p className="text-[10px] md:text-xs font-medium text-white/80 truncate" title={special.restaurant.display_name}>
                                             {special.restaurant.display_name}
                                         </p>
                                     </div>
@@ -238,14 +239,14 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                             onClick={handlePrevPage}
                             disabled={currentPage === 0}
                             className={`p-2 rounded-full transition-colors ${currentPage === 0
-                                ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-900 hover:bg-gray-100'
+                                ? 'text-white/20 cursor-not-allowed'
+                                : 'text-white hover:bg-white/10'
                                 }`}
                         >
                             <ChevronLeft className="w-6 h-6" />
                         </button>
 
-                        <span className="text-sm font-medium text-gray-600">
+                        <span className="text-sm font-medium text-white/70">
                             {currentPage + 1} / {totalPages}
                         </span>
 
@@ -253,8 +254,8 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages - 1}
                             className={`p-2 rounded-full transition-colors ${currentPage === totalPages - 1
-                                ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-900 hover:bg-gray-100'
+                                ? 'text-white/20 cursor-not-allowed'
+                                : 'text-white hover:bg-white/10'
                                 }`}
                         >
                             <ChevronRight className="w-6 h-6" />
