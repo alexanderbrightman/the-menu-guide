@@ -165,44 +165,44 @@ export function LandingPage() {
           </div>
 
           {/* Vertical stack: dining1 → search → dining2 → dining3 */}
-          <div className="flex-1 flex flex-col items-center justify-center pt-16 pb-16 px-4 gap-4">
-            {/* Image 1 - full width */}
-            <div className="w-full flex justify-center">
+          <div className="flex-1 flex flex-col items-center justify-center pt-24 pb-20 px-4 gap-2 min-h-0">
+            {/* Image 1 - flexible height */}
+            <div className="flex-1 w-full flex justify-center items-center min-h-0 relative">
               <Image
                 src="/dining1.png"
                 alt="Dining illustration 1"
                 width={400}
                 height={300}
-                className="w-full max-w-md h-auto object-contain"
+                className="w-auto h-full max-h-[25vh] object-contain"
                 priority
               />
             </div>
 
-            {/* Search bar */}
-            <div className="w-full max-w-2xl">
+            {/* Search bar - fixed height */}
+            <div className="w-full max-w-2xl flex-shrink-0 z-10 my-2">
               <SearchSection />
             </div>
 
-            {/* Image 2 - full width */}
-            <div className="w-full flex justify-center">
+            {/* Image 2 - flexible height */}
+            <div className="flex-1 w-full flex justify-center items-center min-h-0 relative">
               <Image
                 src="/dining2.png"
                 alt="Dining illustration 2"
                 width={400}
                 height={300}
-                className="w-full max-w-md h-auto object-contain"
+                className="w-auto h-full max-h-[25vh] object-contain"
                 priority
               />
             </div>
 
-            {/* Image 3 - full width */}
-            <div className="w-full flex justify-center">
+            {/* Image 3 - flexible height */}
+            <div className="flex-1 w-full flex justify-center items-center min-h-0 relative">
               <Image
                 src="/dining3.png"
                 alt="Dining illustration 3"
                 width={400}
                 height={300}
-                className="w-full max-w-md h-auto object-contain"
+                className="w-auto h-full max-h-[25vh] object-contain"
                 priority
               />
             </div>
