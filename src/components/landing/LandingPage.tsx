@@ -29,44 +29,6 @@ interface Special {
   distance: number | null
 }
 
-// Dining images component - shared between mobile and desktop
-function DiningImages() {
-  return (
-    <div className="w-full flex justify-center items-center gap-4 md:gap-6">
-      <div className="w-1/3 max-w-[200px] md:max-w-[350px]">
-        <Image
-          src="/dining1.png"
-          alt="Dining illustration 1"
-          width={350}
-          height={262}
-          className="w-full h-auto object-contain"
-          priority
-        />
-      </div>
-      <div className="w-1/3 max-w-[200px] md:max-w-[350px]">
-        <Image
-          src="/dining2.png"
-          alt="Dining illustration 2"
-          width={350}
-          height={262}
-          className="w-full h-auto object-contain"
-          priority
-        />
-      </div>
-      <div className="w-1/3 max-w-[200px] md:max-w-[350px]">
-        <Image
-          src="/dining3.png"
-          alt="Dining illustration 3"
-          width={350}
-          height={262}
-          className="w-full h-auto object-contain"
-          priority
-        />
-      </div>
-    </div>
-  )
-}
-
 export function LandingPage() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [selectedSpecial, setSelectedSpecial] = useState<Special | null>(null)
@@ -74,7 +36,7 @@ export function LandingPage() {
   return (
     <div
       className="min-h-screen"
-      style={{ backgroundImage: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)' }}
+      style={{ backgroundColor: '#f5f0e8', fontFamily: 'var(--font-raleway), sans-serif' }}
     >
       <style jsx global>{`
         @keyframes swing {
@@ -113,20 +75,40 @@ export function LandingPage() {
         </div>
 
         {/* Section 1: Images + Search */}
-        <section className="min-h-screen w-full snap-start flex flex-col items-center justify-center px-4 pt-20 pb-8 relative">
-          {/* Images positioned above the search bar - wider container */}
-          <div className="absolute left-0 right-0 flex justify-center" style={{ top: 'calc(50% - 220px)' }}>
-            <div className="w-full max-w-5xl px-4">
-              <DiningImages />
+        <section className="min-h-screen w-full snap-start flex flex-col items-center justify-center px-4 pt-20 pb-16 relative">
+          <div className="w-full max-w-3xl flex flex-col items-center justify-center gap-8 flex-1">
+            {/* Dining2 above search */}
+            <div className="w-full max-w-[500px]">
+              <Image
+                src="/dining2.png"
+                alt="Dining illustration"
+                width={500}
+                height={375}
+                className="w-full h-auto object-contain"
+                priority
+              />
+            </div>
+
+            {/* Search bar */}
+            <div className="w-full max-w-2xl">
+              <SearchSection />
+            </div>
+
+            {/* Dining3 below search */}
+            <div className="w-full max-w-[500px]">
+              <Image
+                src="/dining3.png"
+                alt="Dining illustration"
+                width={500}
+                height={375}
+                className="w-full h-auto object-contain"
+                priority
+              />
             </div>
           </div>
-          {/* Search bar container - this is the TRUE center */}
-          <div className="w-full max-w-2xl flex flex-col items-center relative">
-            {/* Search bar at center */}
-            <SearchSection />
-          </div>
+
           {/* Visual cue to scroll */}
-          <div className="absolute bottom-8 left-0 right-0 flex justify-center animate-bounce-slow text-gray-400">
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center animate-bounce-slow text-gray-600">
             <span className="text-sm">Scroll for Local Specials</span>
           </div>
         </section>
@@ -145,7 +127,7 @@ export function LandingPage() {
         <section className="min-h-screen w-full snap-start flex flex-col items-center justify-center px-4 py-8">
           <div className="w-full max-w-2xl flex flex-col items-center gap-8">
             <InfoTextCard />
-            <div className="relative w-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-black">
+            <div className="relative w-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-gray-800">
               <FohImageCard fill className="rounded-lg object-cover h-full" />
             </div>
           </div>
@@ -164,52 +146,40 @@ export function LandingPage() {
             />
           </div>
 
-          {/* Vertical stack: dining1 → search → dining2 → dining3 */}
-          <div className="flex-1 flex flex-col items-center justify-center pt-24 pb-20 px-4 gap-2 min-h-0">
-            {/* Image 1 - flexible height */}
-            <div className="flex-1 w-full flex justify-center items-center min-h-0 relative">
+          {/* Vertical stack: dining2 → search → dining3 with equal spacing */}
+          <div className="flex-1 flex flex-col items-center justify-between pt-20 pb-16 px-0 min-h-0">
+            {/* Dining2 above search - full width */}
+            <div className="flex-1 w-full flex items-center justify-center">
               <Image
-                src="/dining1.png"
-                alt="Dining illustration 1"
-                width={400}
-                height={300}
-                className="w-auto h-full max-h-[25vh] object-contain"
+                src="/dining2.png"
+                alt="Dining illustration"
+                width={600}
+                height={450}
+                className="w-full h-auto max-h-[30vh] object-contain px-4"
                 priority
               />
             </div>
 
-            {/* Search bar - fixed height */}
-            <div className="w-full max-w-2xl flex-shrink-0 z-10 my-2">
+            {/* Search bar */}
+            <div className="w-full px-4 flex-shrink-0 z-10">
               <SearchSection />
             </div>
 
-            {/* Image 2 - flexible height */}
-            <div className="flex-1 w-full flex justify-center items-center min-h-0 relative">
-              <Image
-                src="/dining2.png"
-                alt="Dining illustration 2"
-                width={400}
-                height={300}
-                className="w-auto h-full max-h-[25vh] object-contain"
-                priority
-              />
-            </div>
-
-            {/* Image 3 - flexible height */}
-            <div className="flex-1 w-full flex justify-center items-center min-h-0 relative">
+            {/* Dining3 below search - full width */}
+            <div className="flex-1 w-full flex items-center justify-center">
               <Image
                 src="/dining3.png"
-                alt="Dining illustration 3"
-                width={400}
-                height={300}
-                className="w-auto h-full max-h-[25vh] object-contain"
+                alt="Dining illustration"
+                width={600}
+                height={450}
+                className="w-full h-auto max-h-[30vh] object-contain px-4"
                 priority
               />
             </div>
           </div>
 
           {/* Visual cue to scroll */}
-          <div className="absolute bottom-8 left-0 right-0 flex justify-center animate-bounce-slow text-gray-400">
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center animate-bounce-slow text-gray-600">
             <span className="text-sm">Scroll for Local Specials</span>
           </div>
         </section>
@@ -230,7 +200,7 @@ export function LandingPage() {
           </div>
 
           <div className="flex-1 flex items-center justify-center min-h-0 py-4">
-            <div className="relative w-full h-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-black">
+            <div className="relative w-full h-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-gray-800">
               <FohImageCard fill className="h-full" />
             </div>
           </div>

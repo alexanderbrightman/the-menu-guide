@@ -20,7 +20,8 @@ import {
   Abril_Fatface,
   Bebas_Neue,
   Lobster,
-  Comfortaa
+  Comfortaa,
+  Josefin_Sans
 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -60,6 +61,7 @@ const abrilFatface = Abril_Fatface({ variable: "--font-abril-fatface", subsets: 
 const bebasNeue = Bebas_Neue({ variable: "--font-bebas-neue", subsets: ["latin"], weight: ["400"] });
 const lobster = Lobster({ variable: "--font-lobster", subsets: ["latin"], weight: ["400"] });
 const comfortaa = Comfortaa({ variable: "--font-comfortaa", subsets: ["latin"] });
+const josefinSans = Josefin_Sans({ variable: "--font-josefin-sans", subsets: ["latin"], weight: ["300", "400", "600"] });
 
 export const metadata: Metadata = {
   title: "The Menu Guide",
@@ -71,7 +73,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#1a1a1a',
+  themeColor: '#f5f0e8',
 };
 
 export default function RootLayout({
@@ -101,6 +103,7 @@ export default function RootLayout({
     bebasNeue.variable,
     lobster.variable,
     comfortaa.variable,
+    josefinSans.variable,
   ].join(" ");
 
   return (

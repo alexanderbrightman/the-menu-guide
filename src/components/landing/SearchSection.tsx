@@ -96,7 +96,7 @@ export function SearchSection() {
                 {/* Search bar container */}
                 <label
                     htmlFor="search-input"
-                    className="relative w-full flex items-center transition-all duration-300 cursor-text rounded-2xl bg-white/10 backdrop-blur-md hover:bg-white/15 focus-within:bg-white/20 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 focus-within:shadow-black/40 border border-white/10 focus-within:border-white/30 focus-within:ring-1 focus-within:ring-white/20"
+                    className="relative w-full flex items-center transition-all duration-300 cursor-text rounded-2xl bg-white/90 backdrop-blur-md hover:bg-white/95 focus-within:bg-white shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 focus-within:shadow-black/20 border border-gray-300 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-400/30"
                     style={{
                         height: 'clamp(3rem, 5.5vw, 4rem)',
                         paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',
@@ -104,7 +104,7 @@ export function SearchSection() {
                     }}
                 >
                     <Search
-                        className="absolute text-white z-10"
+                        className="absolute text-gray-600 z-10"
                         style={{
                             left: 'clamp(0.75rem, 2.5vw, 1.5rem)',
                             width: 'clamp(1rem, 2vw, 1.5rem)',
@@ -121,7 +121,7 @@ export function SearchSection() {
                         placeholder="Search for restaurants..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-white placeholder:text-white h-auto py-2 font-medium"
+                        className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-auto py-2 font-medium"
                         style={{
                             paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
                             paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
@@ -133,7 +133,7 @@ export function SearchSection() {
                     />
                     <ArrowRight
                         key={arrowAnimationKey}
-                        className={`absolute top-1/2 -translate-y-1/2 text-white z-10 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''
+                        className={`absolute top-1/2 -translate-y-1/2 text-gray-600 z-10 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''
                             }`}
                         style={{
                             right: 'clamp(0.75rem, 2.5vw, 1.5rem)',
@@ -145,11 +145,11 @@ export function SearchSection() {
 
                 {/* Search results dropdown */}
                 {searchQuery.trim().length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-3 shadow-xl shadow-black/40 border border-white/10 bg-black/80 backdrop-blur-md max-h-96 overflow-y-auto z-30 rounded-2xl">
+                    <div className="absolute top-full left-0 right-0 mt-3 shadow-xl shadow-black/20 border border-gray-200 bg-white/95 backdrop-blur-md max-h-96 overflow-y-auto z-30 rounded-2xl">
                         {isSearching ? (
-                            <div className="p-8 text-center text-white/70">
-                                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-white/70" />
-                                <p className="text-white/70">Searching...</p>
+                            <div className="p-8 text-center text-gray-500">
+                                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-gray-500" />
+                                <p className="text-gray-500">Searching...</p>
                             </div>
                         ) : searchResults.length > 0 ? (
                             <div className="py-2">
@@ -161,7 +161,7 @@ export function SearchSection() {
                                             href={`/menu/${restaurant.username}`}
                                             prefetch={true}
                                             onClick={() => setLoadingResult(restaurant.username)}
-                                            className={`relative w-full px-4 py-3 text-left transition-colors flex items-center gap-4 ${isLoading ? 'bg-white/10' : 'hover:bg-white/5'
+                                            className={`relative w-full px-4 py-3 text-left transition-colors flex items-center gap-4 ${isLoading ? 'bg-gray-100' : 'hover:bg-gray-50'
                                                 }`}
                                             onMouseEnter={() => router.prefetch(`/menu/${restaurant.username}`)}
                                         >
@@ -171,7 +171,7 @@ export function SearchSection() {
                                                     alt={restaurant.display_name}
                                                     width={56}
                                                     height={56}
-                                                    className="object-cover flex-shrink-0 border border-white/20 rounded-lg"
+                                                    className="object-cover flex-shrink-0 border border-gray-200 rounded-lg"
                                                     onError={(e) => {
                                                         console.warn(`Failed to load avatar for ${restaurant.username}: ${restaurant.avatar_url}`)
                                                         // Hide the image by setting display to none
@@ -184,23 +184,23 @@ export function SearchSection() {
                                                     }}
                                                 />
                                             ) : null}
-                                            <div className={`w-14 h-14 bg-white/10 ${restaurant.avatar_url ? 'hidden' : 'flex'} items-center justify-center flex-shrink-0 border border-white/20 rounded-lg`}>
-                                                <span className="text-white font-medium text-base">
+                                            <div className={`w-14 h-14 bg-gray-100 ${restaurant.avatar_url ? 'hidden' : 'flex'} items-center justify-center flex-shrink-0 border border-gray-200 rounded-lg`}>
+                                                <span className="text-gray-900 font-medium text-base">
                                                     {restaurant.display_name.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-white font-medium">
+                                                <span className="text-gray-900 font-medium">
                                                     {restaurant.display_name}
                                                 </span>
-                                                <span className="text-white/60 text-sm">@{restaurant.username}</span>
+                                                <span className="text-gray-500 text-sm">@{restaurant.username}</span>
                                             </div>
                                         </Link>
                                     )
                                 })}
                             </div>
                         ) : (
-                            <div className="p-8 text-center text-white/50">
+                            <div className="p-8 text-center text-gray-400">
                                 <p>No restaurants found</p>
                             </div>
                         )}
