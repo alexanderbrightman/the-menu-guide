@@ -66,6 +66,12 @@ const josefinSans = Josefin_Sans({ variable: "--font-josefin-sans", subsets: ["l
 export const metadata: Metadata = {
   title: "The Menu Guide",
   description: "Create and manage your restaurant's digital menu",
+  icons: {
+    icon: "/CarolLogo.png",
+    shortcut: "/CarolLogo.png",
+    apple: "/CarolLogo.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {

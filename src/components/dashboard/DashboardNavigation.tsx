@@ -7,7 +7,7 @@ import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 import { SubscriptionDetailsCard } from '@/components/profile/SubscriptionDetailsCard'
 import { UpgradeCard } from '@/components/payment/UpgradeCard'
-import { Menu, Edit, Scan, LogOut, Settings } from 'lucide-react'
+import { Menu, Edit, Scan, LogOut, Settings, Utensils, Plus, FolderPlus } from 'lucide-react'
 import { Profile } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 import { validatePremiumAccess } from '@/lib/premium-validation'
@@ -39,16 +39,32 @@ export function DashboardNavigation({
     const [isOpen, setIsOpen] = useState(false)
     const isDarkBackground = contentColor === '#ffffff'
 
+    const handleViewMenu = () => {
+        if (typeof window !== 'undefined' && profile?.username) {
+            window.open(`${window.location.origin}/menu/${profile.username}`, '_blank')
+        }
+    }
+
+    const handleNewItem = () => {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-create-item'))
+        }
+    }
+
+    const handleNewCategory = () => {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-create-category'))
+        }
+    }
+
     const handleScanMenu = () => {
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('open-scan-menu'))
-            // Sheet stays open
         }
     }
 
     const handleEditProfile = () => {
         onEditProfile()
-        // Sheet stays open
     }
 
     const handleSignOut = async () => {
@@ -90,6 +106,54 @@ export function DashboardNavigation({
 
                     <div className="flex flex-col w-full gap-6 max-w-sm mx-auto">
                         <div className="space-y-4 w-full">
+                            {/* View Menu */}
+                            {profile?.username && (
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-4 text-lg h-12 px-4 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                    onClick={handleViewMenu}
+                                    style={{ color: contentColor }}
+                                >
+                                    <Utensils className="h-5 w-5" />
+                                    View Menu
+                                </Button>
+                            )}
+
+                            {/* Add Menu Item */}
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-4 text-lg h-12 px-4 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                onClick={handleNewItem}
+                                style={{ color: contentColor }}
+                            >
+                                <Plus className="h-5 w-5" />
+                                Add Menu Item
+                            </Button>
+
+                            {/* Add Category */}
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-4 text-lg h-12 px-4 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                onClick={handleNewCategory}
+                                style={{ color: contentColor }}
+                            >
+                                <FolderPlus className="h-5 w-5" />
+                                Add Category
+                            </Button>
+
+                            {/* Scan Menu */}
+                            {user && (
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-4 text-lg h-12 px-4 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                    onClick={handleScanMenu}
+                                    style={{ color: contentColor }}
+                                >
+                                    <Scan className="h-5 w-5" />
+                                    Scan Menu
+                                </Button>
+                            )}
+
                             {/* Edit Profile */}
                             <Button
                                 variant="ghost"
@@ -114,19 +178,6 @@ export function DashboardNavigation({
                                     </Button>
                                 </SettingsDialog>
                             </div>
-
-                            {/* Scan Menu */}
-                            {user && (
-                                <Button
-                                    variant="ghost"
-                                    className="w-full justify-start gap-4 text-lg h-12 px-4 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                                    onClick={handleScanMenu}
-                                    style={{ color: contentColor }}
-                                >
-                                    <Scan className="h-5 w-5" />
-                                    Scan Menu
-                                </Button>
-                            )}
 
                             {/* Sign Out */}
                             <Button

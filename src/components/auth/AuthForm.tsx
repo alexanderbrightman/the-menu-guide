@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function AuthForm({ onSuccess, onForgotPassword, labelColor, variant = 'default' }: { onSuccess?: () => void; onForgotPassword?: () => void; labelColor?: string; variant?: 'default' | 'glass-dark' }) {
-  const [activeForm, setActiveForm] = useState<'signin' | 'signup'>('signin')
+export function AuthForm({ onSuccess, onForgotPassword, labelColor, variant = 'default', initialView = 'signin', allowToggle = true }: { onSuccess?: () => void; onForgotPassword?: () => void; labelColor?: string; variant?: 'default' | 'glass-dark'; initialView?: 'signin' | 'signup'; allowToggle?: boolean }) {
+  const [activeForm, setActiveForm] = useState<'signin' | 'signup'>(initialView)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -194,30 +194,31 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor, variant = 'd
   return (
     <div className="w-full">
       {/* Button selector */}
-      <div className="flex gap-3 mb-6">
-        <div className="flex-1 min-w-0">
-          <Button
-            type="button"
-            onClick={() => setActiveForm('signin')}
-            className={`w-full backdrop-blur-md rounded-lg transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signin' ? toggleButtonActiveClasses : toggleButtonInactiveClasses
-              }`}
-          >
-            Sign In
-          </Button>
-        </div>
+      {allowToggle && (
+        <div className="flex gap-3 mb-6">
+          <div className="flex-1 min-w-0">
+            <Button
+              type="button"
+              onClick={() => setActiveForm('signin')}
+              className={`w-full backdrop-blur-md rounded-lg transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signin' ? toggleButtonActiveClasses : toggleButtonInactiveClasses
+                }`}
+            >
+              Sign In
+            </Button>
+          </div>
 
-        {/* Sign Up button */}
-        <div className="flex-1 min-w-0">
-          <Button
-            type="button"
-            onClick={() => setActiveForm('signup')}
-            className={`w-full backdrop-blur-md rounded-lg transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signup' ? toggleButtonActiveClasses : toggleButtonInactiveClasses
-              }`}
-          >
-            Sign Up
-          </Button>
+          <div className="flex-1 min-w-0">
+            <Button
+              type="button"
+              onClick={() => setActiveForm('signup')}
+              className={`w-full backdrop-blur-md rounded-lg transition-all text-sm py-2 px-4 h-10 ${activeForm === 'signup' ? toggleButtonActiveClasses : toggleButtonInactiveClasses
+                }`}
+            >
+              Sign Up
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sign In Form */}
       {activeForm === 'signin' && (
@@ -357,8 +358,8 @@ export function AuthForm({ onSuccess, onForgotPassword, labelColor, variant = 'd
       {message && (
         <div
           className={`mt-4 p-3 text-sm text-center rounded-lg border backdrop-blur-sm ${isGlassDark
-              ? 'text-white border-white/20 bg-white/10'
-              : 'text-gray-900 border-black bg-gray-50/80'
+            ? 'text-white border-white/20 bg-white/10'
+            : 'text-gray-900 border-black bg-gray-50/80'
             }`}
         >
           {message}

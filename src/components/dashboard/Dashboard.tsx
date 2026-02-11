@@ -4,13 +4,22 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { QrCode, Utensils, Check, Copy } from 'lucide-react'
+import { Utensils, LogOut } from 'lucide-react'
 import Image from 'next/image'
 import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
 import { DashboardNavigation } from '@/components/dashboard/DashboardNavigation'
+import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
+import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { QrCode, Check, Copy, Download } from 'lucide-react'
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
@@ -43,6 +52,7 @@ const getContrastColor = (hexColor: string) => {
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
   const [showProfileEdit, setShowProfileEdit] = useState(false)
+  const [showQrDialog, setShowQrDialog] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -63,15 +73,34 @@ export function Dashboard() {
   const outlineButtonClass = isDarkBackground
     ? 'border border-white !text-white hover:bg-white/10 bg-transparent rounded-lg'
     : 'border border-black !text-slate-900 hover:bg-slate-100 bg-transparent rounded-lg'
-  const cardSurfaceClass = `rounded-2xl transition-colors ${isDarkBackground
-    ? 'bg-white/10 text-white shadow-xl shadow-black/20'
-    : 'bg-white/95 shadow-sm'
-    }`
 
   // Premium feature validation
   const qrCodeAccess = usePremiumFeature('QR code generation')
 
   const profileUsername = profile?.username || ''
+
+  // Sidebar action handlers
+  const handleViewMenu = useCallback(() => {
+    if (profile?.username && typeof window !== 'undefined') {
+      window.open(`${window.location.origin}/menu/${profile.username}`, '_blank')
+    }
+  }, [profile?.username])
+
+  const handleNewItem = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('open-create-item'))
+  }, [])
+
+  const handleNewCategory = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('open-create-category'))
+  }, [])
+
+  const handleScanMenu = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('open-scan-menu'))
+  }, [])
+
+  const handleSignOut = useCallback(async () => {
+    await signOut()
+  }, [signOut])
 
   const generateQRCode = useCallback(async () => {
     if (!user) return
@@ -163,13 +192,25 @@ export function Dashboard() {
     }
   }, [menuBackgroundColor])
 
+  // Listen for edit profile event from mobile toolbar
+  useEffect(() => {
+    const handleOpenEditProfile = () => setShowProfileEdit(true)
+    const handleOpenQrCode = () => setShowQrDialog(true)
+    window.addEventListener('open-edit-profile', handleOpenEditProfile)
+    window.addEventListener('open-qr-code', handleOpenQrCode)
+    return () => {
+      window.removeEventListener('open-edit-profile', handleOpenEditProfile)
+      window.removeEventListener('open-qr-code', handleOpenQrCode)
+    }
+  }, [])
+
   if (!user || !profile) {
     return <div>Loading...</div>
   }
 
   return (
     <div
-      className="min-h-screen transition-colors"
+      className="min-h-screen transition-colors flex"
       style={{
         backgroundColor: menuBackgroundColor,
         color: contrastColor,
@@ -181,153 +222,207 @@ export function Dashboard() {
         className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
         style={{
           height: 'env(safe-area-inset-top, 0px)',
-          background: menuBackgroundColor, // Matches the page background
+          background: menuBackgroundColor,
         }}
       />
 
-      <header
-        className="border-b border-white/10 backdrop-blur-sm"
-        style={{
-          backgroundColor: menuBackgroundColor,
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 gap-4">
-            <div className="flex items-center gap-3">
-              {profile?.avatar_url && (
-                <div className="relative h-10 w-10 overflow-hidden rounded-full border border-black/10">
-                  <Image
-                    src={profile.avatar_url}
-                    alt={profile.display_name || 'Profile'}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              <h1
-                className="text-xl font-bold"
-                style={{ color: contrastColor, fontFamily: menuFontFamily }}
-              >
-                {profile?.display_name || 'Your Restaurant'}
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {profile?.username && (
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <DashboardSidebar
+        profile={profile}
+        user={user}
+        onViewMenu={handleViewMenu}
+        onNewItem={handleNewItem}
+        onNewCategory={handleNewCategory}
+        onScanMenu={handleScanMenu}
+        onEditProfile={() => setShowProfileEdit(true)}
+        onSignOut={handleSignOut}
+        signingOut={signingOut}
+        qrCodeUrl={qrCodeUrl}
+        menuLink={typeof window !== 'undefined' ? `${window.location.origin}/menu/${profile.username}` : `/menu/${profile.username}`}
+        onDownloadQr={downloadQRCode}
+        outlineButtonClass={outlineButtonClass}
+        backgroundColor={menuBackgroundColor}
+        contrastColor={contrastColor}
+        isDarkBackground={isDarkBackground}
+        borderColorClass={isDarkBackground ? 'border-white/10' : 'border-black/8'}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0">
+        <header
+          className="border-b backdrop-blur-sm lg:hidden"
+          style={{
+            backgroundColor: menuBackgroundColor,
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16 gap-4">
+              {/* Left: Avatar + name on mobile, empty on desktop */}
+              <div className="flex items-center gap-3 lg:hidden">
+                {profile?.avatar_url && (
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full border border-black/10">
+                    <Image
+                      src={profile.avatar_url}
+                      alt={profile.display_name || 'Profile'}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <h1
+                  className="text-xl font-bold"
+                  style={{ color: contrastColor, fontFamily: menuFontFamily }}
+                >
+                  {profile?.display_name || 'Your Restaurant'}
+                </h1>
+              </div>
+              {/* Desktop: empty left spacer */}
+              <div className="hidden lg:block" />
+
+              {/* Right: Sign Out (always) + mobile-only hamburger + View Menu */}
+              <div className="flex items-center space-x-4">
+                {/* View Menu - mobile only */}
+                {profile?.username && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`${outlineButtonClass} flex items-center gap-2 border rounded-lg lg:hidden`}
+                    onClick={() => window.open(`${window.location.origin}/menu/${profile.username}`, '_blank')}
+                  >
+                    <Utensils className="h-4 w-4" />
+                    <span className="hidden sm:inline">View Menu</span>
+                  </Button>
+                )}
+
+                {/* Sign Out button - always visible */}
                 <Button
                   variant="outline"
                   size="sm"
                   className={`${outlineButtonClass} flex items-center gap-2 border rounded-lg`}
-                  onClick={() => window.open(`${window.location.origin}/menu/${profile.username}`, '_blank')}
+                  onClick={handleSignOut}
+                  disabled={signingOut}
                 >
-                  <Utensils className="h-4 w-4" />
-                  <span className="hidden sm:inline">View Menu</span>
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">{signingOut ? 'Signing Out...' : 'Sign Out'}</span>
                 </Button>
-              )}
-              <DashboardNavigation
-                signOut={signOut}
-                signingOut={signingOut}
-                onEditProfile={() => setShowProfileEdit(true)}
-                profile={profile}
-                user={user}
-                triggerClassName={outlineButtonClass}
-                contentBackgroundColor={menuBackgroundColor}
-                contentColor={contrastColor}
-                borderColorClass={isDarkBackground ? 'border-white/20' : 'border-black/10'}
-              />
+
+
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex flex-col gap-16 pb-20">
-        <PrivateMenuPage />
+        <div className="flex flex-col gap-16 lg:gap-4 pb-20 lg:pt-4">
+          <PrivateMenuPage />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* QR Code Section */}
-          {qrCodeUrl && (
-            <div className={`mt-8 rounded-xl border shadow-sm overflow-hidden p-4 sm:p-5 ${isDarkBackground ? 'bg-white/5 border-white/20' : 'bg-white border-gray-200'}`}>
-              {/* Top Row: Title/Desc on left, QR on right */}
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <QrCode className={`h-4 w-4 ${primaryTextClass}`} />
-                    <h3 className={`font-bold text-base sm:text-lg leading-tight ${primaryTextClass}`}>
-                      Menu QR Code
-                    </h3>
-                  </div>
-                  <p className={`text-xs sm:text-sm ${subtleTextClass}`}>
-                    Scan to view your digital menu instantly.
-                  </p>
-                </div>
-                {/* QR Code - Upper Right */}
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-white rounded-md overflow-hidden">
-                  <Image
-                    src={qrCodeUrl}
-                    alt="Menu QR Code"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                    priority
-                  />
-                </div>
-              </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mt-6 space-y-4">
 
-              {/* Link Box */}
-              <div className={`flex items-center gap-2 p-2 rounded-lg border mb-3 ${isDarkBackground ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                <code className={`text-[10px] sm:text-xs flex-1 truncate font-mono ${contrastColor === '#ffffff' ? 'text-white/90' : 'text-gray-600'}`}>
-                  {typeof window !== 'undefined' ? window.location.origin : ''}/menu/{profile.username}
-                </code>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className={`h-6 w-6 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-200 text-gray-500'}`}
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
-                    setCopied(true)
-                    setTimeout(() => setCopied(false), 2000)
-                  }}
-                >
-                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                </Button>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className={`flex-1 text-xs h-8 ${outlineButtonClass}`}
-                  onClick={downloadQRCode}
-                >
-                  Download
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className={`flex-1 text-xs h-8 ${outlineButtonClass}`}
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
-                    setCopied(true)
-                    setTimeout(() => setCopied(false), 2000)
-                  }}
-                >
-                  {copied ? 'Copied' : 'Copy Link'}
-                </Button>
-              </div>
+              {user && (
+                <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => { }} profile={profile} />
+              )}
             </div>
-          )}
-
-          <div className="mt-6 space-y-4">
-
-            {user && (
-              <ScanMenuModal userId={user.id} hideTrigger onScanSuccess={() => { }} profile={profile} />
-            )}
           </div>
         </div>
       </div>
 
       {showProfileEdit && <ProfileEditForm onClose={() => setShowProfileEdit(false)} />}
+
+      {/* Mobile QR Code Dialog */}
+      <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+        <DialogContent
+          className="sm:max-w-md border-0"
+          style={{
+            backgroundColor: isDarkBackground ? '#1a1a2e' : '#ffffff',
+            color: contrastColor,
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold" style={{ color: contrastColor }}>
+              <QrCode className="h-5 w-5" />
+              Menu QR Code
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-5 py-4">
+            {qrCodeUrl ? (
+              <div className="relative w-48 h-48 bg-white rounded-xl overflow-hidden shadow-lg p-3">
+                <Image
+                  src={qrCodeUrl}
+                  alt="Menu QR Code"
+                  fill
+                  className="object-contain p-2"
+                  unoptimized
+                  priority
+                />
+              </div>
+            ) : (
+              <div
+                className="w-48 h-48 rounded-xl flex items-center justify-center"
+                style={{
+                  backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                  border: `1px solid ${isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                }}
+              >
+                <p className="text-sm opacity-50">Generating...</p>
+              </div>
+            )}
+            <p className="text-sm text-center opacity-60">
+              Scan to view your digital menu instantly.
+            </p>
+            <div
+              className="w-full flex items-center gap-2 p-3 rounded-lg border"
+              style={{
+                backgroundColor: isDarkBackground ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+              }}
+            >
+              <code className="text-xs flex-1 truncate font-mono opacity-75">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/menu/{profile.username}
+              </code>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={`h-7 w-7 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-200'}`}
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                }}
+                style={{ color: contrastColor }}
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+            <div className="flex gap-3 w-full">
+              <Button
+                size="sm"
+                variant="outline"
+                className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
+                onClick={downloadQRCode}
+                disabled={!qrCodeUrl}
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                }}
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? 'Copied!' : 'Copy Link'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

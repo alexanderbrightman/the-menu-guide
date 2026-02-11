@@ -236,7 +236,7 @@ export function MenuCategorySection({
                             strategy={rectSortingStrategy}
                             disabled={!isSortable}
                         >
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                                 {items.map((item) => (
                                     <SortableItem key={item.id} id={item.id} className="h-full">
                                         <MenuItemCard

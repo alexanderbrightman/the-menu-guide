@@ -299,6 +299,16 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
           (a.sort_order || 0) - (b.sort_order || 0)
         )
         setCategories(sortedCategories)
+
+        // Default all categories to expanded
+        const defaultExpanded: Record<string, boolean> = {
+          'favorites': true,
+          'uncategorized': true
+        }
+        sortedCategories.forEach((cat: MenuCategory) => {
+          defaultExpanded[cat.id] = true
+        })
+        setExpandedCategories(defaultExpanded)
       } else if (!categoriesRes.ok) {
         setTransientMessage(`Error: ${categoriesData.error || 'Failed to load categories'} `)
       }
@@ -475,6 +485,31 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       document.body.style.backgroundColor = previousBodyBg
     }
   }, [menuBackgroundColor])
+
+  // Listen for sidebar events to open create item/category
+  useEffect(() => {
+    const handleOpenCreateItem = () => {
+      setEditingItem(null)
+      setItemForm(EMPTY_ITEM_FORM)
+      setItemCategory('none')
+      setItemTags([])
+      setImageFile(null)
+      setIsItemSheetOpen(true)
+      resetProgress()
+    }
+    const handleOpenCreateCategory = () => {
+      setCategoryName('')
+      setEditingCategory(null)
+      setIsCategoryDialogOpen(true)
+    }
+
+    window.addEventListener('open-create-item', handleOpenCreateItem)
+    window.addEventListener('open-create-category', handleOpenCreateCategory)
+    return () => {
+      window.removeEventListener('open-create-item', handleOpenCreateItem)
+      window.removeEventListener('open-create-category', handleOpenCreateCategory)
+    }
+  }, [resetProgress])
 
   // Close modal on Esc key and lock body scroll
   useEffect(() => {
@@ -1132,7 +1167,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
         modifiers={[restrictToWindowEdges]}
       >
         <section
-          className="w-full py-4 sm:py-6 md:py-8"
+          className="w-full py-4 sm:py-6 md:py-8 pb-24 lg:pb-8"
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
@@ -1149,7 +1184,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
               theme={theme}
             />
 
-            <div className="mt-6 sm:mt-8 md:mt-12 space-y-4 sm:space-y-6 md:space-y-8">
+            <div className="mt-1 sm:mt-4 md:mt-0 space-y-4 sm:space-y-6 md:space-y-8">
               {loading ? (
                 <div
                   className={`flex flex - col items - center justify - center border border - dashed ${getBorderColor()} py - 12 sm: py - 16 md: py - 20 ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
@@ -1709,7 +1744,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             <Button
               type="button"
               variant="outline"
-              className={`${outlineButtonClass} border ${getBorderColor()}`}
+              className={`${outlineButtonClass} border ${getBorderColor()} rounded-full`}
               onClick={() => setDeleteConfirmation(prev => ({ ...prev, isOpen: false }))}
             >
               Cancel
@@ -1717,7 +1752,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             <Button
               type="button"
               variant="destructive"
-              className="bg-red-600 hover:bg-red-700 text-white border-none"
+              className="bg-red-600 hover:bg-red-700 text-white border-none rounded-full"
               onClick={handleConfirmDelete}
             >
               Delete

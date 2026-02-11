@@ -1,6 +1,6 @@
-import Image from 'next/image'
-import { Plus } from 'lucide-react'
+import { Plus, Scan, Edit, Settings, FolderPlus, QrCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { Profile } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
@@ -28,12 +28,22 @@ export function MenuHeader({
         outlineButtonClass,
         getBorderColor,
         isDarkBackground,
+        menuBackgroundColor,
     } = theme
 
-    const usernameLink =
-        typeof window !== 'undefined' && profile?.username
-            ? `${window.location.origin}/menu/${profile.username}`
-            : null
+    const handleScanMenu = () => {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-scan-menu'))
+        }
+    }
+
+    const handleEditProfile = () => {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-edit-profile'))
+        }
+    }
+
+    const btnClass = `${outlineButtonClass} flex items-center gap-1.5 border ${getBorderColor()} rounded-lg px-4 py-2 text-sm whitespace-nowrap flex-shrink-0`
 
     return (
         <header className="space-y-4 sm:space-y-6">
@@ -42,26 +52,59 @@ export function MenuHeader({
                     {/* Header content moved to Dashboard frame */}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 w-full px-4">
-
-                    <Button
-                        variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1.5 border ${getBorderColor()} rounded-lg px-4 py-2 text-sm`}
-                        onClick={onNewCategory}
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">New Category</span>
-                        <span className="sm:hidden">Category</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className={`${outlineButtonClass} flex items-center gap-1.5 border ${getBorderColor()} rounded-lg px-4 py-2 text-sm`}
-                        onClick={onNewItem}
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">New Item</span>
-                        <span className="sm:hidden">Item</span>
-                    </Button>
+                {/* Mobile action toolbar - fixed to bottom of viewport for easy reach */}
+                <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden overflow-x-auto scrollbar-hide border-t" style={{ borderColor: getBorderColor(), paddingBottom: 'env(safe-area-inset-bottom)', backgroundColor: menuBackgroundColor }}>
+                    <div className="flex items-center gap-2 sm:gap-3 w-max px-4 py-3">
+                        <Button
+                            variant="outline"
+                            className={btnClass}
+                            onClick={onNewItem}
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Item
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className={btnClass}
+                            onClick={onNewCategory}
+                        >
+                            <FolderPlus className="h-4 w-4" />
+                            Add Category
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className={btnClass}
+                            onClick={handleScanMenu}
+                        >
+                            <Scan className="h-4 w-4" />
+                            Scan Menu
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className={btnClass}
+                            onClick={handleEditProfile}
+                        >
+                            <Edit className="h-4 w-4" />
+                            Edit Profile
+                        </Button>
+                        <SettingsDialog>
+                            <Button
+                                variant="outline"
+                                className={btnClass}
+                            >
+                                <Settings className="h-4 w-4" />
+                                Settings
+                            </Button>
+                        </SettingsDialog>
+                        <Button
+                            variant="outline"
+                            className={btnClass}
+                            onClick={() => window.dispatchEvent(new CustomEvent('open-qr-code'))}
+                        >
+                            <QrCode className="h-4 w-4" />
+                            QR Code
+                        </Button>
+                    </div>
                 </div>
 
                 {message && (
