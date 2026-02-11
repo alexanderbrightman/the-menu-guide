@@ -129,7 +129,7 @@ export function DashboardSidebar({
         const itemColor = navItemColors[item.id] || contrastColor
 
         const baseClasses = `
-            w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg
+            w-full flex items-center gap-3 px-4 py-3 text-base font-medium rounded-lg
             transition-all duration-150 cursor-pointer relative group
         `
 
@@ -189,7 +189,7 @@ export function DashboardSidebar({
         return (
             <button
                 className={`
-                    w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg
+                    w-full flex items-center gap-3 px-4 py-3 text-base font-medium rounded-lg
                     transition-all duration-150 cursor-pointer relative group
                 `}
                 onClick={() => {
@@ -219,7 +219,7 @@ export function DashboardSidebar({
 
     return (
         <aside
-            className="hidden lg:flex flex-col w-[260px] min-w-[260px] h-screen sticky top-0 border-r overflow-y-auto"
+            className="hidden lg:flex flex-col w-[280px] min-w-[280px] h-screen sticky top-0 border-r overflow-y-auto"
             style={{
                 backgroundColor,
                 color: contrastColor,
@@ -228,13 +228,13 @@ export function DashboardSidebar({
         >
             {/* Profile Section */}
             <div
-                className="px-5 pt-6 pb-4 border-b"
+                className="px-5 pt-8 pb-6 border-b"
                 style={{ borderColor: contrastColor }} // Explicit border color
             >
                 <div className="flex items-center gap-3">
                     {profile?.avatar_url ? (
                         <div
-                            className="relative h-10 w-10 overflow-hidden rounded-full border flex-shrink-0"
+                            className="relative h-12 w-12 overflow-hidden rounded-full border flex-shrink-0"
                             style={{ borderColor: contrastColor }}
                         >
                             <Image
@@ -246,7 +246,7 @@ export function DashboardSidebar({
                         </div>
                     ) : (
                         <div
-                            className="h-10 w-10 rounded-full border flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                            className="h-12 w-12 rounded-full border flex items-center justify-center text-base font-semibold flex-shrink-0"
                             style={{
                                 backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
                                 color: contrastColor,
@@ -257,31 +257,26 @@ export function DashboardSidebar({
                         </div>
                     )}
                     <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: contrastColor }}>
+                        <p className="text-lg font-semibold truncate" style={{ color: contrastColor }}>
                             {profile?.display_name || 'Your Restaurant'}
                         </p>
-                        {user?.email && (
-                            <p className="text-xs truncate" style={{ color: isDarkBackground ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }}>
-                                {user.email}
-                            </p>
-                        )}
                     </div>
                 </div>
             </div>
 
             {/* Navigation Section */}
-            <div className="px-3 py-4">
-                <p className={`text-[11px] font-semibold uppercase tracking-wider px-4 mb-2 ${sectionLabelClass}`}>
+            <div className="px-3 py-6">
+                <p className={`text-sm font-semibold uppercase tracking-wider px-4 mb-3 ${sectionLabelClass}`}>
                     Menu
                 </p>
-                <nav className="space-y-0.5">
+                <nav className="space-y-1">
                     {navItems.slice(0, 4).map(renderNavButton)}
                 </nav>
 
-                <p className={`text-[11px] font-semibold uppercase tracking-wider px-4 mt-6 mb-2 ${sectionLabelClass}`}>
+                <p className={`text-sm font-semibold uppercase tracking-wider px-4 mt-8 mb-3 ${sectionLabelClass}`}>
                     Account
                 </p>
-                <nav className="space-y-0.5">
+                <nav className="space-y-1">
                     {navItems.slice(4).map(renderNavButton)}
                     <QrCodeDialog
                         qrCodeUrl={qrCodeUrl}
@@ -323,7 +318,7 @@ export function DashboardSidebar({
                     height={260}
                     className={`w-full h-auto block ${isDarkBackground ? 'invert' : ''}`}
                 />
-                <p className="text-[10px] text-center py-2" style={{ color: contrastColor }}>
+                <p className="text-xs text-center pt-4 pb-8" style={{ color: contrastColor }}>
                     Thanks for using The Menu Guide :)
                 </p>
             </div>
