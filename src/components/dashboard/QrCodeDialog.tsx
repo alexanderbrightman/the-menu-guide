@@ -91,13 +91,13 @@ export function QrCodeDialog({
 
                     {/* Link Box */}
                     <div
-                        className="w-full flex items-center gap-2 p-3 rounded-lg border"
+                        className="w-full flex items-center gap-2 p-3 rounded-lg border min-w-0 overflow-hidden"
                         style={{
                             backgroundColor: isDarkBackground ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
                             borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
                         }}
                     >
-                        <code className="text-xs flex-1 truncate font-mono opacity-75">
+                        <code className="text-xs flex-1 min-w-0 truncate font-mono opacity-75">
                             {menuLink}
                         </code>
                         <Button
