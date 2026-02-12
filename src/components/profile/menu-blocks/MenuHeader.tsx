@@ -53,8 +53,8 @@ export function MenuHeader({
                 </div>
 
                 {/* Mobile action toolbar - fixed to bottom of viewport for easy reach */}
-                <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden overflow-x-auto scrollbar-hide border-t" style={{ borderColor: getBorderColor(), paddingBottom: 'env(safe-area-inset-bottom)', backgroundColor: menuBackgroundColor }}>
-                    <div className="flex items-center gap-2 sm:gap-3 w-max px-4 py-3">
+                <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden overflow-x-auto scrollbar-hide border-t" style={{ borderColor: getBorderColor(), paddingBottom: 'env(safe-area-inset-bottom)', backgroundColor: menuBackgroundColor, WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
+                    <div className="flex items-center gap-2 sm:gap-3 w-max px-4 py-4">
                         <Button
                             variant="outline"
                             className={btnClass}
