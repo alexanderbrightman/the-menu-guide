@@ -1,5 +1,5 @@
 # The Menu Guide
-**Your Menu. Beautifully Digital.**
+**Discover. Dine. Delight.**
 
 The **easiest** way for restaurants to manage their menus online. The Menu Guide gives you a stunning, photo-first digital menu that customers can access instantly via QR code—no PDFs, no pinching to zoom, just a seamless mobile experience.
 
