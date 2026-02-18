@@ -127,8 +127,8 @@ export function LandingPage() {
         <section className="min-h-screen w-full snap-start flex flex-col items-center justify-center px-4 py-8">
           <div className="w-full max-w-2xl flex flex-col items-center gap-8">
             <InfoTextCard />
-            <div className="relative w-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-gray-800">
-              <FohImageCard fill className="rounded-lg object-cover h-full" />
+            <div className="w-full max-w-xl mx-auto">
+              <FohImageCard />
             </div>
           </div>
         </section>
@@ -200,8 +200,8 @@ export function LandingPage() {
           </div>
 
           <div className="flex-1 flex items-center justify-center min-h-0 py-4">
-            <div className="relative w-full h-full max-h-[60vh] aspect-[3/4] rounded-lg overflow-hidden border border-gray-800">
-              <FohImageCard fill className="h-full" />
+            <div className="w-full">
+              <FohImageCard />
             </div>
           </div>
         </section>
