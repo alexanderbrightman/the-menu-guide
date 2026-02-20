@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import { sanitizeTextInput, sanitizePrice } from '@/lib/sanitize'
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
@@ -11,11 +11,11 @@ export const runtime = 'nodejs'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MIN_FILE_SIZE = 5 * 1024
 
-// Initialize OpenAI client lazily (only when needed)
-const getOpenAIClient = () => {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not configured')
-  return new OpenAI({ apiKey })
+// Initialize Gemini client lazily (only when needed)
+const getGeminiClient = () => {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  if (!apiKey) throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured')
+  return new GoogleGenerativeAI(apiKey)
 }
 
 interface ParsedMenuItem {
@@ -81,10 +81,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Upload JPEG, PNG, WebP, or PDF.' },
+        { error: 'Invalid file type. Upload JPEG, PNG, or WebP.' },
         { status: 400, headers: getSecurityHeaders() }
       )
     }
@@ -108,9 +108,17 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(arrayBuffer).toString('base64')
     const mimeType = file.type
 
-    // Prepare OpenAI client and optimized structured extraction prompt
-    const openai = getOpenAIClient()
-    // Optimized prompt: more concise, specific instructions for faster processing
+    // Prepare Gemini client and structured extraction prompt
+    const genAI = getGeminiClient()
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0,
+        maxOutputTokens: 3000,
+      },
+    })
+
     const structuredPrompt = `Extract menu items from this image. Return JSON only:
 {
   "items": [
@@ -120,40 +128,20 @@ export async function POST(request: NextRequest) {
 Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories from section headers. If an item has multiple price options (e.g., small/large, lunch/dinner), set price to the lowest option and append all pricing options to the description (e.g., "Small: $8 | Medium: $10 | Large: $12"). No markdown, no extra text.`
 
     const imageData = {
-      type: 'image_url' as const,
-      image_url: {
-        url: `data:${mimeType};base64,${base64}`,
+      inlineData: {
+        data: base64,
+        mimeType: mimeType as string,
       },
     }
 
-    // Optimized OpenAI call: reduced tokens, temperature=0 for consistency, faster processing
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout
-    const parseResponse = await openai.chat.completions.create(
-      {
-        model: 'gpt-4o', // Using gpt-4o for maximum accuracy and premium experience
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: structuredPrompt },
-              imageData,
-            ],
-          },
-        ],
-        response_format: { type: 'json_object' },
-        max_completion_tokens: 1500, // Reduced from 1200 - most menus fit in 800 tokens
-        temperature: 0, // Deterministic output for consistency and speed
-      },
-      { signal: controller.signal }
-    )
+    const parseResponse = await model.generateContent([structuredPrompt, imageData])
     clearTimeout(timeout)
 
-    // Optimized JSON parsing: handle response_format json_object (shouldn't need cleaning, but keep as fallback)
-    const parsed = parseResponse.choices[0]?.message?.content || '{}'
+    const parsed = parseResponse.response.text() || '{}'
     let menuData: ParsedMenu
     try {
-      // With response_format: json_object, OpenAI should return clean JSON, but clean just in case
       const cleaned = parsed.replace(/```json\n?|```/g, '').trim()
       menuData = JSON.parse(cleaned) as ParsedMenu
     } catch (parseError) {
@@ -267,7 +255,7 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     if (responseStatus === 401) {
       return NextResponse.json({ error: 'An error occurred with the scanning service' }, { status: 500, headers: getSecurityHeaders() })
     }
-    if (errorCode === 'insufficient_quota') {
+    if (errorCode === 'insufficient_quota' || errorCode === 'RESOURCE_EXHAUSTED') {
       return NextResponse.json({ error: 'Scanning service temporarily unavailable. Please try again later.' }, { status: 503, headers: getSecurityHeaders() })
     }
     return NextResponse.json({ error: errorMessage }, { status: 500, headers: getSecurityHeaders() })

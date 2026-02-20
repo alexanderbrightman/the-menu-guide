@@ -280,7 +280,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                 <Input
                   id="menu-file-input"
                   type="file"
-                  accept="image/*,application/pdf"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
