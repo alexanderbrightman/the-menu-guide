@@ -42,7 +42,7 @@ export function GettingStartedPage() {
     return (
         <div
             className="min-h-screen"
-            style={{ backgroundColor: '#f9f1e7', fontFamily: 'var(--font-raleway), sans-serif' }}
+            style={{ backgroundColor: '#F5F5F5', fontFamily: 'var(--font-raleway), sans-serif' }}
         >
             {/* Header */}
             <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">

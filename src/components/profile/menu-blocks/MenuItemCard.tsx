@@ -43,7 +43,7 @@ export function MenuItemCard({
 
     return (
         <div
-            className={`group relative flex flex-col cursor-pointer border h-full ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${showPlaceholder ? '' : (isDarkBackground ? 'bg-white/5' : 'bg-white')
+            className={`group relative flex flex-col cursor-pointer border h-full overflow-hidden ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${showPlaceholder ? '' : (isDarkBackground ? 'bg-white/5' : 'bg-white')
                 } ${!isAvailable ? 'opacity-60' : ''}`}
             onClick={onClick}
         >
@@ -99,9 +99,7 @@ export function MenuItemCard({
                                 }`}
                             aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                            <Star
-                                className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : ''}`}
-                            />
+                            <Star className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : ''}`} />
                         </button>
                         <button
                             onClick={(e) => {

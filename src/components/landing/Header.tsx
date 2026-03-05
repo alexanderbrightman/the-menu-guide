@@ -271,7 +271,7 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                 ref={mobileMenuRef}
                 className={`md:hidden fixed inset-0 z-50 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
-                style={{ backgroundColor: '#f9f1e7' }}
+                style={{ backgroundColor: '#F5F5F5' }}
             >
                 <div className="h-full flex flex-col">
                     {/* Header with close button */}

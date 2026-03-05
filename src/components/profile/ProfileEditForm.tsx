@@ -46,7 +46,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     address: profile?.address || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
     is_dark_mode: isDarkModeFromColor(profile?.menu_background_color),
-    show_display_name: profile?.show_display_name !== false // default to true
+    show_display_name: true
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -130,7 +130,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         address: profile.address || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
         is_dark_mode: isDarkModeFromColor(profile.menu_background_color),
-        show_display_name: profile.show_display_name !== false // default to true
+        show_display_name: true
       })
     }
   }, [profile])
@@ -258,7 +258,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           longitude: longitude,
           menu_font: formData.menu_font,
           menu_background_color: formData.is_dark_mode ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND,
-          show_display_name: formData.show_display_name
+          show_display_name: true
         })
         .eq('id', profile.id)
 
@@ -484,16 +484,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                   />
                 </div>
 
-                <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
-                  <Label htmlFor="show_display_name" className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>
-                    Show name on public page
-                  </Label>
-                  <Switch
-                    id="show_display_name"
-                    checked={formData.show_display_name}
-                    onCheckedChange={(checked) => setTimeout(() => setFormData({ ...formData, show_display_name: checked }), 0)}
-                  />
-                </div>
               </div>
 
               {/* Theme controls */}

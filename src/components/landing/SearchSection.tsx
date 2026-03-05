@@ -96,7 +96,7 @@ export function SearchSection() {
                 {/* Search bar container */}
                 <label
                     htmlFor="search-input"
-                    className="relative w-full flex items-center transition-all duration-300 cursor-text rounded-2xl bg-white/90 backdrop-blur-md hover:bg-white/95 focus-within:bg-white shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 focus-within:shadow-black/20 border border-gray-300 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-400/30"
+                    className="relative w-full flex items-center gap-2 transition-all duration-300 cursor-text rounded-2xl bg-white/90 backdrop-blur-md hover:bg-white/95 focus-within:bg-white shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 focus-within:shadow-black/20 border border-gray-300 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-400/30"
                     style={{
                         height: 'clamp(3rem, 5.5vw, 4rem)',
                         paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',
@@ -104,9 +104,8 @@ export function SearchSection() {
                     }}
                 >
                     <Search
-                        className="absolute text-gray-600 z-10"
+                        className="flex-shrink-0 text-gray-600"
                         style={{
-                            left: 'clamp(0.75rem, 2.5vw, 1.5rem)',
                             width: 'clamp(1rem, 2vw, 1.5rem)',
                             height: 'clamp(1rem, 2vw, 1.5rem)',
                         }}
@@ -121,10 +120,8 @@ export function SearchSection() {
                         placeholder="Search for restaurants..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-auto py-2 font-medium"
+                        className="flex-1 !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-auto py-0 px-0 font-medium"
                         style={{
-                            paddingLeft: 'clamp(2.5rem, 6vw, 3.5rem)',
-                            paddingRight: 'clamp(2.5rem, 6vw, 3.5rem)',
                             fontSize: '16px',
                             border: 'none !important',
                             outline: 'none !important',
@@ -133,10 +130,8 @@ export function SearchSection() {
                     />
                     <ArrowRight
                         key={arrowAnimationKey}
-                        className={`absolute top-1/2 -translate-y-1/2 text-gray-600 z-10 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''
-                            }`}
+                        className={`flex-shrink-0 text-gray-600 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''}`}
                         style={{
-                            right: 'clamp(0.75rem, 2.5vw, 1.5rem)',
                             width: 'clamp(1rem, 2vw, 1.5rem)',
                             height: 'clamp(1rem, 2vw, 1.5rem)',
                         }}
