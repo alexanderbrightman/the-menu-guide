@@ -238,27 +238,32 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                         <button
                             onClick={handlePrevPage}
                             disabled={currentPage === 0}
-                            className={`p-2 rounded-full transition-colors ${currentPage === 0
+                            className={`p-1.5 rounded-full transition-all duration-200 ${currentPage === 0
                                 ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-700 hover:bg-gray-200'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
+                            style={currentPage > 0 ? { background: 'rgba(0,0,0,0.04)' } : undefined}
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
 
-                        <span className="text-sm font-medium text-gray-600">
+                        <span
+                            className="text-xs font-medium text-gray-400 tabular-nums"
+                            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}
+                        >
                             {currentPage + 1} / {totalPages}
                         </span>
 
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages - 1}
-                            className={`p-2 rounded-full transition-colors ${currentPage === totalPages - 1
+                            className={`p-1.5 rounded-full transition-all duration-200 ${currentPage === totalPages - 1
                                 ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-700 hover:bg-gray-200'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
+                            style={currentPage < totalPages - 1 ? { background: 'rgba(0,0,0,0.04)' } : undefined}
                         >
-                            <ChevronRight className="w-6 h-6" />
+                            <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
                 )}

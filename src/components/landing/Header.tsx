@@ -283,15 +283,24 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                         </div>
                     </div>
 
-                    {/* Mobile hamburger button */}
+                    {/* Mobile menu button — frosted glass pill */}
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
-                        className="md:hidden p-2 text-gray-900 hover:bg-gray-900/10 rounded-lg transition-colors"
+                        className="md:hidden flex items-center gap-1.5 h-9 px-3 rounded-full transition-all duration-200"
+                        style={{
+                            background: 'rgba(255,255,255,0.6)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            border: '0.5px solid rgba(0,0,0,0.1)',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                        }}
                         aria-label="Open menu"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
+                        <span className="text-sm font-medium text-gray-700" style={{ letterSpacing: '-0.01em' }}>Menu</span>
                     </button>
                 </div>
             </header>
@@ -316,10 +325,14 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                         </Link>
                         <button
                             onClick={closeMobileMenu}
-                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-900/10 rounded-full transition-colors"
+                            className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200"
+                            style={{
+                                background: 'rgba(0,0,0,0.06)',
+                                border: '0.5px solid rgba(0,0,0,0.08)',
+                            }}
                             aria-label="Close menu"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
                         </button>

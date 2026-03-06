@@ -55,9 +55,9 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Section 2: Restaurant Map */}
+        {/* Section 2: Restaurant Map + Nearby List */}
         <section className="h-screen w-full snap-start flex items-center justify-center" style={{ isolation: 'isolate', backgroundColor: '#F5F5F5' }}>
-          <div className="w-1/2 h-1/2 rounded-2xl overflow-hidden">
+          <div className="w-[480px] h-[85vh] max-h-[700px]">
             <MapSection />
           </div>
         </section>
@@ -87,9 +87,9 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Section 2: Restaurant Map */}
-        <section className="h-[100dvh] w-full snap-start flex items-center justify-center" style={{ isolation: 'isolate', backgroundColor: '#F5F5F5' }}>
-          <div className="w-5/6 h-3/4 rounded-2xl overflow-hidden">
+        {/* Section 2: Restaurant Map + Nearby List */}
+        <section className="h-[100dvh] w-full snap-start flex items-center justify-center px-4" style={{ isolation: 'isolate', backgroundColor: '#F5F5F5' }}>
+          <div className="w-full max-w-md h-[85dvh]">
             <MapSection />
           </div>
         </section>

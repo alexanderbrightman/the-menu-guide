@@ -11,28 +11,28 @@ export function GettingStartedPage() {
     const steps = [
         {
             number: '1',
-            color: 'border-[#F4A261]',
+            color: 'border-[#FF6259]',
             title: 'Create Your Account',
             description: 'Sign up with your email, choose a unique username for your restaurant, and set your restaurant name. Your username becomes your personal menu link — themenuguide.com/menu/your-username.',
 
         },
         {
             number: '2',
-            color: 'border-[#457B9D]', // Fish
+            color: 'border-[#FF6259]',
             title: 'Set Up Your Profile',
             description: 'Customize your restaurant\'s presence — add your logo, write a bio, enter your address, choose a font style, and toggle dark mode to match your brand\'s aesthetic.',
 
         },
         {
             number: '3',
-            color: 'border-[#E9C46A]', // Gluten
+            color: 'border-[#FF6259]',
             title: 'Build Your Menu',
             description: 'Add categories like "Appetizers" or "Desserts", then fill them with items — each with a name, description, price, and photo. Mark items as specials to feature them on the home page.',
 
         },
         {
             number: '4',
-            color: 'border-[#BC6C25]',
+            color: 'border-[#FF6259]',
             title: 'Share Your Menu',
             description: 'Download your unique QR code from the dashboard or copy your public link. Place the QR code on tables, windows, or flyers — customers scan it and instantly see your live menu.',
 
@@ -56,7 +56,8 @@ export function GettingStartedPage() {
                     </Link>
                     <Link
                         href="/"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif', letterSpacing: '-0.01em' }}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -84,7 +85,14 @@ export function GettingStartedPage() {
                     {steps.map((step) => (
                         <div
                             key={step.number}
-                            className="group relative bg-white/60 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300"
+                            className="group relative rounded-2xl p-6 md:p-8 transition-all duration-300"
+                            style={{
+                                background: 'rgba(255,255,255,0.6)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)',
+                                border: '0.5px solid rgba(0,0,0,0.06)',
+                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                            }}
                         >
                             <div className="flex gap-5 md:gap-6">
                                 {/* Step number + icon */}
@@ -123,7 +131,16 @@ export function GettingStartedPage() {
                         </p>
                     </div>
 
-                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl shadow-black/10 p-6 md:p-8 border border-gray-200">
+                    <div
+                        className="rounded-2xl p-6 md:p-8"
+                        style={{
+                            background: 'rgba(255,255,255,0.82)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '0.5px solid rgba(0,0,0,0.1)',
+                            boxShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
+                        }}
+                    >
                         <AuthForm
                             onSuccess={() => {
                                 window.location.href = '/'

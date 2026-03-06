@@ -87,7 +87,15 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                 </div>
 
                 {/* Info Card */}
-                <div className="w-full bg-white rounded-2xl p-6 shadow-xl overflow-hidden relative">
+                <div
+                    className="w-full rounded-2xl p-6 overflow-hidden relative"
+                    style={{
+                        background: 'rgba(255,255,255,0.92)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+                    }}
+                >
                     <div className="flex flex-col gap-4">
                         {/* Header */}
                         <div className="flex items-start justify-between gap-4">
@@ -135,21 +143,25 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                                         alt={restaurant.display_name}
                                         width={40}
                                         height={40}
-                                        className="object-cover border border-gray-200 rounded-lg shadow-sm"
+                                        className="object-cover rounded-full shadow-sm"
+                                        style={{ border: '0.5px solid rgba(0,0,0,0.08)' }}
                                         onError={() => {
                                             console.warn(`Failed to load restaurant avatar in modal: ${restaurant.avatar_url}`)
                                             setAvatarImageError(true)
                                         }}
                                     />
                                 ) : (
-                                    <div className="w-10 h-10 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
-                                        <span className="text-gray-900 font-medium text-base">
+                                    <div
+                                        className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"
+                                        style={{ border: '0.5px solid rgba(0,0,0,0.08)' }}
+                                    >
+                                        <span className="text-gray-400 font-semibold text-base" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}>
                                             {restaurant.display_name.charAt(0).toUpperCase()}
                                         </span>
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-900 truncate group-hover:text-black transition-colors">
+                                    <p className="font-semibold text-gray-900 truncate group-hover:text-black transition-colors" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif', letterSpacing: '-0.01em' }}>
                                         {restaurant.display_name}
                                     </p>
                                     <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -162,6 +174,17 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                                         )}
                                     </div>
                                 </div>
+                                <span
+                                    className="flex-shrink-0 text-white text-xs font-semibold px-4 py-2 rounded-full"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #FF6259, #E8453C)',
+                                        boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                        letterSpacing: '-0.01em',
+                                    }}
+                                >
+                                    View Menu
+                                </span>
                             </Link>
                         </div>
                     </div>
