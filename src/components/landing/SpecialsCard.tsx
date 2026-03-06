@@ -173,7 +173,8 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                 )}
             </div>
 
-            <div className="flex-1 px-2 flex flex-col">
+            <div className="flex-1 px-2 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto min-h-0">
                 <div className={`grid gap-2 md:gap-3 grid-cols-2 md:grid-cols-3`}>
                     {currentSpecials.map((special, index) => (
                         <button
@@ -231,10 +232,11 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                         <div key={`empty-${i}`} className="hidden md:block" />
                     ))}
                 </div>
+                </div>
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4 mt-2 pb-2">
+                    <div className="flex items-center justify-center gap-4 mt-2 pb-2 flex-shrink-0">
                         <button
                             onClick={handlePrevPage}
                             disabled={currentPage === 0}
