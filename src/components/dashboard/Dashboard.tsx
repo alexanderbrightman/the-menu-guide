@@ -16,10 +16,9 @@ import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { QrCode, Check, Copy, Download } from 'lucide-react'
+import { Check, Copy, Download, X } from 'lucide-react'
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
 const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
@@ -333,93 +332,115 @@ export function Dashboard() {
       {/* Mobile QR Code Dialog */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
         <DialogContent
-          className="sm:max-w-md border-0"
+          className={`w-full max-w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${isDarkBackground ? 'sm:border-white/10' : 'sm:border-black/8'} p-0 gap-0 sm:rounded-xl overflow-hidden [&>button]:hidden flex flex-col`}
           style={{
-            backgroundColor: isDarkBackground ? '#1a1a2e' : '#ffffff',
+            backgroundColor: menuBackgroundColor,
             color: contrastColor,
           }}
         >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold" style={{ color: contrastColor }}>
-              <QrCode className="h-5 w-5" />
+          {/* Header */}
+          <div className={`flex items-center justify-between p-4 border-b ${isDarkBackground ? 'border-white/10' : 'border-black/8'}`}>
+            <div />
+            <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
               Menu QR Code
             </DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-5 py-4">
-            {qrCodeUrl ? (
-              <div className="relative w-48 h-48 bg-white rounded-xl overflow-hidden shadow-lg p-3">
-                <Image
-                  src={qrCodeUrl}
-                  alt="Menu QR Code"
-                  fill
-                  className="object-contain p-2"
-                  unoptimized
-                  priority
-                />
-              </div>
-            ) : (
-              <div
-                className="w-48 h-48 rounded-xl flex items-center justify-center"
-                style={{
-                  backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                  border: `1px solid ${isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
-                }}
-              >
-                <p className="text-sm opacity-50">Generating...</p>
-              </div>
-            )}
-            <p className="text-sm text-center opacity-60">
-              Scan to view your digital menu instantly.
-            </p>
-            <div
-              className="w-full flex items-center gap-2 p-3 rounded-lg border"
-              style={{
-                backgroundColor: isDarkBackground ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-              }}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowQrDialog(false)}
+              className="h-8 w-8 hover:bg-transparent"
+              style={{ color: contrastColor }}
             >
-              <code className="text-xs flex-1 truncate font-mono opacity-75">
-                {typeof window !== 'undefined' ? window.location.origin : ''}/menu/{profile.username}
-              </code>
-              <Button
-                size="icon"
-                variant="ghost"
-                className={`h-7 w-7 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-200'}`}
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 2000)
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="flex flex-col items-center gap-5">
+              {/* QR Code */}
+              {qrCodeUrl ? (
+                <div className="relative w-48 h-48 bg-white rounded-xl overflow-hidden shadow-lg p-3">
+                  <Image
+                    src={qrCodeUrl}
+                    alt="Menu QR Code"
+                    fill
+                    className="object-contain p-2"
+                    unoptimized
+                    priority
+                  />
+                </div>
+              ) : (
+                <div
+                  className="w-48 h-48 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                    border: `1px solid ${isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                  }}
+                >
+                  <p className="text-sm opacity-50">Generating...</p>
+                </div>
+              )}
+
+              <p className={`text-sm text-center ${isDarkBackground ? 'text-white/60' : 'text-gray-500'}`}>
+                Scan to view your digital menu instantly.
+              </p>
+
+              {/* Link Box */}
+              <div
+                className={`w-full flex items-center gap-2 p-3 rounded-lg border ${isDarkBackground ? 'border-white/10' : 'border-black/8'}`}
+                style={{
+                  backgroundColor: isDarkBackground ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
                 }}
-                style={{ color: contrastColor }}
               >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              </Button>
+                <code className="text-xs flex-1 min-w-0 truncate block font-mono opacity-75">
+                  {typeof window !== 'undefined' ? window.location.origin : ''}/menu/{profile.username}
+                </code>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={`h-7 w-7 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-200'}`}
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                  style={{ color: contrastColor }}
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 w-full">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
+                  onClick={downloadQRCode}
+                  disabled={!qrCodeUrl}
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copied!' : 'Copy Link'}
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-3 w-full">
-              <Button
-                size="sm"
-                variant="outline"
-                className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
-                onClick={downloadQRCode}
-                disabled={!qrCodeUrl}
-              >
-                <Download className="h-4 w-4" />
-                Download
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/menu/${profile.username}`)
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 2000)
-                }}
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'Copied!' : 'Copy Link'}
-              </Button>
-            </div>
+
+            <div className="pb-10 sm:pb-0" />
           </div>
         </DialogContent>
       </Dialog>

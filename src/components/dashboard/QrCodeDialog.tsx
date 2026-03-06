@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button'
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import { QrCode, Check, Copy, Download, X } from 'lucide-react'
+import { Check, Copy, Download, X } from 'lucide-react'
 
 interface QrCodeDialogProps {
     qrCodeUrl: string | null
@@ -21,6 +20,8 @@ interface QrCodeDialogProps {
     outlineButtonClass: string
     onDownload: () => void
     children: React.ReactNode
+    backgroundColor?: string
+    borderColorClass?: string
 }
 
 export function QrCodeDialog({
@@ -32,8 +33,15 @@ export function QrCodeDialog({
     outlineButtonClass,
     onDownload,
     children,
+    backgroundColor,
+    borderColorClass,
 }: QrCodeDialogProps) {
     const [copied, setCopied] = useState(false)
+    const [open, setOpen] = useState(false)
+
+    const borderClass = borderColorClass || (isDarkBackground ? 'border-white/10' : 'border-black/8')
+    const bgColor = backgroundColor || (isDarkBackground ? '#1a1a2e' : '#ffffff')
+    const primaryTextClass = isDarkBackground ? 'text-white' : 'text-gray-900'
 
     const handleCopy = () => {
         navigator.clipboard.writeText(menuLink)
@@ -42,97 +50,112 @@ export function QrCodeDialog({
     }
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
             <DialogContent
-                className="sm:max-w-md border-0 overflow-hidden max-w-[calc(100vw-2rem)] p-4 sm:p-6"
+                className={`w-full max-w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${borderClass} p-0 gap-0 sm:rounded-xl overflow-hidden [&>button]:hidden flex flex-col`}
                 style={{
-                    backgroundColor: isDarkBackground ? '#1a1a2e' : '#ffffff',
+                    backgroundColor: bgColor,
                     color: contrastColor,
                 }}
             >
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-bold" style={{ color: contrastColor }}>
-                        <QrCode className="h-5 w-5 flex-shrink-0" />
+                {/* Header */}
+                <div className={`flex items-center justify-between p-4 border-b ${borderClass}`}>
+                    <div />
+                    <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
                         Menu QR Code
                     </DialogTitle>
-                </DialogHeader>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setOpen(false)}
+                        className="h-8 w-8 hover:bg-transparent"
+                        style={{ color: contrastColor }}
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
 
-                <div className="flex flex-col items-center gap-3 sm:gap-5 py-2 sm:py-4 w-full min-w-0 overflow-hidden box-border">
-                    {/* QR Code Image - responsive sizing */}
-                    {qrCodeUrl ? (
-                        <div className="relative w-[55%] max-w-[200px] aspect-square bg-white rounded-xl overflow-hidden shadow-lg p-2 sm:p-3">
-                            <Image
-                                src={qrCodeUrl}
-                                alt="Menu QR Code"
-                                fill
-                                className="object-contain p-1 sm:p-2"
-                                unoptimized
-                                priority
-                            />
-                        </div>
-                    ) : (
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                    <div className="flex flex-col items-center gap-5">
+                        {/* QR Code */}
+                        {qrCodeUrl ? (
+                            <div className="relative w-48 h-48 bg-white rounded-xl overflow-hidden shadow-lg p-3">
+                                <Image
+                                    src={qrCodeUrl}
+                                    alt="Menu QR Code"
+                                    fill
+                                    className="object-contain p-2"
+                                    unoptimized
+                                    priority
+                                />
+                            </div>
+                        ) : (
+                            <div
+                                className="w-48 h-48 rounded-xl flex items-center justify-center"
+                                style={{
+                                    backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                    border: `1px solid ${isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                                }}
+                            >
+                                <p className="text-sm opacity-50">Generating...</p>
+                            </div>
+                        )}
+
+                        <p className={`text-sm text-center ${isDarkBackground ? 'text-white/60' : 'text-gray-500'}`}>
+                            Scan to view your digital menu instantly.
+                        </p>
+
+                        {/* Link Box */}
                         <div
-                            className="w-[55%] max-w-[200px] aspect-square rounded-xl flex items-center justify-center"
+                            className={`w-full flex items-center gap-2 p-3 rounded-lg border ${borderClass}`}
                             style={{
-                                backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                                border: `1px solid ${isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                                backgroundColor: isDarkBackground ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
                             }}
                         >
-                            <p className="text-sm opacity-50">Generating...</p>
+                            <code className="text-xs flex-1 min-w-0 truncate block font-mono opacity-75">
+                                {menuLink}
+                            </code>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className={`h-7 w-7 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-200'}`}
+                                onClick={handleCopy}
+                                style={{ color: contrastColor }}
+                            >
+                                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            </Button>
                         </div>
-                    )}
 
-                    <p className="text-xs sm:text-sm text-center opacity-60">
-                        Scan to view your digital menu instantly.
-                    </p>
-
-                    {/* Link Box */}
-                    <div
-                        className="w-full flex items-center gap-2 p-2 sm:p-3 rounded-lg border min-w-0 overflow-hidden box-border"
-                        style={{
-                            backgroundColor: isDarkBackground ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                            borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                        }}
-                    >
-                        <code className="text-[11px] sm:text-xs flex-1 min-w-0 truncate block font-mono opacity-75">
-                            {menuLink}
-                        </code>
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            className={`h-7 w-7 flex-shrink-0 ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-200'}`}
-                            onClick={handleCopy}
-                            style={{ color: contrastColor }}
-                        >
-                            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                        </Button>
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 w-full">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
+                                onClick={onDownload}
+                                disabled={!qrCodeUrl}
+                            >
+                                <Download className="h-4 w-4" />
+                                Download
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className={`flex-1 h-10 gap-2 ${outlineButtonClass}`}
+                                onClick={handleCopy}
+                            >
+                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                {copied ? 'Copied!' : 'Copy Link'}
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 sm:gap-3 w-full">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className={`flex-1 h-9 sm:h-10 gap-1.5 sm:gap-2 text-xs sm:text-sm ${outlineButtonClass}`}
-                            onClick={onDownload}
-                            disabled={!qrCodeUrl}
-                        >
-                            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Download
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className={`flex-1 h-9 sm:h-10 gap-1.5 sm:gap-2 text-xs sm:text-sm ${outlineButtonClass}`}
-                            onClick={handleCopy}
-                        >
-                            {copied ? <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                            {copied ? 'Copied!' : 'Copy Link'}
-                        </Button>
-                    </div>
+                    <div className="pb-10 sm:pb-0" />
                 </div>
             </DialogContent>
         </Dialog>
