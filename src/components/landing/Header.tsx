@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { AuthForm } from '@/components/auth/AuthForm'
 
 interface HeaderProps {
@@ -112,25 +111,36 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
 
                     {/* Desktop buttons with expanding forms */}
                     <div className="hidden md:block relative">
-                        <div className="flex items-center gap-6">
-                            <Button
+                        <div className="flex items-center gap-4">
+                            <button
                                 onClick={() => {
                                     toggleSection('login')
                                     setIsFlipped(false)
                                 }}
-                                variant="outline"
-                                className={`border-gray-900 text-gray-900 hover:bg-gray-900/10 rounded-lg transition-all ${expandedSection === 'login' ? 'bg-gray-900/10 shadow-md' : 'bg-transparent'}`}
+                                className="h-9 px-5 rounded-full text-sm font-medium transition-all duration-200"
+                                style={{
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                    letterSpacing: '-0.01em',
+                                    background: expandedSection === 'login' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.6)',
+                                    backdropFilter: 'blur(12px)',
+                                    WebkitBackdropFilter: 'blur(12px)',
+                                    border: '0.5px solid rgba(0,0,0,0.1)',
+                                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                                    color: '#1a1a1a',
+                                }}
                             >
                                 Sign In
-                            </Button>
+                            </button>
 
-                            <Link href="/getting-started">
-                                <Button
-                                    variant="ghost"
-                                    className="text-gray-900 hover:bg-gray-900/10 rounded-lg transition-all underline underline-offset-4"
-                                >
-                                    Getting Started
-                                </Button>
+                            <Link
+                                href="/getting-started"
+                                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                                style={{
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                    letterSpacing: '-0.01em',
+                                }}
+                            >
+                                Getting Started
                             </Link>
                         </div>
 
@@ -148,8 +158,15 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                 {/* Front Face: Login Form */}
                                 <div
                                     ref={frontRef}
-                                    className="absolute inset-0 w-full bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/20 p-6 border border-gray-200 [backface-visibility:hidden]"
-                                    style={{ height: 'fit-content' }}
+                                    className="absolute inset-0 w-full rounded-2xl p-6 [backface-visibility:hidden]"
+                                    style={{
+                                        height: 'fit-content',
+                                        background: 'rgba(255,255,255,0.88)',
+                                        backdropFilter: 'blur(20px)',
+                                        WebkitBackdropFilter: 'blur(20px)',
+                                        border: '0.5px solid rgba(0,0,0,0.1)',
+                                        boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+                                    }}
                                 >
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-lg font-semibold text-gray-900">Restaurant Login</h3>
@@ -176,8 +193,15 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                 {/* Back Face: Contact Form */}
                                 <div
                                     ref={backRef}
-                                    className="absolute inset-0 w-full bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/20 p-6 border border-gray-200 [backface-visibility:hidden] [transform:rotateY(180deg)]"
-                                    style={{ height: 'fit-content' }}
+                                    className="absolute inset-0 w-full rounded-2xl p-6 [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                                    style={{
+                                        height: 'fit-content',
+                                        background: 'rgba(255,255,255,0.88)',
+                                        backdropFilter: 'blur(20px)',
+                                        WebkitBackdropFilter: 'blur(20px)',
+                                        border: '0.5px solid rgba(0,0,0,0.1)',
+                                        boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+                                    }}
                                 >
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-lg font-semibold text-gray-900">Contact the Builder</h3>
@@ -204,7 +228,7 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                 required
                                                 value={contactFormData.name}
                                                 onChange={(e) => setContactFormData({ ...contactFormData, name: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                                                className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 transition-all"
                                                 placeholder="Your name"
                                             />
                                         </div>
@@ -220,7 +244,7 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                 required
                                                 value={contactFormData.email}
                                                 onChange={(e) => setContactFormData({ ...contactFormData, email: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                                                className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 transition-all"
                                                 placeholder="your@email.com"
                                             />
                                         </div>
@@ -236,14 +260,20 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                 rows={3}
                                                 value={contactFormData.message}
                                                 onChange={(e) => setContactFormData({ ...contactFormData, message: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all resize-none"
+                                                className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 transition-all resize-none"
                                                 placeholder="How can we help?"
                                             />
                                         </div>
                                         <button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className="w-full h-9 border border-gray-900 text-gray-900 hover:bg-gray-900/10 bg-transparent rounded-lg shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                            className="w-full h-9 rounded-full text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #FF6259, #E8453C)',
+                                                boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                                letterSpacing: '-0.01em',
+                                            }}
                                         >
                                             {isSubmitting ? 'Sending...' : 'Send Message'}
                                         </button>
@@ -388,7 +418,7 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                         required
                                                         value={contactFormData.name}
                                                         onChange={(e) => setContactFormData({ ...contactFormData, name: e.target.value })}
-                                                        className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                                                        className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 transition-all"
                                                         placeholder="Your name"
                                                     />
                                                 </div>
@@ -404,7 +434,7 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                         required
                                                         value={contactFormData.email}
                                                         onChange={(e) => setContactFormData({ ...contactFormData, email: e.target.value })}
-                                                        className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                                                        className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 transition-all"
                                                         placeholder="your@email.com"
                                                     />
                                                 </div>
@@ -420,14 +450,20 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                         rows={3}
                                                         value={contactFormData.message}
                                                         onChange={(e) => setContactFormData({ ...contactFormData, message: e.target.value })}
-                                                        className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all resize-none"
+                                                        className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 transition-all resize-none"
                                                         placeholder="How can we help?"
                                                     />
                                                 </div>
                                                 <button
                                                     type="submit"
                                                     disabled={isSubmitting}
-                                                    className="w-full h-9 border border-gray-900 text-gray-900 hover:bg-gray-900/10 bg-transparent rounded-lg shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                    className="w-full h-9 rounded-full text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #FF6259, #E8453C)',
+                                                boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                                letterSpacing: '-0.01em',
+                                            }}
                                                 >
                                                     {isSubmitting ? 'Sending...' : 'Send Message'}
                                                 </button>

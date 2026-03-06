@@ -57,7 +57,7 @@ export function LandingPage() {
 
         {/* Section 2: Restaurant Map */}
         <section className="h-screen w-full snap-start flex items-center justify-center" style={{ isolation: 'isolate', backgroundColor: '#F5F5F5' }}>
-          <div className="w-1/2 h-1/2 rounded-2xl overflow-hidden border border-black">
+          <div className="w-1/2 h-1/2 rounded-2xl overflow-hidden">
             <MapSection />
           </div>
         </section>
@@ -89,7 +89,7 @@ export function LandingPage() {
 
         {/* Section 2: Restaurant Map */}
         <section className="h-[100dvh] w-full snap-start flex items-center justify-center" style={{ isolation: 'isolate', backgroundColor: '#F5F5F5' }}>
-          <div className="w-5/6 h-3/4 rounded-2xl overflow-hidden border border-black">
+          <div className="w-5/6 h-3/4 rounded-2xl overflow-hidden">
             <MapSection />
           </div>
         </section>

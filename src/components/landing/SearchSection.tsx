@@ -93,21 +93,26 @@ export function SearchSection() {
     return (
         <div className="w-full">
             <div className="relative w-full max-w-2xl mx-auto">
-                {/* Search bar container */}
+                {/* Search bar container — frosted glass, Apple-inspired */}
                 <label
                     htmlFor="search-input"
-                    className="relative w-full flex items-center gap-2 transition-all duration-300 cursor-text rounded-2xl bg-white/90 backdrop-blur-md hover:bg-white/95 focus-within:bg-white shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 focus-within:shadow-black/20 border border-gray-300 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-400/30"
+                    className="relative w-full flex items-center gap-2.5 transition-all duration-300 cursor-text rounded-2xl"
                     style={{
                         height: 'clamp(3rem, 5.5vw, 4rem)',
                         paddingLeft: 'clamp(0.75rem, 2.5vw, 1.5rem)',
                         paddingRight: 'clamp(0.75rem, 2.5vw, 1.5rem)',
+                        background: 'rgba(255,255,255,0.72)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: '0.5px solid rgba(0,0,0,0.1)',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.08), 0 0.5px 1px rgba(0,0,0,0.04)',
                     }}
                 >
                     <Search
-                        className="flex-shrink-0 text-gray-600"
+                        className="flex-shrink-0 text-gray-400"
                         style={{
-                            width: 'clamp(1rem, 2vw, 1.5rem)',
-                            height: 'clamp(1rem, 2vw, 1.5rem)',
+                            width: 'clamp(1rem, 2vw, 1.25rem)',
+                            height: 'clamp(1rem, 2vw, 1.25rem)',
                         }}
                     />
                     <Input
@@ -117,30 +122,42 @@ export function SearchSection() {
                         autoComplete="off"
                         autoCorrect="off"
                         spellCheck="false"
-                        placeholder="Search for restaurants..."
+                        placeholder="Search restaurants..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400 h-auto py-0 px-0 font-medium"
+                        className="flex-1 !border-0 bg-transparent !focus-visible:ring-0 !focus-visible:border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder:text-gray-400/60 h-auto py-0 px-0"
                         style={{
                             fontSize: '16px',
                             border: 'none !important',
                             outline: 'none !important',
                             boxShadow: 'none !important',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                            fontWeight: 400,
+                            letterSpacing: '-0.01em',
                         }}
                     />
                     <ArrowRight
                         key={arrowAnimationKey}
-                        className={`flex-shrink-0 text-gray-600 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''}`}
+                        className={`flex-shrink-0 text-gray-400 ${searchResults.length > 0 ? 'arrow-swing-animation' : ''}`}
                         style={{
-                            width: 'clamp(1rem, 2vw, 1.5rem)',
-                            height: 'clamp(1rem, 2vw, 1.5rem)',
+                            width: 'clamp(1rem, 2vw, 1.25rem)',
+                            height: 'clamp(1rem, 2vw, 1.25rem)',
                         }}
                     />
                 </label>
 
                 {/* Search results dropdown */}
                 {searchQuery.trim().length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-3 shadow-xl shadow-black/20 border border-gray-200 bg-white/95 backdrop-blur-md max-h-96 overflow-y-auto z-30 rounded-2xl">
+                    <div
+                        className="absolute top-full left-0 right-0 mt-3 max-h-96 overflow-y-auto z-30 rounded-2xl"
+                        style={{
+                            background: 'rgba(255,255,255,0.88)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '0.5px solid rgba(0,0,0,0.1)',
+                            boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+                        }}
+                    >
                         {isSearching ? (
                             <div className="p-8 text-center text-gray-500">
                                 <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-gray-500" />

@@ -19,8 +19,9 @@ interface Props {
   restaurants: Restaurant[]
 }
 
-// Stamen Toner tile (white bg, black roads, transit stops)
-const TONER_URL = 'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png'
+// Stamen Toner — white background, pure black roads and outlines
+const TONER_BG_URL = 'https://tiles.stadiamaps.com/tiles/stamen_toner_background/{z}/{x}/{y}{r}.png?api_key=f1d73476-34da-42b5-a1ee-e71be5fef8cc'
+const TONER_LINES_URL = 'https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}{r}.png?api_key=f1d73476-34da-42b5-a1ee-e71be5fef8cc'
 const TONER_ATTRIBUTION =
   '&copy; <a href="https://stamen.com">Stamen Design</a> &copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 
@@ -31,15 +32,61 @@ function getMiniMapUrl(lat: number, lng: number): string {
   const y = Math.floor(
     ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * n
   )
-  return `https://tiles.stadiamaps.com/tiles/stamen_toner/${z}/${x}/${y}.png`
+  return `https://a.basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png`
 }
 
-function createDotIcon(size: number, centerColor: string, edgeColor: string, pulse = false) {
-  const bg = `radial-gradient(circle at center, ${centerColor} 0%, ${edgeColor} 100%)`
+// Apple Maps–inspired pin: vibrant marker + frosted label card
+function createRestaurantIcon(name: string, isSelected: boolean) {
+  // Pin: teardrop shape built from a circle + rotated square, Apple-red/coral
+  const pinColor = isSelected ? '#E8453C' : '#FF6259'
+  const pinScale = isSelected ? 1.15 : 1
+  const labelBg = isSelected
+    ? 'rgba(255,255,255,0.96)'
+    : 'rgba(255,255,255,0.82)'
+  const labelBorder = isSelected
+    ? 'rgba(0,0,0,0.14)'
+    : 'rgba(0,0,0,0.08)'
+  const labelShadow = isSelected
+    ? '0 2px 12px rgba(0,0,0,0.18), 0 0.5px 1px rgba(0,0,0,0.1)'
+    : '0 1px 6px rgba(0,0,0,0.12), 0 0.5px 1px rgba(0,0,0,0.06)'
+  const fontWeight = isSelected ? 600 : 500
+  const textColor = isSelected ? '#1a1a1a' : '#444'
+
   return L.divIcon({
-    html: `<div class="${pulse ? 'orb-core' : 'orb-core-selected'}" style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    html: `
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;position:relative;">
+        <div style="
+          backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+          background:${labelBg};
+          border:0.5px solid ${labelBorder};
+          border-radius:8px;
+          padding:4px 10px;
+          font-size:12px;
+          font-weight:${fontWeight};
+          color:${textColor};
+          font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;
+          letter-spacing:-0.01em;
+          box-shadow:${labelShadow};
+          white-space:nowrap;
+          line-height:1.3;
+        ">${name}</div>
+        <div style="
+          width:2px;height:8px;
+          background:linear-gradient(to bottom, rgba(0,0,0,0.12), transparent);
+          margin-left:10px;
+        "></div>
+        <div style="
+          width:${10 * pinScale}px;
+          height:${10 * pinScale}px;
+          border-radius:50%;
+          background:${pinColor};
+          box-shadow:0 1px 4px rgba(232,69,60,0.4), inset 0 1px 1px rgba(255,255,255,0.3);
+          margin-left:${5 - (10 * pinScale - 10) / 2}px;
+        "></div>
+      </div>`,
+    iconSize: [0, 0],
+    // anchor at center of the dot: ~10px left, full height (~card 20 + stem 8 + dot 10 = 38px)
+    iconAnchor: [10, Math.round(20 + 8 + 10 * pinScale)],
     className: '',
   })
 }
@@ -132,44 +179,59 @@ export default function MapLeaflet({ restaurants }: Props) {
     return Math.round(miles * STEPS_PER_MILE)
   }, [selected, userLatLng])
 
-  const normalIcon = useMemo(() => createDotIcon(14, '#e8f5e8', '#5a7a5c', true), [])
-  const selectedIcon = useMemo(() => createDotIcon(20, '#f0fff0', '#3d5a3f', false), [])
 
   return (
     <div className="menu-guide-map relative w-full h-full">
       <style>{`
-        .menu-guide-map .leaflet-container { background: transparent !important; }
-
-        @keyframes orb-core-glow {
-          0%, 100% { box-shadow: 0 0 3px 1px rgba(92,122,92,0.5); }
-          50%       { box-shadow: 0 0 6px 2px rgba(92,122,92,0.85); }
+        .menu-guide-map .leaflet-container { background: #F5F5F5 !important; }
+        .menu-guide-map .leaflet-control-zoom {
+          border: none !important;
+          border-radius: 10px !important;
+          overflow: hidden;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.12), 0 0.5px 1px rgba(0,0,0,0.06) !important;
         }
-        @keyframes orb-core-selected {
-          0%, 100% { box-shadow: 0 0 4px 2px rgba(90,122,92,0.7); }
-          50%       { box-shadow: 0 0 8px 3px rgba(90,122,92,1); }
+        .menu-guide-map .leaflet-control-zoom a {
+          background: rgba(255,255,255,0.85) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          color: #333 !important;
+          border: none !important;
+          border-bottom: 0.5px solid rgba(0,0,0,0.08) !important;
+          width: 36px !important;
+          height: 36px !important;
+          line-height: 36px !important;
+          font-size: 18px !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif !important;
+          font-weight: 300 !important;
+          transition: background 0.15s ease;
         }
-        .orb-core          { animation: orb-core-glow     2.4s ease-in-out infinite; }
-        .orb-core-selected { animation: orb-core-selected 1.6s ease-in-out infinite; }
+        .menu-guide-map .leaflet-control-zoom a:hover {
+          background: rgba(255,255,255,0.95) !important;
+        }
+        .menu-guide-map .leaflet-control-zoom a:last-child {
+          border-bottom: none !important;
+        }
       `}</style>
 
-      {/* Blend wrapper — only the map tiles get multiplied against the cream background.
-          Popup card is a sibling outside this div so it stays pure white. */}
-      <div className="absolute inset-0" style={{ mixBlendMode: 'multiply' }}>
+      <div className="absolute inset-0">
         <MapContainer
           center={[40.7128, -74.006]}
-          zoom={12}
+          zoom={13}
+          minZoom={10}
+          maxZoom={19}
           style={{ width: '100%', height: '100%' }}
           zoomControl={true}
           attributionControl={false}
         >
-          <TileLayer attribution={TONER_ATTRIBUTION} url={TONER_URL} />
+          <TileLayer attribution={TONER_ATTRIBUTION} url={TONER_BG_URL} />
+          <TileLayer url={TONER_LINES_URL} />
           <TwoFingerGestureHandler />
           <MapClickHandler onMapClick={() => setSelected(null)} />
           {restaurants.map((r) => (
             <Marker
               key={r.id}
               position={[r.latitude, r.longitude]}
-              icon={selected?.id === r.id ? selectedIcon : normalIcon}
+              icon={createRestaurantIcon(r.display_name, selected?.id === r.id)}
               eventHandlers={{
                 click: (e) => {
                   e.originalEvent.stopPropagation()
@@ -191,11 +253,24 @@ export default function MapLeaflet({ restaurants }: Props) {
 
       {selected && (
         <div
-          className="absolute bottom-4 left-4 right-4 z-[1000] bg-white rounded-2xl shadow-xl px-4 py-3 animate-in slide-in-from-bottom-4 duration-200"
+          className="absolute bottom-4 left-4 right-4 z-[1000] rounded-2xl px-4 py-3 animate-in slide-in-from-bottom-4 duration-200"
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '0.5px solid rgba(0,0,0,0.1)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <button
-            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-700 text-sm leading-none"
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 text-sm leading-none transition-colors"
+            style={{
+              background: 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(8px)',
+              border: '0.5px solid rgba(0,0,0,0.1)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+            }}
             onClick={() => setSelected(null)}
             aria-label="Close"
           >
@@ -204,12 +279,12 @@ export default function MapLeaflet({ restaurants }: Props) {
 
           <div className="flex gap-3 items-center">
             {/* Avatar */}
-            <div className="flex-shrink-0 w-11 h-11 rounded-full overflow-hidden border border-gray-200 bg-gray-100">
+            <div className="flex-shrink-0 w-11 h-11 rounded-full overflow-hidden bg-gray-100" style={{ border: '0.5px solid rgba(0,0,0,0.08)' }}>
               {selected.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={selected.avatar_url} alt={selected.display_name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg font-bold">
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg font-semibold" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}>
                   {selected.display_name.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -217,24 +292,27 @@ export default function MapLeaflet({ restaurants }: Props) {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-gray-900 truncate leading-tight">{selected.display_name}</p>
+              <p className="font-semibold text-gray-900 truncate leading-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}>{selected.display_name}</p>
               {steps !== null && (
-                <p className="text-xs font-medium leading-tight" style={{ color: '#5A7A5C' }}>
-                  {steps.toLocaleString()} steps to your nearest delight
+                <p className="text-xs font-medium leading-tight mt-0.5" style={{ color: '#E8453C' }}>
+                  {steps.toLocaleString()} steps away
                 </p>
               )}
               {selected.address && (
-                <p className="text-xs text-gray-500 truncate leading-tight">{selected.address}</p>
+                <p className="text-xs text-gray-500 truncate leading-tight mt-0.5" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}>{selected.address}</p>
               )}
             </div>
 
             {/* CTA */}
             <a
               href={`/menu/${selected.username}`}
-              className="flex-shrink-0 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-              style={{ backgroundColor: '#7C9A7E' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#5A7A5C')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#7C9A7E')}
+              className="flex-shrink-0 text-white text-sm font-semibold px-4 py-2 rounded-full transition-all whitespace-nowrap"
+              style={{
+                background: 'linear-gradient(135deg, #FF6259, #E8453C)',
+                boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                letterSpacing: '-0.01em',
+              }}
             >
               View Menu
             </a>
