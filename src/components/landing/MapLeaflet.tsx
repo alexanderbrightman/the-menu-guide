@@ -225,7 +225,6 @@ export default function MapLeaflet({ restaurants }: Props) {
         >
           <TileLayer attribution={TONER_ATTRIBUTION} url={TONER_BG_URL} />
           <TileLayer url={TONER_LINES_URL} />
-          <TwoFingerGestureHandler />
           <MapClickHandler onMapClick={() => setSelected(null)} />
           {restaurants.map((r) => (
             <Marker
