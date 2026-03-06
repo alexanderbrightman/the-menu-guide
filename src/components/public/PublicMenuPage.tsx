@@ -849,7 +849,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       {
         selectedItem && (
           <div
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
             style={{
               width: '100vw',
               overflow: 'hidden',
@@ -858,59 +858,47 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
           >
             <div
               className={`w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300`}
-              onClick={(e) => e.stopPropagation()}
             >
-              {/* Image Card */}
-              <div
-                className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border group ${selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? 'bg-black/40 backdrop-blur-md border-white/10' : ''}`}
-                style={!(selectedItem.image_url && !failedImages.has(selectedItem.image_url)) ? {
-                  backgroundColor: menuBackgroundColor,
-                  borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-                } : undefined}
+              {/* Close Button - desktop only */}
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="hidden md:flex absolute top-3 right-3 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
+                aria-label="Close"
               >
-                {/* Close Button */}
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="absolute top-3 right-3 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <X className="h-5 w-5" />
+              </button>
 
-                {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
-                  <div className="w-full h-full relative">
-                    <Image
-                      src={selectedItem.image_url}
-                      alt={selectedItem.title}
-                      fill
-                      className="object-contain"
-                      sizes="(min-width: 768px) 600px, 100vw"
-                      priority
-                      onError={() => {
-                        if (selectedItem.image_url) {
-                          console.warn(`Failed to load modal image: ${selectedItem.image_url}`)
-                          handleImageError(selectedItem.image_url)
-                        }
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="relative w-full h-full">
-                    <Image
-                      src="/MenuImgPlaceholder.png"
-                      alt={selectedItem.title}
-                      fill
-                      className="object-cover scale-125"
-                      style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
-                      sizes="(min-width: 768px) 600px, 100vw"
-                    />
-                  </div>
-                )}
-              </div>
+              {/* Image */}
+              {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedItem.image_url}
+                  alt={selectedItem.title}
+                  className="max-h-[45vh] max-w-full w-auto mx-auto rounded-2xl block"
+                  onError={() => {
+                    if (selectedItem.image_url) {
+                      console.warn(`Failed to load modal image: ${selectedItem.image_url}`)
+                      handleImageError(selectedItem.image_url)
+                    }
+                  }}
+                />
+              ) : (
+                <div className="w-full aspect-[4/3] relative rounded-2xl overflow-hidden">
+                  <Image
+                    src="/MenuImgPlaceholder.png"
+                    alt={selectedItem.title}
+                    fill
+                    className="object-cover scale-125"
+                    style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
+                    sizes="(min-width: 768px) 600px, 100vw"
+                  />
+                </div>
+              )}
 
               {/* Info Card */}
               <div
                 className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
+                onClick={(e) => e.stopPropagation()}
                 style={{
                   backgroundColor: menuBackgroundColor,
                   color: contrastColor,

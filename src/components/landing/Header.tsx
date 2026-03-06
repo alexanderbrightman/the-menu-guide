@@ -99,7 +99,7 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
 
     return (
         <>
-            <header ref={headerRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2" style={{ backgroundColor: 'transparent' }}>
+            <header ref={headerRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-2" style={{ backgroundColor: 'transparent' }}>
                 <div className="flex justify-between items-center">
                     <Link
                         href="/"

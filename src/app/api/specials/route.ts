@@ -50,6 +50,12 @@ export async function GET(request: NextRequest) {
           user_id,
           menu_categories (
             name
+          ),
+          menu_item_tags (
+            tags (
+              id,
+              name
+            )
           )
         ),
         profiles!user_favorites_user_id_fkey (
@@ -117,6 +123,10 @@ export async function GET(request: NextRequest) {
                         price: item.price,
                         image_url: item.image_url,
                         category: item.menu_categories?.name || null,
+                        tags: (item.menu_item_tags || []).map((t: any) => ({
+                            id: t.tags.id,
+                            name: t.tags.name,
+                        })),
                     },
                     restaurant: {
                         id: restaurant.id,
@@ -124,6 +134,8 @@ export async function GET(request: NextRequest) {
                         display_name: restaurant.display_name,
                         avatar_url: restaurant.avatar_url,
                         address: restaurant.address,
+                        latitude: restaurant.latitude,
+                        longitude: restaurant.longitude,
                     },
                     distance,
                 }

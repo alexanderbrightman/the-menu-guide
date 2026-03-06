@@ -16,6 +16,7 @@ interface Special {
     price: number | null
     image_url: string | null
     category: string | null
+    tags?: { id: number; name: string }[]
   }
   restaurant: {
     id: string
@@ -23,6 +24,8 @@ interface Special {
     display_name: string
     avatar_url: string | null
     address: string | null
+    latitude?: number | null
+    longitude?: number | null
   }
   distance: number | null
 }
@@ -45,7 +48,7 @@ export function LandingPage() {
         </div>
 
         {/* Section 1: Search + Specials */}
-        <section className="min-h-screen w-full snap-start flex flex-col items-center px-4 pt-24 pb-8">
+        <section className="min-h-screen w-full snap-start flex flex-col items-center px-4 pt-16 pb-6">
           <div className="w-full max-w-2xl flex flex-col gap-6 flex-1">
             <SearchSection />
             <SpecialsCard
@@ -73,7 +76,7 @@ export function LandingPage() {
             <Header onResetPasswordClick={() => setShowPasswordResetModal(true)} />
           </div>
 
-          <div className="flex-1 flex flex-col pt-20 pb-4 px-4 gap-4 min-h-0">
+          <div className="flex-1 flex flex-col pt-14 pb-3 px-4 gap-2 min-h-0">
             <div className="flex-shrink-0">
               <SearchSection />
             </div>

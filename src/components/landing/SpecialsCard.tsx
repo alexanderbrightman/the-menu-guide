@@ -12,6 +12,7 @@ interface Special {
         price: number | null
         image_url: string | null
         category: string | null
+        tags?: { id: number; name: string }[]
     }
     restaurant: {
         id: string
@@ -19,6 +20,8 @@ interface Special {
         display_name: string
         avatar_url: string | null
         address: string | null
+        latitude?: number | null
+        longitude?: number | null
     }
     distance: number | null
 }
@@ -29,14 +32,17 @@ export interface SpecialsCardProps {
     mobileFullHeight?: boolean
 }
 
-const ITEMS_PER_PAGE = 6
-
 export function SpecialsCard({ onItemClick, className, mobileFullHeight }: SpecialsCardProps) {
     const [specials, setSpecials] = useState<Special[]>([])
     const [loading, setLoading] = useState(true)
     const [locationDenied, setLocationDenied] = useState(false)
     const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
     const [currentPage, setCurrentPage] = useState(0)
+    const [itemsPerPage, setItemsPerPage] = useState(6)
+
+    useEffect(() => {
+        setItemsPerPage(6)
+    }, [])
 
     // Request location and fetch specials
     useEffect(() => {
@@ -80,10 +86,10 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
         }
     }, [])
 
-    const totalPages = Math.ceil(specials.length / ITEMS_PER_PAGE)
+    const totalPages = Math.ceil(specials.length / itemsPerPage)
     const currentSpecials = specials.slice(
-        currentPage * ITEMS_PER_PAGE,
-        (currentPage + 1) * ITEMS_PER_PAGE
+        currentPage * itemsPerPage,
+        (currentPage + 1) * itemsPerPage
     )
 
     const handlePrevPage = () => {
@@ -118,7 +124,7 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
 
     return (
         <div className={`rounded-lg flex flex-col h-full ${className || ''}`}>
-            <div className="flex flex-col items-center justify-center pt-2 mb-4 flex-shrink-0 w-full">
+            <div className="flex flex-col items-center justify-center pt-1 mb-2 flex-shrink-0 w-full">
                 {/* Scroll Divider Title */}
                 <div className="flex items-center justify-center gap-4 w-full overflow-hidden px-4">
                     {/* Left Side: Scroll -> Line */}
@@ -142,7 +148,7 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                         <div className="flex-1 h-[1px] bg-gray-700 -ml-[1px]"></div>
                     </div>
 
-                    <h2 className="text-[18px] font-medium tracking-widest uppercase whitespace-nowrap text-gray-900">
+                    <h2 className="text-[14px] font-medium tracking-widest uppercase whitespace-nowrap text-gray-900">
                         Local Specials
                     </h2>
 
@@ -174,17 +180,26 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
             </div>
 
             <div className="flex-1 px-2 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto min-h-0">
-                <div className={`grid gap-2 md:gap-3 grid-cols-2 md:grid-cols-3`}>
+                <div className="flex-1 min-h-0">
+                <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
                     {currentSpecials.map((special, index) => (
                         <button
                             key={`${special.item.id}-${index}`}
                             onClick={() => onItemClick(special)}
                             className="group cursor-pointer text-left w-full h-full"
                         >
-                            <div className="border border-gray-300 bg-white/50 hover:opacity-80 transition-opacity duration-200 flex flex-col h-full">
-                                {/* Image - smaller aspect ratio on mobile */}
-                                <div className="relative aspect-[3/2] border-b border-gray-300 overflow-hidden bg-gray-100 flex-shrink-0">
+                            <div
+                                className="rounded-xl overflow-hidden flex flex-col h-full transition-all duration-200 group-hover:scale-[0.98] group-active:scale-[0.96]"
+                                style={{
+                                    background: 'rgba(255,255,255,0.7)',
+                                    backdropFilter: 'blur(8px)',
+                                    WebkitBackdropFilter: 'blur(8px)',
+                                    border: '0.5px solid rgba(0,0,0,0.08)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)',
+                                }}
+                            >
+                                {/* Image */}
+                                <div className="relative aspect-[3/2] overflow-hidden bg-gray-100 flex-shrink-0">
                                     {special.item.image_url && !failedImages.has(special.item.image_url) ? (
                                         <Image
                                             src={special.item.image_url}
@@ -192,34 +207,37 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                                             fill
                                             className="object-cover"
                                             sizes="(max-width: 768px) 50vw, 33vw"
-                                            style={{ filter: 'invert(0)' }}
                                             onError={() => {
                                                 console.warn(`Failed to load special item image: ${special.item.image_url}`)
                                                 setFailedImages(prev => new Set(prev).add(special.item.image_url!))
                                             }}
                                         />
                                     ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center text-2xl">
+                                        <div className="absolute inset-0 flex items-center justify-center text-xl text-gray-300">
                                             🍽️
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Info - reduced padding on mobile */}
-                                <div className="p-1.5 md:p-3 flex flex-col flex-1">
-                                    <p className="font-bold text-xs md:text-sm text-gray-900 truncate mb-0.5 md:mb-1" title={special.item.title}>
+                                {/* Info */}
+                                <div className="p-1.5 flex flex-col flex-1">
+                                    <p
+                                        className="font-semibold text-[11px] text-gray-900 truncate"
+                                        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif', letterSpacing: '-0.01em' }}
+                                        title={special.item.title}
+                                    >
                                         {special.item.title}
                                     </p>
 
-                                    {/* Description - hidden on mobile to save space */}
+                                    {/* Description - hidden on mobile */}
                                     {special.item.description && (
-                                        <p className="hidden md:line-clamp-1 text-xs text-gray-500 mb-2 break-words">
+                                        <p className="hidden md:line-clamp-1 text-[11px] text-gray-500 mt-0.5 break-words">
                                             {special.item.description}
                                         </p>
                                     )}
 
-                                    <div className="mt-auto pt-0.5 md:pt-1">
-                                        <p className="text-[10px] md:text-xs font-medium text-gray-600 truncate" title={special.restaurant.display_name}>
+                                    <div className="mt-auto pt-0.5">
+                                        <p className="text-[9px] font-medium text-gray-400 truncate" title={special.restaurant.display_name}>
                                             {special.restaurant.display_name}
                                         </p>
                                     </div>
@@ -227,9 +245,9 @@ export function SpecialsCard({ onItemClick, className, mobileFullHeight }: Speci
                             </div>
                         </button>
                     ))}
-                    {/* Add empty placeholders to maintain grid structure if fewer than 6 items */}
-                    {Array.from({ length: ITEMS_PER_PAGE - currentSpecials.length }).map((_, i) => (
-                        <div key={`empty-${i}`} className="hidden md:block" />
+                    {/* Empty placeholders to maintain grid structure */}
+                    {Array.from({ length: itemsPerPage - currentSpecials.length }).map((_, i) => (
+                        <div key={`empty-${i}`} />
                     ))}
                 </div>
                 </div>
