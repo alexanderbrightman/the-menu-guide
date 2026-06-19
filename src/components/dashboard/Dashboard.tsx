@@ -10,8 +10,10 @@ import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
-import { DashboardNavigation } from '@/components/dashboard/DashboardNavigation'
+import { HappyHourPage } from '@/components/profile/HappyHourPage'
+import { PreFixePage } from '@/components/profile/PreFixePage'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
+import { MobileDashboardNav } from '@/components/dashboard/MobileDashboardNav'
 import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
 import {
   Dialog,
@@ -51,6 +53,7 @@ const getContrastColor = (hexColor: string) => {
 
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
+  const [activeView, setActiveView] = useState<'menu' | 'happy-hour' | 'pre-fixe'>('menu')
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
@@ -87,16 +90,23 @@ export function Dashboard() {
   }, [profile?.username])
 
   const handleNewItem = useCallback(() => {
+    setActiveView('menu')
     window.dispatchEvent(new CustomEvent('open-create-item'))
   }, [])
 
   const handleNewCategory = useCallback(() => {
+    setActiveView('menu')
     window.dispatchEvent(new CustomEvent('open-create-category'))
   }, [])
 
   const handleScanMenu = useCallback(() => {
+    setActiveView('menu')
     window.dispatchEvent(new CustomEvent('open-scan-menu'))
   }, [])
+
+  const handleHappyHour = useCallback(() => setActiveView('happy-hour'), [])
+  const handlePreFixe = useCallback(() => setActiveView('pre-fixe'), [])
+  const handleMenuView = useCallback(() => setActiveView('menu'), [])
 
   const handleSignOut = useCallback(async () => {
     await signOut()
@@ -230,10 +240,14 @@ export function Dashboard() {
       <DashboardSidebar
         profile={profile}
         user={user}
-        onViewMenu={handleViewMenu}
+        activeView={activeView}
+        onViewMenu={handleMenuView}
+        onOpenPublicMenu={handleViewMenu}
         onNewItem={handleNewItem}
         onNewCategory={handleNewCategory}
         onScanMenu={handleScanMenu}
+        onHappyHour={handleHappyHour}
+        onPreFixe={handlePreFixe}
         onEditProfile={() => setShowProfileEdit(true)}
         onSignOut={handleSignOut}
         signingOut={signingOut}
@@ -315,7 +329,9 @@ export function Dashboard() {
         </header>
 
         <div className="flex flex-col gap-16 lg:gap-4 pb-20 lg:pt-4">
-          <PrivateMenuPage />
+          {activeView === 'menu' && <PrivateMenuPage />}
+          {activeView === 'happy-hour' && <HappyHourPage />}
+          {activeView === 'pre-fixe' && <PreFixePage />}
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mt-6 space-y-4">
@@ -327,6 +343,21 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Persistent mobile bottom navigation */}
+      <MobileDashboardNav
+        activeView={activeView}
+        onMenuView={handleMenuView}
+        onHappyHour={handleHappyHour}
+        onPreFixe={handlePreFixe}
+        onNewItem={handleNewItem}
+        onNewCategory={handleNewCategory}
+        onScanMenu={handleScanMenu}
+        onEditProfile={() => setShowProfileEdit(true)}
+        backgroundColor={menuBackgroundColor}
+        contrastColor={contrastColor}
+        isDarkBackground={isDarkBackground}
+      />
 
       {showProfileEdit && <ProfileEditForm onClose={() => setShowProfileEdit(false)} />}
 

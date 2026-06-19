@@ -1,21 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
-import { Utensils, Plus, FolderPlus, Scan, Edit, Settings, LogOut, QrCode } from 'lucide-react'
+import { Utensils, Plus, FolderPlus, Scan, Edit, Settings, LogOut, QrCode, Wine, UtensilsCrossed } from 'lucide-react'
 import { Profile } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 
 interface DashboardSidebarProps {
     profile: Profile | null
     user: User | null
+    activeView?: string
     onViewMenu: () => void
+    onOpenPublicMenu: () => void
     onNewItem: () => void
     onNewCategory: () => void
     onScanMenu: () => void
+    onHappyHour: () => void
+    onPreFixe: () => void
     onEditProfile: () => void
     onSignOut: () => Promise<void>
     signingOut: boolean
@@ -40,10 +44,14 @@ interface NavItem {
 export function DashboardSidebar({
     profile,
     user,
+    activeView,
     onViewMenu,
+    onOpenPublicMenu,
     onNewItem,
     onNewCategory,
     onScanMenu,
+    onHappyHour,
+    onPreFixe,
     onEditProfile,
     onSignOut,
     signingOut,
@@ -67,6 +75,8 @@ export function DashboardSidebar({
         'add-item': '#FB5607',     // Orange
         'add-category': '#FF006E', // Pink
         'scan-menu': '#8338EC',    // Purple
+        'happy-hour': '#FF006E',   // Pink
+        'pre-fixe': '#FB5607',     // Orange
         'edit-profile': '#3A86FF', // Blue
         'settings': '#38B000',     // Green
         'qr-code': '#00BBF9',      // Cyan
@@ -76,7 +86,7 @@ export function DashboardSidebar({
     const navItems: NavItem[] = [
         {
             id: 'view-menu',
-            label: 'View Menu',
+            label: 'Menu',
             icon: <Utensils className={iconClass} />,
             onClick: onViewMenu,
         },
@@ -97,6 +107,18 @@ export function DashboardSidebar({
             label: 'Scan Menu',
             icon: <Scan className={iconClass} />,
             onClick: onScanMenu,
+        },
+        {
+            id: 'happy-hour',
+            label: 'Happy Hour',
+            icon: <Wine className={iconClass} />,
+            onClick: onHappyHour,
+        },
+        {
+            id: 'pre-fixe',
+            label: 'Pre Fixe',
+            icon: <UtensilsCrossed className={iconClass} />,
+            onClick: onPreFixe,
         },
         {
             id: 'edit-profile',
@@ -123,6 +145,13 @@ export function DashboardSidebar({
         setActiveItem(item.id)
         item.onClick()
     }
+
+    // Sync active highlight from parent view
+    useEffect(() => {
+        if (activeView === 'menu') setActiveItem('view-menu')
+        else if (activeView === 'happy-hour') setActiveItem('happy-hour')
+        else if (activeView === 'pre-fixe') setActiveItem('pre-fixe')
+    }, [activeView])
 
     const renderNavButton = (item: NavItem) => {
         const isActive = activeItem === item.id
@@ -226,12 +255,17 @@ export function DashboardSidebar({
                 borderColor: contrastColor, // Use high contrast border color
             }}
         >
-            {/* Profile Section */}
+            {/* Profile Section - opens the public restaurant page */}
             <div
                 className="px-5 pt-8 pb-6 border-b"
                 style={{ borderColor: contrastColor }} // Explicit border color
             >
-                <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={onOpenPublicMenu}
+                    title="View your public restaurant page"
+                    className="group flex items-center gap-3 w-full text-left rounded-lg -mx-2 px-2 py-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                >
                     {profile?.avatar_url ? (
                         <div
                             className="relative h-12 w-12 overflow-hidden rounded-full border flex-shrink-0"
@@ -257,11 +291,14 @@ export function DashboardSidebar({
                         </div>
                     )}
                     <div className="min-w-0">
-                        <p className="text-lg font-semibold truncate" style={{ color: contrastColor }}>
+                        <p className="text-lg font-semibold truncate group-hover:underline" style={{ color: contrastColor }}>
                             {profile?.display_name || 'Your Restaurant'}
                         </p>
+                        <p className="text-xs truncate opacity-60" style={{ color: contrastColor }}>
+                            View public page
+                        </p>
                     </div>
-                </div>
+                </button>
             </div>
 
             {/* Navigation Section */}
@@ -274,10 +311,17 @@ export function DashboardSidebar({
                 </nav>
 
                 <p className={`text-sm font-semibold uppercase tracking-wider px-4 mt-8 mb-3 ${sectionLabelClass}`}>
+                    Promotions
+                </p>
+                <nav className="space-y-1">
+                    {navItems.slice(4, 6).map(renderNavButton)}
+                </nav>
+
+                <p className={`text-sm font-semibold uppercase tracking-wider px-4 mt-8 mb-3 ${sectionLabelClass}`}>
                     Account
                 </p>
                 <nav className="space-y-1">
-                    {navItems.slice(4).map(renderNavButton)}
+                    {navItems.slice(6).map(renderNavButton)}
                     <QrCodeDialog
                         qrCodeUrl={qrCodeUrl}
                         menuLink={menuLink}

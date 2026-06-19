@@ -9,13 +9,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Upload, X, Check, MapPin, ArrowLeft } from 'lucide-react'
+import { Upload, X, Check, MapPin } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
 import { getContrastColor } from '@/lib/utils'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
-import { geocodeAddress } from '@/lib/geocoding'
+import { resolveAddressViaApi } from '@/lib/geocoding'
+import { AddressAutocomplete } from '@/components/profile/AddressAutocomplete'
 import {
   DEFAULT_MENU_FONT,
   LIGHT_MODE_BACKGROUND,
@@ -51,64 +52,20 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [avatarError, setAvatarError] = useState(false)
+  const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(
+    profile?.latitude != null && profile?.longitude != null
+      ? { latitude: profile.latitude, longitude: profile.longitude }
+      : null
+  )
+  const [coordsFromSelection, setCoordsFromSelection] = useState(!!profile?.latitude)
 
-  // Address editing state
-  const [view, setView] = useState<'MAIN' | 'ADDRESS'>('MAIN')
-  const [addressForm, setAddressForm] = useState({
-    street: '',
-    unit: '',
-    city: '',
-    state: '',
-    zip: ''
-  })
-
-  // Initialize address form when opening
-  const handleOpenAddress = () => {
-    // Simple pre-fill: put everything in street if we can't parse it easily
-    // In a real app, we might store these structured fields in the DB
-    setAddressForm({
-      street: formData.address,
-      unit: '',
-      city: '',
-      state: '',
-      zip: ''
-    })
-    setView('ADDRESS')
-  }
-
-  const handleSaveAddress = () => {
-    // Combine fields into a single string
-    // Format: Street[ Unit], City, State Zip
-    let parts = []
-
-    // Line 1: Street + Unit
-    let line1 = addressForm.street.trim()
-    if (addressForm.unit.trim()) {
-      line1 += line1 ? `, ${addressForm.unit.trim()}` : addressForm.unit.trim()
-    }
-    if (line1) parts.push(line1)
-
-    // Line 2: City, State Zip
-    let line2 = []
-    if (addressForm.city.trim()) line2.push(addressForm.city.trim())
-
-    let stateZip = []
-    if (addressForm.state.trim()) stateZip.push(addressForm.state.trim())
-    if (addressForm.zip.trim()) stateZip.push(addressForm.zip.trim())
-
-    if (stateZip.length > 0) {
-      line2.push(stateZip.join(' '))
-    }
-
-    // Join City and State/Zip with comma
-    if (line2.length > 0) {
-      parts.push(line2.join(', '))
-    }
-
-    const fullAddress = parts.join(', ')
-
-    setFormData(prev => ({ ...prev, address: fullAddress }))
-    setView('MAIN')
+  const handleAddressChange = (
+    address: string,
+    coords: { latitude: number; longitude: number } | null
+  ) => {
+    setFormData((prev) => ({ ...prev, address }))
+    setPendingCoords(coords)
+    setCoordsFromSelection(!!coords)
   }
 
   const handleResetTheme = useCallback(() => {
@@ -132,6 +89,10 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         is_dark_mode: isDarkModeFromColor(profile.menu_background_color),
         show_display_name: true
       })
+      if (profile.latitude != null && profile.longitude != null) {
+        setPendingCoords({ latitude: profile.latitude, longitude: profile.longitude })
+        setCoordsFromSelection(true)
+      }
     }
   }, [profile])
 
@@ -225,23 +186,27 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         return
       }
 
-      // Geocode address if provided
+      // Resolve coordinates for address
       let latitude: number | null = null
       let longitude: number | null = null
       const address = formData.address.trim()
 
       if (address) {
-        setMessage('Geocoding address...')
-        const geocodeResult = await geocodeAddress(address)
-
-        if (geocodeResult) {
-          latitude = geocodeResult.latitude
-          longitude = geocodeResult.longitude
+        if (coordsFromSelection && pendingCoords) {
+          latitude = pendingCoords.latitude
+          longitude = pendingCoords.longitude
         } else {
-          clearTimeout(timeoutId)
-          setMessage('Could not find coordinates for this address. Please check the address and try again.')
-          setLoading(false)
-          return
+          setMessage('Verifying address...')
+          const geocodeResult = await resolveAddressViaApi(address)
+          if (geocodeResult) {
+            latitude = geocodeResult.latitude
+            longitude = geocodeResult.longitude
+          } else {
+            clearTimeout(timeoutId)
+            setMessage('Could not verify this address. Please select from the suggestions.')
+            setLoading(false)
+            return
+          }
         }
       }
 
@@ -395,8 +360,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           color: contrastColor,
         }}
       >
-        {view === 'MAIN' ? (
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 w-full">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 w-full">
             {/* Header */}
             <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
               <Button
@@ -529,23 +493,18 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                   <MapPin className="h-4 w-4" />
                   Location
                 </Label>
-                <div className="space-y-2">
-                  <Label htmlFor="address" className={secondaryTextClass}>Restaurant Address</Label>
-                  <div
-                    id="address"
-                    onClick={handleOpenAddress}
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base md:text-sm flex items-center px-3 cursor-pointer overflow-hidden hover:bg-secondary/10 transition-colors`}
-                  >
-                    {formData.address ? (
-                      <span className="truncate">{formData.address}</span>
-                    ) : (
-                      <span className={`opacity-50 ${secondaryTextClass}`}>Tap to add address...</span>
-                    )}
-                  </div>
-                  <p className={`text-xs ${secondaryTextClass} mt-1`}>
-                    This helps customers find nearby specials on the homepage.
-                  </p>
-                </div>
+                <AddressAutocomplete
+                  value={formData.address}
+                  latitude={pendingCoords?.latitude ?? null}
+                  longitude={pendingCoords?.longitude ?? null}
+                  onChange={handleAddressChange}
+                  primaryTextClass={primaryTextClass}
+                  secondaryTextClass={secondaryTextClass}
+                  borderClass={getBorderColor()}
+                />
+                <p className={`text-xs ${secondaryTextClass}`}>
+                  Used for Local Specials, Happy Hour, and Pre Fixe on the homepage.
+                </p>
               </div>
 
               {/* Bio */}
@@ -603,96 +562,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
               <div className="pb-10 sm:pb-0" /> {/* Spacer for bottom safe area */}
             </div>
           </form>
-        ) : (
-          <div className="flex flex-col flex-1 min-h-0 w-full">
-            {/* Address Edit Header */}
-            <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setView('MAIN')}
-                className="text-base font-normal hover:bg-transparent px-2 -ml-2 sm:px-4 sm:ml-0 gap-1"
-                style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-
-              <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
-                Address
-              </DialogTitle>
-
-              <Button
-                type="button"
-                onClick={handleSaveAddress}
-                variant="ghost"
-                className="text-base font-semibold hover:bg-transparent px-2 -mr-2 sm:px-4 sm:mr-0 text-blue-500 hover:text-blue-600"
-              >
-                Done
-              </Button>
-            </div>
-
-            {/* Address Form Fields */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="addr_street" className={primaryTextClass}>Street Address</Label>
-                  <Input
-                    id="addr_street"
-                    value={addressForm.street}
-                    onChange={e => setAddressForm({ ...addressForm, street: e.target.value })}
-                    placeholder="123 Main St"
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
-                    autoFocus
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addr_unit" className={primaryTextClass}>Apt / Suite / Unit (Optional)</Label>
-                  <Input
-                    id="addr_unit"
-                    value={addressForm.unit}
-                    onChange={e => setAddressForm({ ...addressForm, unit: e.target.value })}
-                    placeholder="Apt 4B"
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="addr_city" className={primaryTextClass}>City</Label>
-                    <Input
-                      id="addr_city"
-                      value={addressForm.city}
-                      onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
-                      placeholder="New York"
-                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="addr_state" className={primaryTextClass}>State</Label>
-                    <Input
-                      id="addr_state"
-                      value={addressForm.state}
-                      onChange={e => setAddressForm({ ...addressForm, state: e.target.value })}
-                      placeholder="NY"
-                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addr_zip" className={primaryTextClass}>Zip Code</Label>
-                  <Input
-                    id="addr_zip"
-                    value={addressForm.zip}
-                    onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
-                    placeholder="10001"
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
-                  />
-                </div>
-              </div>
-              <div className="pb-10 sm:pb-0" />
-            </div>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   )

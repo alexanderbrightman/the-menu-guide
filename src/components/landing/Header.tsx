@@ -121,10 +121,10 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                 style={{
                                     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
                                     letterSpacing: '-0.01em',
-                                    background: expandedSection === 'login' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.6)',
-                                    backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
-                                    border: '0.5px solid rgba(0,0,0,0.1)',
+                                    background: expandedSection === 'login' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.65)',
+                                    backdropFilter: 'blur(24px) saturate(180%)',
+                                    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                                    border: '0.5px solid rgba(255,255,255,0.5)',
                                     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                                     color: '#1a1a1a',
                                 }}
@@ -288,10 +288,10 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="md:hidden flex items-center gap-1.5 h-9 px-3 rounded-full transition-all duration-200"
                         style={{
-                            background: 'rgba(255,255,255,0.6)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            border: '0.5px solid rgba(0,0,0,0.1)',
+                            background: 'rgba(255,255,255,0.65)',
+                            backdropFilter: 'blur(24px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                            border: '0.5px solid rgba(255,255,255,0.5)',
                             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
                         }}

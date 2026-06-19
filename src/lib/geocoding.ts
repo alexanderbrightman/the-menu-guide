@@ -1,57 +1,51 @@
-/**
- * Geocoding utilities using OpenStreetMap Nominatim (free, no API key required)
- */
-
-export interface GeocodingResult {
-    latitude: number
-    longitude: number
-    displayName: string
+export interface AddressSuggestion {
+  displayName: string
+  latitude: number
+  longitude: number
+  street: string
+  city: string
+  state: string
+  postcode: string
+  country: string
 }
 
-/**
- * Convert an address string to coordinates using OpenStreetMap Nominatim
- * @param address - The address to geocode
- * @returns Object with latitude, longitude, and formatted address
- */
-export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
-    if (!address || address.trim().length === 0) {
-        return null
+export interface GeocodingResult {
+  latitude: number
+  longitude: number
+  displayName: string
+}
+
+export function formatAddress(suggestion: AddressSuggestion): string {
+  return suggestion.displayName
+}
+
+export function isSameLocation(
+  a: { latitude: number; longitude: number } | null,
+  b: { latitude: number; longitude: number } | null,
+  tolerance = 0.0001
+): boolean {
+  if (!a || !b) return false
+  return (
+    Math.abs(a.latitude - b.latitude) < tolerance &&
+    Math.abs(a.longitude - b.longitude) < tolerance
+  )
+}
+
+/** Client-side resolve via our API route */
+export async function resolveAddressViaApi(address: string): Promise<GeocodingResult | null> {
+  if (!address.trim()) return null
+  try {
+    const response = await fetch(
+      `/api/geocode/resolve?q=${encodeURIComponent(address.trim())}`
+    )
+    const data = await response.json()
+    if (!response.ok || !data.result) return null
+    return {
+      latitude: data.result.latitude,
+      longitude: data.result.longitude,
+      displayName: data.result.displayName,
     }
-
-    try {
-        // Use Nominatim API (free, no API key needed)
-        // We add a user agent as required by Nominatim usage policy
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?` +
-            `q=${encodeURIComponent(address.trim())}&format=json&limit=1`,
-            {
-                headers: {
-                    'User-Agent': 'TheMenuGuide/1.0',
-                },
-            }
-        )
-
-        if (!response.ok) {
-            console.error('Geocoding API error:', response.status)
-            return null
-        }
-
-        const data = await response.json()
-
-        if (!data || data.length === 0) {
-            console.warn('No geocoding results found for address:', address)
-            return null
-        }
-
-        const result = data[0]
-
-        return {
-            latitude: parseFloat(result.lat),
-            longitude: parseFloat(result.lon),
-            displayName: result.display_name,
-        }
-    } catch (error) {
-        console.error('Error geocoding address:', error)
-        return null
-    }
+  } catch {
+    return null
+  }
 }

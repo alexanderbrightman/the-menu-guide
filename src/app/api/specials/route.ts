@@ -1,31 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSecurityHeaders } from '@/lib/security'
 import { createClient } from '@supabase/supabase-js'
+import { calculateDistanceMiles } from '@/lib/geo'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Haversine formula to calculate distance between two coordinates in miles
-function calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-): number {
-    const R = 3959 // Earth's radius in miles
-    const dLat = (lat2 - lat1) * (Math.PI / 180)
-    const dLon = (lon2 - lon1) * (Math.PI / 180)
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-}
-
-// GET - Fetch specials (favorited menu items) from nearby restaurants
+// GET - Fetch specials
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
@@ -106,7 +87,7 @@ export async function GET(request: NextRequest) {
                     const userLat = parseFloat(lat)
                     const userLng = parseFloat(lng)
                     if (!isNaN(userLat) && !isNaN(userLng)) {
-                        distance = calculateDistance(
+                        distance = calculateDistanceMiles(
                             userLat,
                             userLng,
                             restaurant.latitude,
