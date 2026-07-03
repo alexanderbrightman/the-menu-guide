@@ -68,12 +68,13 @@ export function FloatingSearchButton({ open, onOpenChange }: FloatingSearchButto
         )}
       </AnimatePresence>
 
-      {/* FAB - stays at the bottom, animates down off-screen when open */}
+      {/* FAB - desktop only; on mobile the bottom tab bar hosts the
+          search trigger. Animates down off-screen when the panel opens. */}
       <motion.button
         type="button"
         aria-label="Search restaurants"
         onClick={() => onOpenChange(!open)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full flex items-center justify-center"
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full hidden md:flex items-center justify-center"
         style={{ ...glassFabStyle, pointerEvents: open ? 'none' : 'auto' }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}

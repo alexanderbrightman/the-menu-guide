@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# stale duplicate project copy (pending deletion)
+/the-menu-guide/

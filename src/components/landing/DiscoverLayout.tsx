@@ -1,7 +1,6 @@
 'use client'
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { glassCardStyle } from '@/lib/glass-styles'
 
 const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif'
 
@@ -15,10 +14,12 @@ const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI"
 export function DiscoverCardBody({
   title,
   subtitle,
+  distance,
   meta,
 }: {
   title: string
   subtitle: string
+  distance?: React.ReactNode
   meta?: React.ReactNode
 }) {
   return (
@@ -29,15 +30,26 @@ export function DiscoverCardBody({
       >
         {title}
       </h3>
-      <p
-        className="text-[12px] sm:text-[13px] text-[#6e6e73] mt-1 truncate"
-        style={{ fontFamily: APPLE_FONT }}
-      >
-        {subtitle}
-      </p>
+      {/* Restaurant name and distance share one line to save vertical height */}
+      <div className="mt-1 flex items-baseline gap-2">
+        <p
+          className="min-w-0 flex-1 text-[12px] sm:text-[13px] text-[#6e6e73] truncate"
+          style={{ fontFamily: APPLE_FONT }}
+        >
+          {subtitle}
+        </p>
+        {distance != null && (
+          <p
+            className="flex-shrink-0 whitespace-nowrap text-[11px] sm:text-[12px] text-[#86868b]"
+            style={{ fontFamily: APPLE_FONT }}
+          >
+            {distance}
+          </p>
+        )}
+      </div>
       {meta && (
         <p
-          className="text-[11px] sm:text-[12px] text-[#86868b] mt-1.5 truncate"
+          className="text-[11px] sm:text-[12px] text-[#86868b] mt-1 truncate"
           style={{ fontFamily: APPLE_FONT }}
         >
           {meta}
@@ -76,10 +88,8 @@ export function DiscoverCardShell({
       onClick={onClick}
       className="group cursor-pointer text-left w-full"
     >
-      <div
-        className="rounded-2xl overflow-hidden transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]"
-        style={glassCardStyle}
-      >
+      {/* No card background — the image floats and the text sits beneath it */}
+      <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
         {children}
       </div>
     </button>

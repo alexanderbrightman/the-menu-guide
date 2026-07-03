@@ -66,7 +66,7 @@ export function MobileDashboardNav({
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 lg:hidden overflow-x-auto scrollbar-hide border-t"
+      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden overflow-x-auto scrollbar-hide border-t"
       style={{
         borderColor,
         backgroundColor,

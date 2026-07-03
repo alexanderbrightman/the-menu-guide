@@ -9,7 +9,11 @@ interface EnvConfig {
   SUPABASE_SERVICE_ROLE_KEY?: string
   STRIPE_SECRET_KEY?: string
   STRIPE_WEBHOOK_SECRET?: string
+  STRIPE_PRICE_ID?: string
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?: string
+  NEXT_PUBLIC_APP_URL?: string
+  GOOGLE_GENERATIVE_AI_API_KEY?: string
+  CRON_SECRET?: string
 }
 
 /**
@@ -40,7 +44,11 @@ export function validateEnv(): EnvConfig {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    STRIPE_PRICE_ID: process.env.STRIPE_PRICE_ID,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    CRON_SECRET: process.env.CRON_SECRET,
   }
 
   for (const [key, value] of Object.entries(optionalVars)) {

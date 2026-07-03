@@ -3,13 +3,20 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { sanitizeTextInput, sanitizePrice } from '@/lib/sanitize'
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
-import { checkRateLimit, getRateLimitHeaders, PHOTO_UPLOAD_RATE_LIMIT } from '@/lib/rate-limiting'
+import { checkRateLimit, getRateLimitHeaders, AI_SCAN_RATE_LIMIT } from '@/lib/rate-limiting'
+import { PREMIUM_API_HEADERS } from '@/lib/premium-validation'
+import { requirePremium } from '@/lib/premium-server'
 
 export const runtime = 'nodejs'
+// Allow enough time for the Gemini call plus DB writes on Vercel
+export const maxDuration = 60
 
 // Maximum file size (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MIN_FILE_SIZE = 5 * 1024
+
+// Abort the Gemini call if it takes longer than this
+const GEMINI_TIMEOUT_MS = 45000
 
 // Initialize Gemini client lazily (only when needed)
 const getGeminiClient = () => {
@@ -31,6 +38,35 @@ interface ParsedMenu {
 
 type CategoryRecord = { id: string; name: string }
 
+/**
+ * Validate and normalize the AI's JSON output. The model's response is
+ * untrusted input: fields may be missing, of the wrong type, or absurdly
+ * long. Returns null when the payload doesn't match the expected shape.
+ */
+function normalizeParsedMenu(raw: unknown): ParsedMenu | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const items = (raw as { items?: unknown }).items
+  if (!Array.isArray(items)) return null
+
+  const normalized: ParsedMenuItem[] = []
+  for (const item of items) {
+    if (typeof item !== 'object' || item === null) continue
+    const record = item as Record<string, unknown>
+
+    const title = typeof record.title === 'string' ? record.title : ''
+    if (!title.trim()) continue
+
+    normalized.push({
+      title,
+      description: typeof record.description === 'string' ? record.description : null,
+      price: typeof record.price === 'number' || typeof record.price === 'string' ? sanitizePrice(record.price) : null,
+      category: typeof record.category === 'string' ? record.category : null,
+    })
+  }
+
+  return { items: normalized }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get and validate auth token
@@ -45,18 +81,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    // Apply generous rate limiting for menu scanning (photo upload limit)
+    // AI scanning is a premium feature - enforce server-side (the client UI
+    // gate alone can be bypassed with a direct API call)
+    const premiumGate = await requirePremium(supabase, user.id, 'AI menu scanning')
+    if (!premiumGate.ok) {
+      return NextResponse.json(premiumGate.body, {
+        status: premiumGate.status,
+        headers: {
+          ...PREMIUM_API_HEADERS,
+          ...getSecurityHeaders(),
+        },
+      })
+    }
+
+    // Tight rate limiting: each scan is a paid Gemini vision call
     const rateLimit = checkRateLimit(
       request,
       user.id,
       'scan-menu:POST',
-      PHOTO_UPLOAD_RATE_LIMIT.maxRequests,
-      PHOTO_UPLOAD_RATE_LIMIT.windowMs
+      AI_SCAN_RATE_LIMIT.maxRequests,
+      AI_SCAN_RATE_LIMIT.windowMs
     )
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'Too many requests. Please wait a moment before scanning another menu.' },
+        { error: 'Scan limit reached. Please wait before scanning another menu.' },
         {
           status: 429,
           headers: {
@@ -134,16 +183,20 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       },
     }
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout
-    const parseResponse = await model.generateContent([structuredPrompt, imageData])
-    clearTimeout(timeout)
+    // Race the Gemini call against a hard timeout so a hung request can't
+    // hold the connection open until the platform kills it
+    const parseResponse = await Promise.race([
+      model.generateContent([structuredPrompt, imageData]),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('GEMINI_TIMEOUT')), GEMINI_TIMEOUT_MS)
+      ),
+    ])
 
     const parsed = parseResponse.response.text() || '{}'
-    let menuData: ParsedMenu
+    let rawMenuData: unknown
     try {
       const cleaned = parsed.replace(/```json\n?|```/g, '').trim()
-      menuData = JSON.parse(cleaned) as ParsedMenu
+      rawMenuData = JSON.parse(cleaned)
     } catch (parseError) {
       console.error('JSON parse error:', parseError, 'Raw response:', parsed.substring(0, 200))
       return NextResponse.json(
@@ -152,7 +205,17 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       )
     }
 
-    if (!menuData.items?.length) {
+    // Validate the AI output shape before touching the database
+    const menuData = normalizeParsedMenu(rawMenuData)
+    if (!menuData) {
+      console.error('AI response did not match expected schema:', parsed.substring(0, 200))
+      return NextResponse.json(
+        { error: 'Received unexpected data from the scanner. Please try again.' },
+        { status: 502, headers: getSecurityHeaders() }
+      )
+    }
+
+    if (!menuData.items.length) {
       return NextResponse.json(
         { error: 'No menu items found. Ensure the text is readable.' },
         { status: 400, headers: getSecurityHeaders() }
@@ -164,30 +227,35 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       menuData.items = menuData.items.slice(0, 50)
     }
 
-    // Optimized category resolution: fetch ALL user categories upfront for caching
-    // This eliminates the need for a second query when categories already exist
     let itemsInserted = 0
     let categoriesCreated = 0
     const categoryMap = new Map<string, string>()
 
-    // Extract unique category names from scanned items
+    // Extract unique category names, sanitized identically to how they are
+    // looked up later (a mismatch here previously left items uncategorized)
     const categoryNames = Array.from(
       new Set(
         menuData.items
-          .map((item) => item.category?.toString().trim())
-          .filter((category): category is string => Boolean(category))
+          .map((item) => (item.category ? sanitizeTextInput(item.category) : ''))
+          .filter((category): category is string => category.length > 0)
       )
     )
 
     if (categoryNames.length > 0) {
-      // Fetch ALL user categories upfront (not just matching ones) for better caching
-      // This allows us to reuse categories that might be referenced later
-      const { data: allUserCategories } = await supabase
+      // Fetch ALL user categories upfront so existing ones are reused
+      const { data: allUserCategories, error: categoriesFetchError } = await supabase
         .from('menu_categories')
         .select('id,name')
         .eq('user_id', user.id)
 
-      // Build map of all existing categories
+      if (categoriesFetchError) {
+        console.error('Error fetching categories:', categoriesFetchError)
+        return NextResponse.json(
+          { error: 'Failed to load your menu categories. Please try again.' },
+          { status: 500, headers: getSecurityHeaders() }
+        )
+      }
+
       allUserCategories?.forEach((category) => {
         categoryMap.set(category.name, category.id)
       })
@@ -195,11 +263,19 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       // Only create categories that don't exist
       const missing = categoryNames.filter((n) => !categoryMap.has(n))
       if (missing.length > 0) {
-        // Batch insert missing categories
-        const { data: inserted } = await supabase
+        const { data: inserted, error: categoriesInsertError } = await supabase
           .from('menu_categories')
           .insert(missing.map((name) => ({ user_id: user.id, name })))
           .select('id,name')
+
+        if (categoriesInsertError) {
+          console.error('Error creating categories:', categoriesInsertError)
+          return NextResponse.json(
+            { error: 'Failed to save menu categories. Please try again.' },
+            { status: 500, headers: getSecurityHeaders() }
+          )
+        }
+
         const insertedCategories = inserted as CategoryRecord[] | null
         insertedCategories?.forEach((category) => categoryMap.set(category.name, category.id))
         categoriesCreated += insertedCategories?.length || 0
@@ -209,16 +285,15 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     // Process items: no placeholder image needed (allows NULL per database schema)
     const itemsToInsert = menuData.items
       .map((item) => {
-        const title = sanitizeTextInput(item.title || '')
+        const title = sanitizeTextInput(item.title)
         const description = item.description ? sanitizeTextInput(item.description) : null
-        const price = item.price !== null && item.price !== undefined ? sanitizePrice(item.price) : null
         const categoryName = item.category ? sanitizeTextInput(item.category) : null
         const category_id = categoryName ? categoryMap.get(categoryName) || null : null
         return {
           user_id: user.id,
           title,
           description,
-          price,
+          price: item.price,
           category_id,
           image_url: null, // No placeholder needed - allows users to add images later
         }
@@ -226,8 +301,15 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       .filter((menuItem) => menuItem.title.length > 0)
 
     if (itemsToInsert.length > 0) {
-      const { error } = await supabase.from('menu_items').insert(itemsToInsert)
-      if (!error) itemsInserted = itemsToInsert.length
+      const { error: itemsInsertError } = await supabase.from('menu_items').insert(itemsToInsert)
+      if (itemsInsertError) {
+        console.error('Error inserting menu items:', itemsInsertError)
+        return NextResponse.json(
+          { error: 'The menu was scanned but items could not be saved. Please try again.' },
+          { status: 500, headers: getSecurityHeaders() }
+        )
+      }
+      itemsInserted = itemsToInsert.length
     }
 
     return NextResponse.json(
@@ -245,12 +327,19 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     )
   } catch (error: unknown) {
     console.error('Error in scan-menu POST:', error)
+
+    if (error instanceof Error && error.message === 'GEMINI_TIMEOUT') {
+      return NextResponse.json(
+        { error: 'The scan took too long. Please try again with a smaller or clearer image.' },
+        { status: 504, headers: getSecurityHeaders() }
+      )
+    }
+
     const responseStatus =
       typeof error === 'object' && error !== null && 'response' in error
         ? (error as { response?: { status?: number } }).response?.status
         : undefined
     const errorCode = typeof error === 'object' && error !== null && 'code' in error ? (error as { code?: string }).code : undefined
-    const errorMessage = error instanceof Error ? error.message : 'An error occurred while scanning the menu'
 
     if (responseStatus === 401) {
       return NextResponse.json({ error: 'An error occurred with the scanning service' }, { status: 500, headers: getSecurityHeaders() })
@@ -258,6 +347,7 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     if (errorCode === 'insufficient_quota' || errorCode === 'RESOURCE_EXHAUSTED') {
       return NextResponse.json({ error: 'Scanning service temporarily unavailable. Please try again later.' }, { status: 503, headers: getSecurityHeaders() })
     }
-    return NextResponse.json({ error: errorMessage }, { status: 500, headers: getSecurityHeaders() })
+    // Generic message - never leak internal error details to the client
+    return NextResponse.json({ error: 'An error occurred while scanning the menu' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

@@ -99,11 +99,11 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
 
     return (
         <>
-            <header ref={headerRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-2" style={{ backgroundColor: 'transparent' }}>
+            <header ref={headerRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-1.5 md:pt-3 md:pb-2" style={{ backgroundColor: 'transparent' }}>
                 <div className="flex justify-between items-center">
                     <Link
                         href="/"
-                        className="text-2xl md:text-3xl font-normal tracking-wide hover:opacity-80 transition-opacity text-gray-900"
+                        className="text-xl md:text-3xl font-normal tracking-wide hover:opacity-80 transition-opacity text-gray-900"
                         style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
                     >
                         The Menu Guide

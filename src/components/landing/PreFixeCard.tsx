@@ -11,6 +11,7 @@ import {
   LoadingPanel,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export interface PreFixeEntry {
   menu: {
@@ -62,6 +63,7 @@ function getHeroImage(entry: PreFixeEntry): string | null {
 }
 
 export function PreFixeCard({ onItemClick, location, locationDenied, locationLoading, className }: Props) {
+  const isMobile = useIsMobile()
   const [menus, setMenus] = useState<PreFixeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
@@ -89,20 +91,24 @@ export function PreFixeCard({ onItemClick, location, locationDenied, locationLoa
   }, [location, locationLoading])
 
   const totalPages = Math.ceil(menus.length / itemsPerPage)
-  const pageItems = menus.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+  const displayedItems = isMobile
+    ? menus
+    : menus.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
 
   if (loading || locationLoading) return <LoadingPanel message="Loading pre fixe menus..." />
   if (menus.length === 0) return <EmptyPanel message="No pre fixe menus nearby yet. Check back soon!" />
 
   return (
     <div className={`flex flex-col ${className || ''}`}>
-      {locationDenied && <p className="text-xs text-gray-400 text-center mb-3">Showing all pre fixe menus</p>}
+      {locationDenied && (
+        <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all pre fixe menus</p>
+      )}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-        {pageItems.map((entry) => {
+        {displayedItems.map((entry) => {
           const hero = getHeroImage(entry)
           return (
             <DiscoverCardShell key={entry.menu.id} onClick={() => onItemClick(entry)}>
-              <div className="relative aspect-[4/3] bg-gray-100">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]">
                 {hero ? (
                   <Image src={hero} alt={entry.menu.title} fill className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
                 ) : (
@@ -117,13 +123,14 @@ export function PreFixeCard({ onItemClick, location, locationDenied, locationLoa
               <DiscoverCardBody
                 title={entry.menu.title}
                 subtitle={entry.restaurant.display_name}
+                distance={entry.distance != null ? formatDistanceMiles(entry.distance) : undefined}
                 meta={
                   <>
-                    {entry.menu.price != null && `$${Number(entry.menu.price).toFixed(0)} · `}
+                    {entry.menu.price != null && `$${Number(entry.menu.price).toFixed(0)}`}
+                    {entry.menu.price != null && entry.menu.start_time && entry.menu.end_time ? ' · ' : ''}
                     {entry.menu.start_time && entry.menu.end_time
                       ? formatScheduleBadge(entry.menu.days_of_week, entry.menu.start_time, entry.menu.end_time)
                       : ''}
-                    {entry.distance != null && ` · ${formatDistanceMiles(entry.distance)}`}
                   </>
                 }
               />
@@ -131,12 +138,14 @@ export function PreFixeCard({ onItemClick, location, locationDenied, locationLoa
           )
         })}
       </div>
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
-        onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-      />
+      {!isMobile && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
+          onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+        />
+      )}
     </div>
   )
 }

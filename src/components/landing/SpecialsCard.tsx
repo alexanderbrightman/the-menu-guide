@@ -10,7 +10,8 @@ import {
   LoadingPanel,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
-import { glassCardStyle } from '@/lib/glass-styles'
+import { formatDistanceMiles } from '@/lib/geo'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export interface Special {
   item: {
@@ -47,6 +48,7 @@ export function SpecialsCard({
   locationDenied,
   locationLoading,
 }: SpecialsCardProps) {
+  const isMobile = useIsMobile()
   const [specials, setSpecials] = useState<Special[]>([])
   const [loading, setLoading] = useState(true)
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
@@ -77,10 +79,9 @@ export function SpecialsCard({
   }, [location, locationLoading])
 
   const totalPages = Math.ceil(specials.length / itemsPerPage)
-  const currentSpecials = specials.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  )
+  const displayedSpecials = isMobile
+    ? specials
+    : specials.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
 
   if (loading || locationLoading) {
     return <LoadingPanel message="Loading specials..." />
@@ -95,12 +96,12 @@ export function SpecialsCard({
   return (
     <div className={`flex flex-col ${className || ''}`}>
       {locationDenied && (
-        <p className="text-xs text-gray-400 text-center mb-3">Showing all specials</p>
+        <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all specials</p>
       )}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-        {currentSpecials.map((special, index) => (
+        {displayedSpecials.map((special, index) => (
           <DiscoverCardShell key={`${special.item.id}-${index}`} onClick={() => onItemClick(special)}>
-            <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]">
               {special.item.image_url && !failedImages.has(special.item.image_url) ? (
                 <Image
                   src={special.item.image_url}
@@ -114,16 +115,22 @@ export function SpecialsCard({
                 <div className="absolute inset-0 flex items-center justify-center text-2xl text-gray-300">🍽️</div>
               )}
             </div>
-            <DiscoverCardBody title={special.item.title} subtitle={special.restaurant.display_name} />
+            <DiscoverCardBody
+              title={special.item.title}
+              subtitle={special.restaurant.display_name}
+              distance={special.distance != null ? formatDistanceMiles(special.distance) : undefined}
+            />
           </DiscoverCardShell>
         ))}
       </div>
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
-        onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-      />
+      {!isMobile && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
+          onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+        />
+      )}
     </div>
   )
 }

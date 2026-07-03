@@ -22,6 +22,21 @@ export function validatePremiumAccess(profile: Profile | Partial<Profile> | null
     }
   }
 
+  // Complimentary accounts (admin-granted via the Supabase dashboard) have
+  // premium access with no expiry. Skip the Stripe-based checks entirely,
+  // including the end-date check: a comp account may carry a stale
+  // subscription_current_period_end from an old paid subscription.
+  if (profile.is_complimentary) {
+    if (feature.includes('public') && !profile.is_public) {
+      return {
+        isValid: false,
+        error: 'Your profile must be published to access this feature. Please publish your profile first.',
+        statusCode: 403
+      }
+    }
+    return { isValid: true }
+  }
+
   // FIRST: Check if subscription has expired based on end date (regardless of status)
   // This is critical - even if status says 'pro', if it's expired, deny access
   if (profile.subscription_current_period_end) {
@@ -92,6 +107,17 @@ export function checkSubscriptionStatus(profile: Profile | Partial<Profile> | nu
       daysUntilExpiry: 0,
       expiryDate: null,
       message: 'No profile found'
+    }
+  }
+
+  // Complimentary accounts never expire and shouldn't show expiry warnings
+  if (profile.is_complimentary) {
+    return {
+      isActive: true,
+      isExpired: false,
+      daysUntilExpiry: null,
+      expiryDate: null,
+      message: 'Complimentary account'
     }
   }
 
@@ -226,6 +252,11 @@ export function checkAndGetExpiredSubscriptionUpdate(profile: Profile | Partial<
   updateData?: Partial<Profile>
 } {
   if (!profile || profile.subscription_status !== 'pro') {
+    return { isExpired: false, needsUpdate: false }
+  }
+
+  // Complimentary accounts are never auto-downgraded
+  if (profile.is_complimentary) {
     return { isExpired: false, needsUpdate: false }
   }
 

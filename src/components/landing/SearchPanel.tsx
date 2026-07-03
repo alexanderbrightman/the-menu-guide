@@ -18,7 +18,7 @@ export function SearchPanel({ onResultClick }: SearchPanelProps) {
   const [loadingResult, setLoadingResult] = useState<string | null>(null)
 
   return (
-    <div className="px-3 pb-3 pt-1">
+    <div className="px-3 pb-5 pt-3">
       <label className="relative flex w-full items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-black/[0.035] px-4 py-3 transition-colors focus-within:border-black/[0.12] focus-within:bg-black/[0.05]">
         <Search className="h-[18px] w-[18px] flex-shrink-0 text-gray-400" />
         <Input

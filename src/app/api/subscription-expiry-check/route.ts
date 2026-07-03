@@ -6,15 +6,34 @@ import { getSecurityHeaders } from '@/lib/security'
 const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 /**
- * Updates expired subscriptions in the database
- * This endpoint can be called by a cron job or scheduled task
+ * Verify the request comes from the Vercel cron scheduler (or an operator
+ * with the secret). Vercel automatically sends "Authorization: Bearer
+ * <CRON_SECRET>" when the CRON_SECRET environment variable is set.
  */
-export async function POST(_request: NextRequest) {
+function isAuthorizedCronRequest(request: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    // Fail closed: without a configured secret, this endpoint is disabled
+    console.error('[ExpiryCheck] CRON_SECRET is not configured; rejecting request')
+    return false
+  }
+  return request.headers.get('authorization') === `Bearer ${cronSecret}`
+}
+
+/**
+ * Downgrades profiles whose subscription period has ended.
+ */
+async function runExpiryCheck(): Promise<NextResponse> {
   try {
     console.log('Starting subscription expiry check...')
 
-    // Get all profiles with pro status
-    const { data: profiles, error: fetchError } = await supabaseAdmin.from('profiles').select('id, username, subscription_status, subscription_current_period_end').eq('subscription_status', 'pro')
+    // Get all profiles with pro status, excluding complimentary accounts
+    // (admin-granted premium never expires)
+    const { data: profiles, error: fetchError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, username, subscription_status, subscription_current_period_end')
+      .eq('subscription_status', 'pro')
+      .eq('is_complimentary', false)
 
     if (fetchError) {
       console.error('Error fetching profiles:', fetchError)
@@ -82,55 +101,17 @@ export async function POST(_request: NextRequest) {
   }
 }
 
-/**
- * GET endpoint for manual testing
- */
-export async function GET(_request: NextRequest) {
-  try {
-    // Get all profiles with pro status and their expiry info
-    const { data: profiles, error: fetchError } = await supabaseAdmin.from('profiles').select('id, username, subscription_status, subscription_current_period_end').eq('subscription_status', 'pro')
-
-    if (fetchError) {
-      return NextResponse.json({ error: 'An error occurred while fetching profiles' }, { status: 500, headers: getSecurityHeaders() })
-    }
-
-    const now = new Date()
-    const profilesWithStatus =
-      profiles?.map((profile) => {
-        let status = 'active'
-        let daysUntilExpiry = null
-
-        if (profile.subscription_current_period_end) {
-          const endDate = new Date(profile.subscription_current_period_end)
-          const daysUntil = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-
-          if (endDate < now) {
-            status = 'expired'
-          } else {
-            daysUntilExpiry = Math.max(0, daysUntil)
-          }
-        }
-
-        return {
-          id: profile.id,
-          username: profile.username,
-          status,
-          daysUntilExpiry,
-          subscriptionEnd: profile.subscription_current_period_end,
-        }
-      }) || []
-
-    return NextResponse.json(
-      {
-        profiles: profilesWithStatus,
-        total: profilesWithStatus.length,
-        expired: profilesWithStatus.filter((p) => p.status === 'expired').length,
-        active: profilesWithStatus.filter((p) => p.status === 'active').length,
-      },
-      { headers: getSecurityHeaders() }
-    )
-  } catch (error) {
-    console.error('Error fetching subscription status:', error)
-    return NextResponse.json({ error: 'An error occurred while processing your request' }, { status: 500, headers: getSecurityHeaders() })
+// Vercel cron invokes routes with GET; POST is kept for manual triggering.
+export async function GET(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
   }
+  return runExpiryCheck()
+}
+
+export async function POST(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
+  }
+  return runExpiryCheck()
 }

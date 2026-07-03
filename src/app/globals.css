@@ -123,6 +123,12 @@
     font-family: var(--font-body), sans-serif;
   }
 
+  /* Mobile landing page: match home screen gray through safe areas / overscroll */
+  html.landing-mobile-bg,
+  html.landing-mobile-bg body {
+    background-color: #F5F5F5;
+  }
+
   h1,
   h2,
   h3,

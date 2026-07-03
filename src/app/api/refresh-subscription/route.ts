@@ -78,10 +78,15 @@ export async function POST(request: NextRequest) {
 
         // Determine subscription status
         let subscriptionStatus: Profile['subscription_status'] = 'free'
-        if (subscription.status === 'active') {
+        if (subscription.status === 'active' || subscription.status === 'trialing') {
           subscriptionStatus = 'pro'
         } else if (subscription.status === 'canceled' || subscription.status === 'unpaid' || subscription.status === 'past_due') {
           subscriptionStatus = 'canceled'
+        }
+
+        // Complimentary accounts keep premium regardless of Stripe state
+        if (profile.is_complimentary && subscriptionStatus !== 'pro') {
+          subscriptionStatus = 'pro'
         }
 
         // Update profile with current subscription status
@@ -135,8 +140,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: true,
-          subscriptionStatus: 'free',
-          message: 'No Stripe subscription found - user remains on free plan',
+          subscriptionStatus: profile.is_complimentary ? 'pro' : 'free',
+          message: profile.is_complimentary
+            ? 'Complimentary account - premium access active'
+            : 'No Stripe subscription found - user remains on free plan',
         },
         {
           headers: {

@@ -20,18 +20,32 @@ const relevantEvents = new Set([
   'invoice.payment_failed',
 ])
 
-// In-memory idempotency store (in production, use Redis or database)
-const processedEvents = new Map<string, number>()
+/**
+ * Persistent idempotency: record the event ID in the database before
+ * processing. The primary-key constraint guarantees exactly-once handling
+ * across serverless instances and cold starts.
+ * Returns true if this event was already processed.
+ */
+async function markEventProcessed(eventId: string, eventType: string): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from('stripe_webhook_events')
+    .insert({ event_id: eventId, event_type: eventType })
 
-// Clean up old entries every hour (in production, use TTL)
-setInterval(() => {
-  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-  for (const [eventId, timestamp] of processedEvents.entries()) {
-    if (timestamp < oneDayAgo) {
-      processedEvents.delete(eventId)
-    }
-  }
-}, 60 * 60 * 1000)
+  if (!error) return false
+
+  // 23505 = unique violation → event already handled
+  if (error.code === '23505') return true
+
+  // Any other error (e.g. table missing): log and process anyway.
+  // Double-processing is safer than silently dropping a billing event.
+  console.error('[Webhook] Idempotency store unavailable, processing anyway:', error.message)
+  return false
+}
+
+/** Allow Stripe to retry the event after a handler failure. */
+async function unmarkEventProcessed(eventId: string) {
+  await supabaseAdmin.from('stripe_webhook_events').delete().eq('event_id', eventId)
+}
 
 export async function GET() {
   return NextResponse.json(
@@ -67,20 +81,18 @@ export async function POST(req: NextRequest) {
     return new NextResponse(`Webhook Error: ${message}`, { status: 400, headers: getSecurityHeaders() })
   }
 
-  // Check idempotency - prevent processing same event multiple times
   const eventId = event.id
-  if (processedEvents.has(eventId)) {
-    console.log(`[Webhook] Event ${eventId} already processed, skipping`)
-    return new NextResponse(JSON.stringify({ received: true, skipped: true }), { status: 200, headers: getSecurityHeaders() })
-  }
-
   console.log(`[Webhook] Received event: ${event.type} (ID: ${eventId})`)
 
   if (relevantEvents.has(event.type)) {
-    try {
-      // Mark event as being processed
-      processedEvents.set(eventId, Date.now())
+    // Check idempotency - prevent processing same event multiple times
+    const alreadyProcessed = await markEventProcessed(eventId, event.type)
+    if (alreadyProcessed) {
+      console.log(`[Webhook] Event ${eventId} already processed, skipping`)
+      return new NextResponse(JSON.stringify({ received: true, skipped: true }), { status: 200, headers: getSecurityHeaders() })
+    }
 
+    try {
       switch (event.type) {
         case 'checkout.session.completed':
           await handleCheckoutSessionCompleted(event)
@@ -93,11 +105,10 @@ export async function POST(req: NextRequest) {
           break
 
         case 'invoice.payment_succeeded':
-          await handleInvoicePaymentSucceeded(event)
-          break
-
         case 'invoice.payment_failed':
-          console.log('[Webhook] Payment failed - logging for monitoring')
+          // Both events re-sync the subscription from Stripe so the local DB
+          // always mirrors Stripe's state (past_due, unpaid, active, ...).
+          await handleInvoiceEvent(event)
           break
 
         default:
@@ -108,8 +119,9 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       console.error(`[Webhook] Error handling event ${event.type}:`, error)
       // Remove from processed events on error so it can be retried
-      processedEvents.delete(eventId)
-      return new NextResponse(`Webhook handler failed: ${error}`, { status: 400, headers: getSecurityHeaders() })
+      await unmarkEventProcessed(eventId)
+      // 500 (not 4xx) so Stripe retries transient failures automatically
+      return new NextResponse('Webhook handler failed', { status: 500, headers: getSecurityHeaders() })
     }
   }
 
@@ -245,13 +257,13 @@ async function handleSubscriptionChange(event: Stripe.Event) {
   }
 }
 
-async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
+async function handleInvoiceEvent(event: Stripe.Event) {
   const invoice = event.data.object as Stripe.Invoice & { subscription?: string | Stripe.Subscription }
   const subscriptionId = typeof invoice.subscription === 'string'
     ? invoice.subscription
     : invoice.subscription?.id || null
 
-  console.log('[Invoice] Payment succeeded:', {
+  console.log(`[Invoice] ${event.type}:`, {
     invoiceId: invoice.id,
     customer: invoice.customer,
     subscription: subscriptionId,
@@ -327,7 +339,7 @@ async function manageSubscriptionStatusChange(
     // Find the profile in Supabase
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, username, subscription_status')
+      .select('id, username, subscription_status, is_complimentary')
       .eq('id', profileId)
       .single()
 
@@ -342,7 +354,7 @@ async function manageSubscriptionStatusChange(
     let subscriptionStatus: Profile['subscription_status'] = 'free'
     let isPublic = false
 
-    if (subscription.status === 'active') {
+    if (subscription.status === 'active' || subscription.status === 'trialing') {
       subscriptionStatus = 'pro'
       isPublic = true
     } else if (subscription.status === 'canceled') {
@@ -362,6 +374,14 @@ async function manageSubscriptionStatusChange(
     } else if (subscription.status === 'unpaid' || subscription.status === 'past_due') {
       subscriptionStatus = 'canceled'
       isPublic = false
+    }
+
+    // Complimentary accounts keep premium regardless of what happens to any
+    // Stripe subscription attached to them (admin-granted access)
+    if (profile.is_complimentary && subscriptionStatus !== 'pro') {
+      console.log(`[ManageSubscription] Profile ${profileId} is complimentary - keeping premium despite Stripe status '${subscription.status}'`)
+      subscriptionStatus = 'pro'
+      isPublic = true
     }
 
     // Prepare update data

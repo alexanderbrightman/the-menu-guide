@@ -66,6 +66,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404, headers: getSecurityHeaders() })
     }
 
+    // Verify the subscription actually belongs to this user's Stripe customer
+    // before modifying it
+    const existingSubscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id)
+    if (existingSubscription.customer !== profile.stripe_customer_id) {
+      console.error(`[Reactivate] Subscription ${profile.stripe_subscription_id} does not belong to customer ${profile.stripe_customer_id}`)
+      return NextResponse.json({ error: 'Subscription mismatch. Please contact support.' }, { status: 409, headers: getSecurityHeaders() })
+    }
+
     // Reactivate the subscription by removing the cancel_at_period_end flag
     const subscription: Stripe.Subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {
       cancel_at_period_end: false,

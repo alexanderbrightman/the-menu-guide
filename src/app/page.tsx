@@ -13,93 +13,74 @@ function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Function to immediately update subscription status after payment
-  const updateSubscriptionStatus = useCallback(async () => {
+  // Verify the completed checkout with the server. The server checks the
+  // session against Stripe, so a forged ?success=true URL cannot grant premium.
+  const verifyPayment = useCallback(async (sessionId: string) => {
     if (!user || !supabase) return null
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) return null
 
-      // Call our dedicated payment success API
       const response = await fetch('/api/payment-success', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sessionId }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        console.error('Failed to update subscription status:', data.error)
+        console.error('Payment verification failed:', data.error)
         return null
       }
 
-      console.log('Payment success API response:', data)
       return data
     } catch (error) {
-      console.error('Error updating subscription status:', error)
+      console.error('Error verifying payment:', error)
       return null
     }
   }, [user])
 
-  // Handle payment success/cancel messages
+  // Handle payment success/cancel redirects from Stripe Checkout
   useEffect(() => {
     const success = searchParams.get('success')
     const canceled = searchParams.get('canceled')
-    
-    if (success === 'true') {
-      console.log('Payment success detected, updating subscription...')
-      alert('🎉 Payment successful! Your account has been upgraded to Premium!')
-      
-      // Immediately update subscription status and set is_public = true
-      updateSubscriptionStatus().then((result) => {
-        console.log('Payment success API result:', result)
-        
-        if (result?.success) {
-          // Refresh profile to get updated data
-          refreshProfile().then((profileData) => {
-            console.log('Refreshed profile after payment:', profileData)
-            
-            // Clean up URL params and replace in history to avoid localhost redirect issues
-            setTimeout(() => {
-              router.replace('/')
-            }, 1000)
-          }).catch((error) => {
-            console.error('Error refreshing profile after payment:', error)
-            // Still redirect even if refresh fails
-            setTimeout(() => {
-              router.replace('/')
-            }, 1000)
-          })
-        } else {
-          console.error('Payment success API failed:', result)
-          // Still try to refresh and redirect
-          refreshProfile().then(() => {
-            setTimeout(() => {
-              router.replace('/')
-            }, 1000)
-          })
-        }
-      }).catch((error) => {
-        console.error('Error updating subscription status:', error)
-        // Still try to refresh and redirect
-        refreshProfile().then(() => {
-          setTimeout(() => {
-            router.replace('/')
-          }, 1000)
+    const sessionId = searchParams.get('session_id')
+
+    const finish = () => {
+      // Clean up URL params without adding to history
+      setTimeout(() => router.replace('/'), 1000)
+    }
+
+    if (success === 'true' && sessionId) {
+      verifyPayment(sessionId)
+        .then((result) => {
+          if (result?.success) {
+            alert('🎉 Payment successful! Your account has been upgraded to Premium!')
+          } else {
+            // Payment may still be processing; the Stripe webhook will
+            // upgrade the account once it confirms.
+            alert('Thanks! Your payment is being confirmed. Your account will update automatically in a moment.')
+          }
+          return refreshProfile()
         })
-      })
+        .catch((error) => {
+          console.error('Error verifying payment:', error)
+          return refreshProfile()
+        })
+        .finally(finish)
+    } else if (success === 'true') {
+      // No session ID: rely on the webhook, just refresh what we have
+      refreshProfile().finally(finish)
     } else if (canceled === 'true') {
       alert('❌ Payment was canceled. You can try again anytime.')
-      // Clean up URL params and redirect without adding to history
-      setTimeout(() => {
-        router.replace('/')
-      }, 1000)
+      finish()
     }
-  }, [searchParams, router, refreshProfile, updateSubscriptionStatus])
+  }, [searchParams, router, refreshProfile, verifyPayment])
 
   // Check if Supabase is configured
   const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 

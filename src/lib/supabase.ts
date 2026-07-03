@@ -98,6 +98,8 @@ export interface Profile {
   subscription_current_period_end?: string
   subscription_cancel_at_period_end?: boolean
   subscription_canceled_at?: string
+  /** Admin-granted free premium; set via Supabase dashboard only */
+  is_complimentary?: boolean
   view_count?: number
   currency?: string
   latitude?: number

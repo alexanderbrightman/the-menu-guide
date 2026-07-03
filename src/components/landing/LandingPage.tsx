@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { SpecialsCard, type Special } from '@/components/landing/SpecialsCard'
@@ -10,10 +10,11 @@ import { HappyHourModal } from '@/components/landing/HappyHourModal'
 import { PreFixeCard, type PreFixeEntry } from '@/components/landing/PreFixeCard'
 import { PreFixeModal } from '@/components/landing/PreFixeModal'
 import { Header } from '@/components/landing/Header'
-import { MapSection } from '@/components/landing/MapSection'
 import { HomeTabSwitcher, type HomeTab } from '@/components/landing/HomeTabSwitcher'
+import { MobileTabBar } from '@/components/landing/MobileTabBar'
 import { FloatingSearchButton } from '@/components/landing/FloatingSearchButton'
 import { useUserLocation } from '@/hooks/useUserLocation'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const TAB_ORDER: HomeTab[] = ['specials', 'happy-hour', 'prefxe']
 
@@ -33,13 +34,63 @@ export function LandingPage() {
   const [selectedHappyHour, setSelectedHappyHour] = useState<HappyHourEntry | null>(null)
   const [selectedPreFixe, setSelectedPreFixe] = useState<PreFixeEntry | null>(null)
 
+  // User location feeds the discover APIs, which sort results by
+  // nearest restaurant server-side (lat/lng query params).
   const { location, denied, loading: locationLoading } = useUserLocation()
+
+  const isMobile = useIsMobile()
+
+  // Collapse the header as the user scrolls down through the items so the
+  // cards get full view; reveal it again on scroll up / at the top. Mobile only.
+  const [headerHidden, setHeaderHidden] = useState(false)
+  const [headerHeight, setHeaderHeight] = useState<number>()
+  const headerInnerRef = useRef<HTMLDivElement>(null)
+  const lastScrollY = useRef(0)
+
+  useEffect(() => {
+    if (!headerInnerRef.current) return
+    const measure = () => setHeaderHeight(headerInnerRef.current?.offsetHeight)
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
+
+  const handleContentScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!isMobile) return
+    const y = e.currentTarget.scrollTop
+    const last = lastScrollY.current
+    if (y <= 8) {
+      setHeaderHidden(false)
+    } else if (y > last + 4) {
+      setHeaderHidden(true)
+    } else if (y < last - 4) {
+      setHeaderHidden(false)
+    }
+    lastScrollY.current = y
+  }
+
+  // Extend the home background through safe areas and overscroll on mobile.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const apply = () => {
+      document.documentElement.classList.toggle('landing-mobile-bg', mq.matches)
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => {
+      mq.removeEventListener('change', apply)
+      document.documentElement.classList.remove('landing-mobile-bg')
+    }
+  }, [])
 
   const handleTabChange = (tab: HomeTab) => {
     const prevIdx = TAB_ORDER.indexOf(activeTab)
     const nextIdx = TAB_ORDER.indexOf(tab)
     setTabDirection(nextIdx > prevIdx ? 1 : -1)
     setActiveTab(tab)
+    // New tab panel mounts scrolled to the top — show the header again.
+    lastScrollY.current = 0
+    setHeaderHidden(false)
   }
 
   const tabPanelProps = {
@@ -60,17 +111,36 @@ export function LandingPage() {
     }
   }
 
-  const section1 = (
-    <section className="h-[100dvh] md:h-screen w-full snap-start flex flex-col relative">
-      {/* Header in normal flow so it never overlaps the tabs */}
-      <div className="relative z-30 flex-shrink-0">
-        <Header onResetPasswordClick={() => setShowPasswordResetModal(true)} />
+  return (
+    <div
+      className="h-[100dvh] md:h-screen flex flex-col overflow-hidden bg-[#F5F5F5] min-h-[100dvh]"
+      style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
+    >
+      {/* Header in normal flow so it never overlaps the content. On mobile it
+          collapses to reclaim vertical space as the user scrolls the items. */}
+      <motion.div
+        className="relative z-30 flex-shrink-0 overflow-hidden bg-[#F5F5F5]"
+        initial={false}
+        animate={{
+          height: isMobile ? (headerHidden ? 0 : headerHeight ?? 'auto') : 'auto',
+        }}
+        transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+      >
+        <div ref={headerInnerRef}>
+          <Header onResetPasswordClick={() => setShowPasswordResetModal(true)} />
+        </div>
+      </motion.div>
+
+      {/* Desktop: segmented tab switcher below the header.
+          Mobile: tabs live in the bottom bar instead. */}
+      <div className="hidden md:block flex-shrink-0">
+        <HomeTabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
-      <HomeTabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
-
-      {/* Animated, scrollable content panel */}
-      <div className="flex-1 min-h-0 relative overflow-hidden">
+      {/* Animated, scrollable content panel. On mobile this fills the
+          space between the header and the bottom tab bar; only this
+          region scrolls while header + tab bar stay pinned. */}
+      <div className="flex-1 min-h-0 relative overflow-hidden bg-[#F5F5F5]">
         <AnimatePresence mode="wait" custom={tabDirection}>
           <motion.div
             key={activeTab}
@@ -94,7 +164,10 @@ export function LandingPage() {
               }
             }}
           >
-            <div className="h-full overflow-y-auto overscroll-contain px-4 pt-2 pb-28">
+            <div
+              onScroll={handleContentScroll}
+              className="h-full overflow-y-auto overscroll-contain bg-[#F5F5F5] px-4 pt-1 pb-[calc(env(safe-area-inset-bottom,0px)+76px)] md:pt-2 md:pb-10"
+            >
               <div className="max-w-3xl mx-auto w-full">
                 {renderTabContent()}
               </div>
@@ -102,31 +175,16 @@ export function LandingPage() {
           </motion.div>
         </AnimatePresence>
       </div>
-    </section>
-  )
 
-  const section2 = (
-    <section
-      className="h-[100dvh] w-full snap-start flex items-center justify-center px-4"
-      style={{ isolation: 'isolate', backgroundColor: '#F5F5F5' }}
-    >
-      <div className="w-full max-w-md md:w-[480px] h-[85dvh] md:max-h-[700px]">
-        <MapSection />
-      </div>
-    </section>
-  )
+      {/* Mobile-only bottom navigation: tab pill + search button */}
+      <MobileTabBar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onSearchClick={() => setSearchOpen(true)}
+      />
 
-  return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: '#F5F5F5', fontFamily: 'var(--font-raleway), sans-serif' }}
-    >
-      <div className="h-[100dvh] md:h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
-        {section1}
-        {section2}
-      </div>
-
-      {/* Floating search — anchored to viewport, outside scroll/transform contexts */}
+      {/* Search overlay. The trigger FAB renders on desktop only;
+          on mobile the bottom bar's search button opens the same panel. */}
       <FloatingSearchButton open={searchOpen} onOpenChange={setSearchOpen} />
 
       {selectedSpecial && (

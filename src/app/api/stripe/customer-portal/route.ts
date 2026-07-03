@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
     try {
       const session = await stripe.billingPortal.sessions.create({
         customer: profile.stripe_customer_id,
-        return_url: `${baseUrl}/dashboard`,
+        // The dashboard renders at the root route for signed-in users
+        return_url: `${baseUrl}/`,
       })
 
       return NextResponse.json(

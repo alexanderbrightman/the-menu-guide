@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedResponse, setCachedResponse, getProfileCacheKey, createCacheableResponse } from '@/lib/cache'
 import { getSecurityHeaders } from '@/lib/security'
-import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
+import { createAuthenticatedClient, getAuthToken, supabaseAdmin } from '@/lib/supabase-server'
 import { checkRateLimit, getRateLimitHeaders, STANDARD_RATE_LIMIT } from '@/lib/rate-limiting'
 import { sanitizeTextInput } from '@/lib/sanitize'
+import { validateApiPremiumAccess, createPremiumErrorResponse } from '@/lib/premium-validation'
 
 // Maximum request body size (1MB)
 const MAX_REQUEST_SIZE = 1024 * 1024
@@ -52,7 +53,9 @@ export async function GET(request: NextRequest) {
 
     if (needsUpdate && updateData) {
       console.log(`[Profile] Auto-updating expired subscription for user ${user.id}`)
-      const { data: updatedProfile, error: updateError } = await supabase
+      // Subscription fields are server-managed (protected by DB trigger),
+      // so this update must go through the service-role client
+      const { data: updatedProfile, error: updateError } = await supabaseAdmin
         .from('profiles')
         .update(updateData)
         .eq('id', user.id)
@@ -237,6 +240,24 @@ export async function PUT(request: NextRequest) {
     // Validate that at least one field is provided
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400, headers: getSecurityHeaders() })
+    }
+
+    // Publishing a menu (is_public: true) is a premium feature - verify
+    // subscription server-side before allowing it
+    if (updateData.is_public === true) {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('subscription_status, subscription_current_period_end, is_complimentary')
+        .eq('id', user.id)
+        .single()
+
+      const premiumValidation = validateApiPremiumAccess(currentProfile, 'menu publishing')
+      if (!premiumValidation.isValid) {
+        return NextResponse.json(
+          createPremiumErrorResponse(premiumValidation.error!, premiumValidation.statusCode!),
+          { status: premiumValidation.statusCode!, headers: getSecurityHeaders() }
+        )
+      }
     }
 
     // Update profile

@@ -114,6 +114,16 @@ export const STRICT_RATE_LIMIT = {
 }
 
 /**
+ * Rate limit for AI-powered endpoints (menu scanning).
+ * Each request costs real money (Gemini vision call), so this is much
+ * tighter than the photo-upload limit: 10 scans per hour per user.
+ */
+export const AI_SCAN_RATE_LIMIT = {
+  maxRequests: 10,
+  windowMs: 60 * 60 * 1000 // 1 hour
+}
+
+/**
  * Clean up expired rate limit entries (call periodically)
  */
 export function cleanupRateLimit() {

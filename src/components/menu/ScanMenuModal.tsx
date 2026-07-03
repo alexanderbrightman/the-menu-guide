@@ -169,7 +169,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
 
       <Dialog open={showModal} onOpenChange={handleClose}>
         <DialogContent
-          className={`w-[90vw] max-w-sm border ${getBorderColor()} p-0 gap-0 rounded-xl overflow-hidden shadow-xl [&>button]:hidden flex flex-col z-[200]`}
+          className={`w-[90vw] max-w-sm border ${getBorderColor()} p-0 gap-0 rounded-xl overflow-hidden shadow-xl [&>button]:hidden flex flex-col`}
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
@@ -207,38 +207,30 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                 </div>
                 <div className="flex flex-col w-full gap-2 pt-2">
                   <Button
-                    onClick={() => {
-                      if (profile?.stripe_customer_id) {
-                        // Redirect to billing portal if they have a customer ID but not active
-                        window.location.href = '/api/stripe/create-portal-session'
-                      } else {
-                        // Or trigger the upgrade card logic elsewhere. 
-                        // For simplicity and "simple pop up" request, we'll link to subscription page 
-                        // or just re-use the upgrade logic if we had it handy.
-                        // But since UpgradeCard logic is complex, let's just use the UpgradeCard's internal logic
-                        // functionality but via a simple button? No, UpgradeCard handles the session creation.
-                        // Let's just create a new checkout session here.
-                        const handleSimpleUpgrade = async () => {
-                          setLoading(true);
-                          try {
-                            if (!supabase) return;
-                            const { data: { session: authSession } } = await supabase.auth.getSession();
-                            if (!authSession) return;
-                            const res = await fetch('/api/stripe/create-checkout-session', {
-                              method: 'POST',
-                              headers: { Authorization: `Bearer ${authSession.access_token}` }
-                            });
-                            const data = await res.json();
-                            if (data.url) window.location.href = data.url;
-                            else alert('Error starting upgrade.');
-                          } catch (e) {
-                            console.error(e);
-                            alert('Error starting upgrade.');
-                          } finally {
-                            setLoading(false);
-                          }
-                        };
-                        handleSimpleUpgrade();
+                    onClick={async () => {
+                      // Existing Stripe customers manage billing via the
+                      // customer portal; new customers go through checkout.
+                      const endpoint = profile?.stripe_customer_id
+                        ? '/api/stripe/customer-portal'
+                        : '/api/stripe/create-checkout-session'
+
+                      setLoading(true)
+                      try {
+                        if (!supabase) return
+                        const { data: { session: authSession } } = await supabase.auth.getSession()
+                        if (!authSession) return
+                        const res = await fetch(endpoint, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${authSession.access_token}` }
+                        })
+                        const data = await res.json()
+                        if (res.ok && data.url) window.location.href = data.url
+                        else alert(data.error || 'Error starting upgrade.')
+                      } catch (e) {
+                        console.error(e)
+                        alert('Error starting upgrade.')
+                      } finally {
+                        setLoading(false)
                       }
                     }}
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white"

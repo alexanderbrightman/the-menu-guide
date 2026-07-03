@@ -5,7 +5,7 @@ import type Stripe from 'stripe'
 import type { Profile } from '@/lib/supabase'
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
-import { checkRateLimit, getRateLimitHeaders, STANDARD_RATE_LIMIT } from '@/lib/rate-limiting'
+import { checkRateLimit, getRateLimitHeaders, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
 
 // Maximum request body size (1MB)
 const MAX_REQUEST_SIZE = 1024 * 1024
@@ -16,6 +16,15 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+/**
+ * Confirms a completed Stripe Checkout and syncs the user's subscription.
+ *
+ * Security model: the client only supplies a Checkout Session ID. Everything
+ * else (payment status, subscription state, ownership) is verified against
+ * Stripe. Premium is NEVER granted without a paid session whose metadata
+ * matches the authenticated user. The webhook remains the source of truth;
+ * this endpoint just makes the upgrade visible immediately after redirect.
+ */
 export async function POST(request: NextRequest) {
   try {
     // Check request size
@@ -43,8 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    // Apply standard rate limiting
-    const rateLimit = checkRateLimit(request, user.id, 'payment-success:POST', STANDARD_RATE_LIMIT.maxRequests, STANDARD_RATE_LIMIT.windowMs)
+    // Strict rate limiting: this endpoint triggers Stripe API calls
+    const rateLimit = checkRateLimit(request, user.id, 'payment-success:POST', STRICT_RATE_LIMIT.maxRequests, STRICT_RATE_LIMIT.windowMs)
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -59,129 +68,64 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Processing payment success for user:', user.id, user.email)
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('stripe_customer_id, email, username')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError) {
-      console.error('Error fetching profile:', profileError)
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404, headers: getSecurityHeaders() })
+    // The Checkout Session ID comes from the success redirect URL
+    // (?session_id={CHECKOUT_SESSION_ID}); it is required for verification.
+    let sessionId: string | null = null
+    try {
+      const body = await request.json()
+      sessionId = typeof body?.sessionId === 'string' ? body.sessionId : null
+    } catch {
+      // No/invalid JSON body
     }
 
-    console.log('Current profile:', profile)
-
-    // Strategy 1: Check if user already has a customer ID and active subscription
-    let activeSubscription: Stripe.Subscription | null = null
-    let customerId: string | null = null
-
-    if (profile.stripe_customer_id) {
-      try {
-        const subscriptions = await stripe.subscriptions.list({
-          customer: profile.stripe_customer_id,
-          status: 'active',
-          limit: 1
-        })
-        
-        if (subscriptions.data.length > 0) {
-          activeSubscription = subscriptions.data[0]
-          customerId = profile.stripe_customer_id
-          console.log('Found active subscription by customer ID:', activeSubscription.id)
-        }
-      } catch (error) {
-        console.error('Error fetching subscriptions by customer ID:', error)
-      }
+    if (!sessionId || !sessionId.startsWith('cs_')) {
+      return NextResponse.json(
+        { error: 'A valid Checkout session ID is required to confirm payment.' },
+        { status: 400, headers: getSecurityHeaders() }
+      )
     }
 
-    // Strategy 2: If no customer ID or subscription found, search by email
-    if (!activeSubscription && user.email) {
-      try {
-        console.log('Searching for customer by email:', user.email)
-        const customers = await stripe.customers.list({
-          email: user.email,
-          limit: 5 // Get more customers in case there are multiple
-        })
-        
-        console.log('Found customers:', customers.data.length)
-        
-        for (const customer of customers.data) {
-          console.log('Checking customer:', customer.id, 'for active subscriptions')
-          const subscriptions = await stripe.subscriptions.list({
-            customer: customer.id,
-            status: 'active',
-            limit: 1
-          })
-          
-          if (subscriptions.data.length > 0) {
-            activeSubscription = subscriptions.data[0]
-            customerId = customer.id
-            console.log('Found active subscription by email:', activeSubscription.id)
-            break
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching customer by email:', error)
-      }
+    // Retrieve the session directly from Stripe - never trust the client
+    let session: Stripe.Checkout.Session
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['subscription'] })
+    } catch {
+      return NextResponse.json({ error: 'Checkout session not found' }, { status: 404, headers: getSecurityHeaders() })
     }
 
-    // Strategy 3: Search recent checkout sessions for this user
-    if (!activeSubscription && user.email) {
-      try {
-        console.log('Searching recent checkout sessions for email:', user.email)
-        const sessions = await stripe.checkout.sessions.list({
-          limit: 10,
-          expand: ['data.subscription']
-        })
-        
-        for (const session of sessions.data) {
-          if (session.customer_details?.email === user.email && 
-              session.payment_status === 'paid' && 
-              session.subscription) {
-            console.log('Found paid checkout session:', session.id)
-            
-            // Get the subscription details
-            const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-            if (subscription.status === 'active') {
-              activeSubscription = subscription
-              customerId = session.customer as string
-              console.log('Found active subscription from checkout session:', subscription.id)
-              break
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error searching checkout sessions:', error)
-      }
+    // The session must belong to the authenticated user
+    if (session.metadata?.userId !== user.id) {
+      console.warn(`[PaymentSuccess] Session ${sessionId} does not belong to user ${user.id}`)
+      return NextResponse.json({ error: 'Checkout session does not belong to this account' }, { status: 403, headers: getSecurityHeaders() })
     }
 
-    // Update profile with subscription details
+    // The session must be a paid subscription checkout
+    if (session.mode !== 'subscription' || session.payment_status !== 'paid') {
+      return NextResponse.json(
+        { error: 'Payment has not been completed for this session.' },
+        { status: 402, headers: getSecurityHeaders() }
+      )
+    }
+
+    const subscription = session.subscription as Stripe.Subscription | null
+    if (!subscription || !['active', 'trialing'].includes(subscription.status)) {
+      return NextResponse.json(
+        { error: 'No active subscription found for this session. If you were charged, your account will update automatically shortly.' },
+        { status: 402, headers: getSecurityHeaders() }
+      )
+    }
+
+    // All checks passed - sync verified subscription details to the profile
+    const periodEndSeconds = subscription.items?.data?.[0]?.current_period_end
     const updateData: Partial<Profile> = {
       subscription_status: 'pro',
       is_public: true,
+      stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+      stripe_subscription_id: subscription.id,
+      subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
     }
-
-    if (activeSubscription) {
-      const firstItem = activeSubscription.items?.data?.[0]
-      const periodEndSeconds = firstItem?.current_period_end
-
-      if (customerId) {
-        updateData.stripe_customer_id = customerId
-      }
-      updateData.stripe_subscription_id = activeSubscription.id
-      if (periodEndSeconds) {
-        updateData.subscription_current_period_end = new Date(periodEndSeconds * 1000).toISOString()
-      }
-      console.log('Updating with subscription details:', {
-        customerId,
-        subscriptionId: activeSubscription.id,
-        periodEnd: updateData.subscription_current_period_end
-      })
-    } else {
-      console.log('No active subscription found, updating to pro status anyway')
+    if (periodEndSeconds) {
+      updateData.subscription_current_period_end = new Date(periodEndSeconds * 1000).toISOString()
     }
 
     const { error: updateError } = await supabaseAdmin
@@ -190,34 +134,19 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('Error updating subscription status:', updateError)
+      console.error('[PaymentSuccess] Error updating subscription status:', updateError)
       return NextResponse.json({ error: 'An error occurred while updating subscription status' }, { status: 500, headers: getSecurityHeaders() })
     }
 
-    console.log('Successfully updated profile to Premium for user:', user.id)
-
-    // Verify the update was successful
-    const { data: updatedProfile, error: verifyError } = await supabaseAdmin
-      .from('profiles')
-      .select('subscription_status, is_public, stripe_subscription_id, stripe_customer_id')
-      .eq('id', user.id)
-      .single()
-
-    if (verifyError) {
-      console.error('Error verifying profile update:', verifyError)
-    } else {
-      console.log('Verified profile update:', updatedProfile)
-    }
+    console.log(`[PaymentSuccess] Verified and synced subscription ${subscription.id} for user ${user.id}`)
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Payment processed successfully',
+        message: 'Payment verified successfully',
         subscription_status: 'pro',
         is_public: true,
-        subscription_id: activeSubscription?.id || null,
-        customer_id: customerId,
-        verified: updatedProfile,
+        subscription_id: subscription.id,
       },
       {
         headers: {

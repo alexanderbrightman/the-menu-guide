@@ -11,6 +11,7 @@ import {
   LoadingPanel,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export interface HappyHourEntry {
   menu: {
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export function HappyHourCard({ onItemClick, location, locationDenied, locationLoading, className }: Props) {
+  const isMobile = useIsMobile()
   const [menus, setMenus] = useState<HappyHourEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
@@ -69,21 +71,25 @@ export function HappyHourCard({ onItemClick, location, locationDenied, locationL
   }, [location, locationLoading])
 
   const totalPages = Math.ceil(menus.length / itemsPerPage)
-  const pageItems = menus.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+  const displayedItems = isMobile
+    ? menus
+    : menus.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
 
   if (loading || locationLoading) return <LoadingPanel message="Loading happy hours..." />
   if (menus.length === 0) return <EmptyPanel message="No happy hours nearby yet. Check back soon!" />
 
   return (
     <div className={`flex flex-col ${className || ''}`}>
-      {locationDenied && <p className="text-xs text-gray-400 text-center mb-3">Showing all happy hours</p>}
+      {locationDenied && (
+        <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all happy hours</p>
+      )}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-        {pageItems.map((entry) => {
+        {displayedItems.map((entry) => {
           const photos = entry.menu.photos || []
           const photo = photos[0]?.image_url
           return (
             <DiscoverCardShell key={entry.menu.id} onClick={() => onItemClick(entry)}>
-              <div className="relative aspect-[4/3] bg-gray-100">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]">
                 {photo ? (
                   <Image src={photo} alt={entry.menu.title} fill className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
                 ) : (
@@ -103,23 +109,21 @@ export function HappyHourCard({ onItemClick, location, locationDenied, locationL
               <DiscoverCardBody
                 title={entry.menu.title}
                 subtitle={entry.restaurant.display_name}
-                meta={
-                  <>
-                    {formatScheduleBadge(entry.menu.days_of_week, entry.menu.start_time, entry.menu.end_time)}
-                    {entry.distance != null && ` · ${formatDistanceMiles(entry.distance)}`}
-                  </>
-                }
+                distance={entry.distance != null ? formatDistanceMiles(entry.distance) : undefined}
+                meta={formatScheduleBadge(entry.menu.days_of_week, entry.menu.start_time, entry.menu.end_time)}
               />
             </DiscoverCardShell>
           )
         })}
       </div>
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
-        onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-      />
+      {!isMobile && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
+          onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+        />
+      )}
     </div>
   )
 }

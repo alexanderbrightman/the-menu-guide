@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
 import { secureJsonResponse } from '@/lib/security'
 import { calculateDistanceMiles, isActiveNow } from '@/lib/geo'
+import { requirePremium } from '@/lib/premium-server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -143,6 +144,10 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
+  // Pre fixe menus are a premium feature - enforce server-side
+  const premiumGate = await requirePremium(supabase, user.id, 'pre fixe menus')
+  if (!premiumGate.ok) return secureJsonResponse(premiumGate.body, premiumGate.status)
+
   const body = await request.json()
   const { title, description, price, start_time, end_time, days_of_week, is_active } = body
   if (!title?.trim()) return secureJsonResponse({ error: 'Title required' }, 400)
@@ -172,6 +177,10 @@ export async function PATCH(request: NextRequest) {
   const supabase = createAuthenticatedClient(token)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
+
+  // Pre fixe menus are a premium feature - enforce server-side
+  const premiumGate = await requirePremium(supabase, user.id, 'pre fixe menus')
+  if (!premiumGate.ok) return secureJsonResponse(premiumGate.body, premiumGate.status)
 
   const body = await request.json()
   const { id, ...updates } = body

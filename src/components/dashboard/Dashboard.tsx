@@ -229,7 +229,7 @@ export function Dashboard() {
     >
       {/* Safe area overlay - adapts to background color (dark or light) */}
       <div
-        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+        className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
         style={{
           height: 'env(safe-area-inset-top, 0px)',
           background: menuBackgroundColor,

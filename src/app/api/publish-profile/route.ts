@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Get the user's profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('subscription_status, is_public, subscription_current_period_end')
+      .select('subscription_status, is_public, subscription_current_period_end, is_complimentary')
       .eq('id', user.id)
       .single()
 
