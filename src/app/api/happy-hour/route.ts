@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
       .select(`
         id, title, description, start_time, end_time, days_of_week, is_active,
         happy_hour_photos ( id, image_url, sort_order ),
-        profiles!inner ( id, username, display_name, avatar_url, address, latitude, longitude, is_public, subscription_status )
+        profiles!inner ( id, username, display_name, avatar_url, address, latitude, longitude, is_public, subscription_status, is_complimentary )
       `)
       .eq('is_active', true)
       .eq('profiles.is_public', true)
-      .eq('profiles.subscription_status', 'pro')
+      // Premium access = paid subscription OR admin-granted complimentary flag
+      .or('subscription_status.eq.pro,is_complimentary.eq.true', { referencedTable: 'profiles' })
 
     if (error) {
       console.error('Happy hour discover error:', error)

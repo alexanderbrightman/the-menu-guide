@@ -98,31 +98,41 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
             <Check className="h-3 w-3 mr-1" />
             Premium Member
           </Badge>
-          <span className="text-sm text-green-600">
-            $30/month
-          </span>
+          {!profile?.is_complimentary && (
+            <span className="text-sm text-green-600">
+              $30/month
+            </span>
+          )}
         </div>
 
-        {profile?.subscription_current_period_end && (
+        {profile?.is_complimentary ? (
           <div className="text-sm text-green-600">
-            Next billing: {new Date(profile.subscription_current_period_end).toLocaleDateString()}
+            You have complementary access. Thank you for using The Menu Guide
           </div>
-        )}
-
-        {profile?.stripe_customer_id ? (
-          <Button
-            variant="outline"
-            onClick={handleManageSubscription}
-            disabled={loading}
-            className="border-green-300 text-green-700 hover:bg-green-100"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            {loading ? 'Opening...' : 'Manage Subscription'}
-          </Button>
         ) : (
-          <div className="text-sm text-green-600">
-            Premium account
-          </div>
+          <>
+            {profile?.subscription_current_period_end && (
+              <div className="text-sm text-green-600">
+                Next billing: {new Date(profile.subscription_current_period_end).toLocaleDateString()}
+              </div>
+            )}
+
+            {profile?.stripe_customer_id ? (
+              <Button
+                variant="outline"
+                onClick={handleManageSubscription}
+                disabled={loading}
+                className="border-green-300 text-green-700 hover:bg-green-100"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                {loading ? 'Opening...' : 'Manage Subscription'}
+              </Button>
+            ) : (
+              <div className="text-sm text-green-600">
+                Premium account
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

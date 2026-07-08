@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
         )
       `)
             .eq('profiles.is_public', true)
-            .eq('profiles.subscription_status', 'pro')
+            // Premium access = paid subscription OR admin-granted complimentary flag
+            .or('subscription_status.eq.pro,is_complimentary.eq.true', { referencedTable: 'profiles' })
             .not('menu_items', 'is', null)
             .limit(1000) // Fetch more than needed, we'll filter and sort below
 

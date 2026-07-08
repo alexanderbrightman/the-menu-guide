@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('username, display_name, avatar_url')
       .eq('is_public', true)
-      .eq('subscription_status', 'pro')
+      // Premium access = paid subscription OR admin-granted complimentary flag
+      .or('subscription_status.eq.pro,is_complimentary.eq.true')
       .or(`username.ilike.%${sanitizedQuery}%,display_name.ilike.%${sanitizedQuery}%`)
       .limit(50) // Fetch more than needed to ensure we get good candidates
 

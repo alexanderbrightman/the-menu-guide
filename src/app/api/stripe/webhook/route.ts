@@ -376,11 +376,12 @@ async function manageSubscriptionStatusChange(
       isPublic = false
     }
 
-    // Complimentary accounts keep premium regardless of what happens to any
-    // Stripe subscription attached to them (admin-granted access)
-    if (profile.is_complimentary && subscriptionStatus !== 'pro') {
-      console.log(`[ManageSubscription] Profile ${profileId} is complimentary - keeping premium despite Stripe status '${subscription.status}'`)
-      subscriptionStatus = 'pro'
+    // Complimentary accounts keep premium access regardless of what happens
+    // to any Stripe subscription attached to them. subscription_status still
+    // reflects the real Stripe state; access is granted via is_complimentary,
+    // so we only make sure the menu stays published.
+    if (profile.is_complimentary && !isPublic) {
+      console.log(`[ManageSubscription] Profile ${profileId} is complimentary - keeping menu published despite Stripe status '${subscription.status}'`)
       isPublic = true
     }
 

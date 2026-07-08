@@ -84,11 +84,6 @@ export async function POST(request: NextRequest) {
           subscriptionStatus = 'canceled'
         }
 
-        // Complimentary accounts keep premium regardless of Stripe state
-        if (profile.is_complimentary && subscriptionStatus !== 'pro') {
-          subscriptionStatus = 'pro'
-        }
-
         // Update profile with current subscription status
         const firstItem = subscription.items?.data?.[0]
         const periodEndSeconds = firstItem?.current_period_end ?? null
@@ -103,8 +98,9 @@ export async function POST(request: NextRequest) {
           updateData.stripe_customer_id = subscription.customer
         }
 
-        // Set is_public to true when subscription is active
-        if (subscriptionStatus === 'pro') {
+        // Set is_public to true when subscription is active. Complimentary
+        // accounts stay published even if their old Stripe subscription lapses.
+        if (subscriptionStatus === 'pro' || profile.is_complimentary) {
           updateData.is_public = true
         } else if (subscriptionStatus === 'canceled') {
           updateData.is_public = false

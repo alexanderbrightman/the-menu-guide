@@ -65,6 +65,11 @@ export function SubscriptionDetailsCard() {
       return
     }
 
+    // Complimentary accounts have no Stripe billing data to fetch
+    if (profile?.is_complimentary) {
+      return
+    }
+
     // Only fetch if user has premium subscription
     if (profile?.subscription_status !== 'pro') {
       console.log('Cannot fetch subscription details: user does not have pro subscription')
@@ -109,14 +114,14 @@ export function SubscriptionDetailsCard() {
     } finally {
       setLoading(false)
     }
-  }, [user, profile?.subscription_status])
+  }, [user, profile?.subscription_status, profile?.is_complimentary])
 
   useEffect(() => {
     // Only fetch if user has premium access and is authenticated
-    if (profile?.subscription_status === 'pro' && user && supabase) {
+    if (profile?.subscription_status === 'pro' && !profile?.is_complimentary && user && supabase) {
       fetchSubscriptionDetails()
     }
-  }, [profile?.subscription_status, user, fetchSubscriptionDetails])
+  }, [profile?.subscription_status, profile?.is_complimentary, user, fetchSubscriptionDetails])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -154,6 +159,25 @@ export function SubscriptionDetailsCard() {
 
   if (!profile || !validatePremiumAccess(profile, 'subscription details').isValid) {
     return null
+  }
+
+  // Complimentary accounts have no Stripe subscription; show a thank-you
+  // message in place of the billing details.
+  if (profile.is_complimentary) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <CreditCard className={`h-4 w-4 ${secondaryTextClass}`} />
+          <h3 className={`text-base font-semibold ${primaryTextClass}`}>Subscription Details</h3>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-sm text-green-800">
+            <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+            <span>You have complementary access. Thank you for using The Menu Guide</span>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {

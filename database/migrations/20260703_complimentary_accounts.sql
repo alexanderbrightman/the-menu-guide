@@ -1,6 +1,11 @@
 -- =============================================================================
 -- Migration: Complimentary (free premium) accounts
 --
+-- NOTE: Partially superseded by 20260704_complimentary_access_independent.sql,
+-- which drops the handle_complimentary_change trigger (section 2 below).
+-- is_complimentary no longer rewrites subscription_status; it grants premium
+-- access on its own.
+--
 -- HOW TO GRANT A FREE SUBSCRIPTION:
 --   Supabase Dashboard -> Table Editor -> profiles -> find the user
 --   -> set is_complimentary to TRUE -> save.
