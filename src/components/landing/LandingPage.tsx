@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
 import { SpecialsCard, type Special } from '@/components/landing/SpecialsCard'
 import { SpecialItemModal } from '@/components/landing/SpecialItemModal'
@@ -17,18 +17,12 @@ import { useUserLocation } from '@/hooks/useUserLocation'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 const TAB_ORDER: HomeTab[] = ['specials', 'happy-hour', 'prefxe']
-
-const slideVariants = {
-  enter: (direction: number) => ({ x: direction > 0 ? '100%' : '-100%', opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (direction: number) => ({ x: direction > 0 ? '-100%' : '100%', opacity: 0 }),
-}
+const SWIPE_THRESHOLD_PX = 56
 
 export function LandingPage() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<HomeTab>('specials')
-  const [tabDirection, setTabDirection] = useState(0)
 
   const [selectedSpecial, setSelectedSpecial] = useState<Special | null>(null)
   const [selectedHappyHour, setSelectedHappyHour] = useState<HappyHourEntry | null>(null)
@@ -46,6 +40,7 @@ export function LandingPage() {
   const [headerHeight, setHeaderHeight] = useState<number>()
   const headerInnerRef = useRef<HTMLDivElement>(null)
   const lastScrollY = useRef(0)
+  const swipeStart = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     if (!headerInnerRef.current) return
@@ -84,13 +79,36 @@ export function LandingPage() {
   }, [])
 
   const handleTabChange = (tab: HomeTab) => {
-    const prevIdx = TAB_ORDER.indexOf(activeTab)
-    const nextIdx = TAB_ORDER.indexOf(tab)
-    setTabDirection(nextIdx > prevIdx ? 1 : -1)
     setActiveTab(tab)
     // New tab panel mounts scrolled to the top — show the header again.
     lastScrollY.current = 0
     setHeaderHidden(false)
+  }
+
+  // Lightweight horizontal swipe: no Framer drag on the image-heavy panels.
+  // Only switches tabs when the gesture is clearly horizontal past a threshold.
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    swipeStart.current = { x: t.clientX, y: t.clientY }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = swipeStart.current
+    swipeStart.current = null
+    if (!start) return
+
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return // prefer vertical scroll
+
+    const idx = TAB_ORDER.indexOf(activeTab)
+    if (dx < 0 && idx < TAB_ORDER.length - 1) {
+      handleTabChange(TAB_ORDER[idx + 1])
+    } else if (dx > 0 && idx > 0) {
+      handleTabChange(TAB_ORDER[idx - 1])
+    }
   }
 
   const tabPanelProps = {
@@ -118,8 +136,10 @@ export function LandingPage() {
     >
       {/* Header in normal flow so it never overlaps the content. On mobile it
           collapses to reclaim vertical space as the user scrolls the items. */}
+      {/* overflow-hidden is mobile-only: it clips the collapsing header animation.
+          On desktop it must be visible so the Sign In dropdown can paint below the header. */}
       <motion.div
-        className="relative z-30 flex-shrink-0 overflow-hidden bg-[#F5F5F5]"
+        className="relative z-30 flex-shrink-0 overflow-hidden md:overflow-visible bg-[#F5F5F5]"
         initial={false}
         animate={{
           height: isMobile ? (headerHidden ? 0 : headerHeight ?? 'auto') : 'auto',
@@ -131,52 +151,30 @@ export function LandingPage() {
         </div>
       </motion.div>
 
-      {/* Desktop: segmented tab switcher below the header.
+      {/* Desktop: three discrete tab buttons below the header.
           Mobile: tabs live in the bottom bar instead. */}
       <div className="hidden md:block flex-shrink-0">
         <HomeTabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
-      {/* Animated, scrollable content panel. On mobile this fills the
-          space between the header and the bottom tab bar; only this
-          region scrolls while header + tab bar stay pinned. */}
-      <div className="flex-1 min-h-0 relative overflow-hidden bg-[#F5F5F5]">
-        <AnimatePresence mode="wait" custom={tabDirection}>
-          <motion.div
-            key={activeTab}
-            custom={tabDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className="absolute inset-0"
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.12}
-            onDragEnd={(_, info) => {
-              if (info.offset.x < -80) {
-                const idx = TAB_ORDER.indexOf(activeTab)
-                if (idx < TAB_ORDER.length - 1) handleTabChange(TAB_ORDER[idx + 1])
-              } else if (info.offset.x > 80) {
-                const idx = TAB_ORDER.indexOf(activeTab)
-                if (idx > 0) handleTabChange(TAB_ORDER[idx - 1])
-              }
-            }}
-          >
-            <div
-              onScroll={handleContentScroll}
-              className="h-full overflow-y-auto overscroll-contain bg-[#F5F5F5] px-4 pt-1 pb-[calc(env(safe-area-inset-bottom,0px)+76px)] md:pt-2 md:pb-10"
-            >
-              <div className="max-w-3xl mx-auto w-full">
-                {renderTabContent()}
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+      {/* Instant tab panels — no slide remount animation (that was the ~4s lag).
+          Touch swipe still advances tabs when the gesture is clearly horizontal. */}
+      <div
+        className="flex-1 min-h-0 relative overflow-hidden bg-[#F5F5F5]"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          onScroll={handleContentScroll}
+          className="h-full overflow-y-auto overscroll-contain bg-[#F5F5F5] px-4 pt-1 pb-[calc(env(safe-area-inset-bottom,0px)+76px)] md:pt-2 md:pb-10"
+        >
+          <div className="max-w-3xl mx-auto w-full">
+            {renderTabContent()}
+          </div>
+        </div>
       </div>
 
-      {/* Mobile-only bottom navigation: tab pill + search button */}
+      {/* Mobile-only bottom navigation: tab buttons + search button */}
       <MobileTabBar
         activeTab={activeTab}
         onTabChange={handleTabChange}

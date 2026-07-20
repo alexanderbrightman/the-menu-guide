@@ -71,7 +71,7 @@ export const getAllergenBorderColor = (tagName: string): string => {
 
     // Allergen tags (Exclude logic) - Cohesive Palette
     'gluten': '#E9C46A',       // Muted Yellow
-    'dairy': '#A8DADC',        // Soft Blue
+    'dairy': '#6BA8AB',        // Soft Blue (darker for white backgrounds)
     'nuts': '#BC6C25',         // Bronze
     'shellfish': '#E76F51',    // Muted Red
     'eggs': '#F4A261',         // Soft Orange
