@@ -1,5 +1,6 @@
 'use client'
 
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import Link from 'next/link'
 import { X } from 'lucide-react'
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import type { PreFixeEntry } from '@/components/landing/PreFixeCard'
 import { getAllergenBorderColor } from '@/lib/utils'
 import { glassCardStyle } from '@/lib/glass-styles'
+import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Props {
   entry: PreFixeEntry
@@ -16,10 +18,13 @@ interface Props {
 
 export function PreFixeModal({ entry, onClose }: Props) {
   const { menu, restaurant } = entry
+  useFullscreenOverlay(true)
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-xl overflow-y-auto"
+      className="fullscreen-overlay flex items-center justify-center p-4 bg-black/30 backdrop-blur-xl overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -99,6 +104,7 @@ export function PreFixeModal({ entry, onClose }: Props) {
           </Link>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }

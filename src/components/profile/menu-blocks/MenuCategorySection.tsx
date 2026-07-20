@@ -25,6 +25,7 @@ interface MenuCategorySectionProps {
     onItemClick: (item: MenuItemWithRelations) => void
     favoritedIds: Set<string>
     theme: ReturnType<typeof useMenuTheme>
+    cardStyle?: 'classic' | 'minimal'
     emptyMessage?: string
     subtitle?: string
     isSortable?: boolean
@@ -47,6 +48,7 @@ export function MenuCategorySection({
     onItemClick,
     favoritedIds,
     theme,
+    cardStyle = 'classic',
     emptyMessage = 'No items in this category.',
     subtitle,
     isSortable = false,
@@ -236,12 +238,16 @@ export function MenuCategorySection({
                             strategy={rectSortingStrategy}
                             disabled={!isSortable}
                         >
-                            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
+                            <div
+                                className={cardStyle === 'minimal' ? 'grid gap-5 sm:gap-6' : 'grid gap-3'}
+                                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}
+                            >
                                 {items.map((item) => (
                                     <SortableItem key={item.id} id={item.id} className="h-full">
                                         <MenuItemCard
                                             item={item}
                                             theme={theme}
+                                            cardStyle={cardStyle}
                                             onEdit={() => onEditItem(item)}
                                             onDelete={() => onDeleteItem(item.id)}
                                             onToggleFavorite={() => onToggleFavorite(item.id)}

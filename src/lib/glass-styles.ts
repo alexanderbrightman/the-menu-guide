@@ -32,6 +32,20 @@ export const glassCardStyle: CSSProperties = { ...glassStyle }
 
 export const glassPanelStyle: CSSProperties = { ...glassStyle }
 
+/** Glass card that stays readable on light and dark menu backgrounds. */
+export function getThemedGlassCardStyle(isDarkBackground: boolean): CSSProperties {
+  if (isDarkBackground) {
+    return {
+      background: 'rgba(255,255,255,0.08)',
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
+      border: '0.5px solid rgba(255,255,255,0.18)',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+    }
+  }
+  return glassCardStyle
+}
+
 export const glassFabStyle: CSSProperties = { ...glassStyle, boxShadow: glassTokens.shadowLg }
 
 /** Tailwind equivalents of {@link glassStyle} for class-based surfaces. */

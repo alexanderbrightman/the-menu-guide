@@ -47,6 +47,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     address: profile?.address || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
     is_dark_mode: isDarkModeFromColor(profile?.menu_background_color),
+    menu_card_style: (profile?.menu_card_style === 'minimal' ? 'minimal' : 'classic') as 'classic' | 'minimal',
     show_display_name: true
   })
   const [loading, setLoading] = useState(false)
@@ -72,7 +73,8 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     setFormData(prev => ({
       ...prev,
       menu_font: DEFAULT_MENU_FONT,
-      is_dark_mode: false
+      is_dark_mode: false,
+      menu_card_style: 'classic',
     }))
   }, [])
 
@@ -87,6 +89,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         address: profile.address || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
         is_dark_mode: isDarkModeFromColor(profile.menu_background_color),
+        menu_card_style: profile.menu_card_style === 'minimal' ? 'minimal' : 'classic',
         show_display_name: true
       })
       if (profile.latitude != null && profile.longitude != null) {
@@ -223,6 +226,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
           longitude: longitude,
           menu_font: formData.menu_font,
           menu_background_color: formData.is_dark_mode ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND,
+          menu_card_style: formData.menu_card_style,
           show_display_name: true
         })
         .eq('id', profile.id)
@@ -483,6 +487,31 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                     id="dark_mode"
                     checked={formData.is_dark_mode}
                     onCheckedChange={(checked) => setTimeout(() => setFormData(prev => ({ ...prev, is_dark_mode: checked })), 0)}
+                  />
+                </div>
+
+                <div className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border ${getBorderColor()}`}>
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="minimal_cards" className={`${primaryTextClass} text-sm cursor-pointer`}>
+                      Minimal Menu Cards
+                    </Label>
+                    <p className={`text-xs mt-0.5 ${secondaryTextClass}`}>
+                      Soft rounded cards like the homepage specials
+                    </p>
+                  </div>
+                  <Switch
+                    id="minimal_cards"
+                    checked={formData.menu_card_style === 'minimal'}
+                    onCheckedChange={(checked) =>
+                      setTimeout(
+                        () =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            menu_card_style: checked ? 'minimal' : 'classic',
+                          })),
+                        0
+                      )
+                    }
                   />
                 </div>
               </div>

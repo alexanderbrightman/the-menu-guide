@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
@@ -20,9 +21,10 @@ import { Tag } from 'lucide-react'
 import { X, Upload, AlertCircle, Check } from 'lucide-react'
 
 import { useMenuTheme } from '@/hooks/useMenuTheme'
+import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
-import { getAllergenBorderColor } from '@/lib/utils'
+import { getAllergenBorderColor, getContrastColor } from '@/lib/utils'
 import { verifyUploadedImage } from '@/lib/image-utils'
 
 // Drag and Drop Imports
@@ -198,6 +200,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
 
   // Use the new theme hook
   const theme = useMenuTheme(profile)
+  const cardStyle = profile?.menu_card_style === 'minimal' ? 'minimal' : 'classic'
   const {
     menuBackgroundColor,
     contrastColor,
@@ -511,27 +514,15 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     }
   }, [resetProgress])
 
-  // Close modal on Esc key and lock body scroll
+  // Close modal on Esc; paint full-screen scrim into iOS safe areas
+  useFullscreenOverlay(!!selectedItem)
   useEffect(() => {
+    if (!selectedItem) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedItem) {
-        setSelectedItem(null)
-      }
+      if (e.key === 'Escape') setSelectedItem(null)
     }
-
-    if (selectedItem) {
-      // Lock body scroll when modal is open
-      const originalStyle = window.getComputedStyle(document.body).overflow
-      document.body.style.overflow = 'hidden'
-      document.documentElement.style.overflow = 'hidden'
-
-      window.addEventListener('keydown', handleKeyDown)
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown)
-        document.body.style.overflow = originalStyle
-        document.documentElement.style.overflow = originalStyle
-      }
-    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedItem])
 
   const toggleFavorite = useCallback(async (itemId: string) => {
@@ -1210,6 +1201,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
+                      cardStyle={cardStyle}
                       emptyMessage="No favorited items."
                       isSortable={false} // Favorites are auto-generated, maybe not sortable manually? Or sortable within favorites? User didn't specify. Let's disable for now to be safe.
                     />
@@ -1248,6 +1240,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                               onItemClick={(item) => setSelectedItem(item)}
                               favoritedIds={favoritedIds}
                               theme={theme}
+                              cardStyle={cardStyle}
                               emptyMessage="No menu items yet. Use the New Item button to add your first dish."
                               isSortable={true}
                             />
@@ -1273,6 +1266,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
+                      cardStyle={cardStyle}
                       subtitle="Organize with categories whenever you are ready."
                       isSortable={true}
                     />
@@ -1314,6 +1308,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
+                      cardStyle={cardStyle}
                       emptyMessage="No uncategorized items."
                       isSortable={true}
                     />
@@ -1559,22 +1554,32 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                             {tags.map((tag) => {
                               const isSelected = itemTags.includes(tag.id)
                               const borderColor = getAllergenBorderColor(tag.name)
+                              const selectedFill = borderColor || (isDarkBackground ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)')
+                              const selectedText = borderColor ? getContrastColor(borderColor) : contrastColor
 
                               return (
                                 <Badge
                                   key={tag.id}
                                   variant="outline"
-                                  className={`cursor-pointer transition-all px-3 py-1.5 text-sm select-none ${isSelected ? 'ring-1 ring-offset-1' : 'hover:opacity-70'}`}
+                                  className={`cursor-pointer transition-all px-3 py-1.5 text-sm select-none ${
+                                    isSelected ? 'font-semibold shadow-sm' : 'hover:opacity-80'
+                                  }`}
                                   onClick={() => toggleFormTag(tag.id)}
                                   style={{
-                                    borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
+                                    borderWidth: isSelected ? 2 : 1,
+                                    borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)'),
                                     backgroundColor: isSelected
-                                      ? (borderColor || (isDarkBackground ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'))
-                                      : 'transparent',
-                                    color: contrastColor
+                                      ? selectedFill
+                                      : isDarkBackground
+                                        ? 'rgba(255,255,255,0.06)'
+                                        : 'transparent',
+                                    color: isSelected ? selectedText : contrastColor,
+                                    boxShadow: isSelected
+                                      ? `0 0 0 2px ${menuBackgroundColor}, 0 0 0 4px ${borderColor || contrastColor}`
+                                      : undefined,
                                   }}
                                 >
-                                  {isSelected && <Check className="h-3 w-3 mr-1" />}
+                                  {isSelected && <Check className="h-3.5 w-3.5 mr-1" strokeWidth={2.5} />}
                                   {tag.name}
                                 </Badge>
                               )
@@ -1590,35 +1595,104 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             </SheetContent>
           </Sheet>
 
-          {/* Item Detail Modal - Custom Implementation matching Public Page */}
-          {selectedItem && (
-            <div
-              className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
-              style={{
-                width: '100vw',
-                overflow: 'hidden',
-              }}
-              onClick={() => setSelectedItem(null)}
-            >
-              <div
-                className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300"
-              >
-                {/* Close Button - desktop only */}
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="hidden md:flex absolute top-3 right-3 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+        </section>
+      </DndContext>
 
-                {/* Image */}
+      {/* Item detail modal — portaled so it sits above dashboard nav / safe-area layers */}
+      {selectedItem &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
+            onClick={() => setSelectedItem(null)}
+          >
+            <div
+              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 py-8 animate-in slide-in-from-bottom-8 fade-in duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="hidden md:flex fixed top-3 right-3 z-[110] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div
+                className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
+                style={{
+                  backgroundColor: menuBackgroundColor,
+                  color: contrastColor,
+                }}
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <h2
+                        id="private-menu-item-heading"
+                        className={`text-2xl font-bold leading-tight ${primaryTextClass}`}
+                        style={{ fontFamily: menuFontFamily }}
+                      >
+                        {selectedItem.title}
+                      </h2>
+                      {typeof selectedItem.price === 'number' && (
+                        <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
+                          {formatPrice(selectedItem.price, profile?.currency)}
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedItem.menu_categories && (
+                      <Badge
+                        variant="secondary"
+                        className="self-start border"
+                        style={{
+                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          color: contrastColor,
+                          borderColor: getBorderColor(),
+                        }}
+                      >
+                        {selectedItem.menu_categories.name}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {selectedItem.description && (
+                    <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${primaryTextClass}`}>
+                      {selectedItem.description}
+                    </p>
+                  )}
+
+                  {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
+                    <div className="pt-2 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {selectedItem.menu_item_tags.map((itemTag, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs border cursor-default py-1.5 px-3"
+                            style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
+                          >
+                            {itemTag.tags.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={`mt-2 text-[10px] leading-tight ${primaryTextClass}`}>
+                    Allergen info provided by restaurant, always notify your waiter
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full rounded-2xl overflow-hidden shadow-xl">
                 {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={selectedItem.image_url}
                     alt={selectedItem.title}
-                    className="max-h-[45vh] max-w-full w-auto mx-auto rounded-2xl block"
+                    className="w-full h-auto block"
                     onError={() => {
                       if (selectedItem.image_url) {
                         console.warn(`Failed to load modal image: ${selectedItem.image_url}`)
@@ -1627,91 +1701,18 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                     }}
                   />
                 ) : (
-                  <div className="flex w-full aspect-[4/3] items-center justify-center text-sm text-white/60">
+                  <div className="flex w-full aspect-[4/3] items-center justify-center text-sm text-white/60 bg-black/20">
                     <div className="flex flex-col items-center gap-2">
                       <span className="text-4xl">🍽️</span>
                       <span>No image available</span>
                     </div>
                   </div>
                 )}
-
-                {/* Info Card */}
-                <div
-                  className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    backgroundColor: menuBackgroundColor,
-                    color: contrastColor,
-                  }}
-                >
-                  <div className="flex flex-col gap-4">
-                    {/* Header */}
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <h2
-                          id="private-menu-item-heading"
-                          className={`text-2xl font-bold leading-tight ${primaryTextClass}`}
-                          style={{ fontFamily: menuFontFamily }}
-                        >
-                          {selectedItem.title}
-                        </h2>
-                        {typeof selectedItem.price === 'number' && (
-                          <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
-                            {formatPrice(selectedItem.price, profile?.currency)}
-                          </div>
-                        )}
-                      </div>
-
-                      {selectedItem.menu_categories && (
-                        <Badge
-                          variant="secondary"
-                          className="self-start border"
-                          style={{
-                            backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                            color: contrastColor,
-                            borderColor: getBorderColor(),
-                          }}
-                        >
-                          {selectedItem.menu_categories.name}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    {selectedItem.description && (
-                      <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${primaryTextClass}`}>
-                        {selectedItem.description}
-                      </p>
-                    )}
-
-                    {/* Tags */}
-                    {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                      <div className="pt-2 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {selectedItem.menu_item_tags.map((itemTag, index) => (
-                            <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs border cursor-default py-1.5 px-3"
-                              style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
-                            >
-                              {itemTag.tags.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={`mt-2 text-[10px] leading-tight ${primaryTextClass}`}>
-                      Allergen info provided by restaurant, always notify your waiter
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
-          )}
-        </section>
-      </DndContext>
+          </div>,
+          document.body
+        )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmation.isOpen} onOpenChange={(open) => setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))}>

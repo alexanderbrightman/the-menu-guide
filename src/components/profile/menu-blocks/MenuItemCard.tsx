@@ -8,6 +8,7 @@ import { useMenuTheme } from '@/hooks/useMenuTheme'
 interface MenuItemCardProps {
     item: MenuItemWithRelations
     theme: ReturnType<typeof useMenuTheme>
+    cardStyle?: 'classic' | 'minimal'
     onEdit: () => void
     onDelete: () => void
     onToggleFavorite: () => void
@@ -19,6 +20,7 @@ interface MenuItemCardProps {
 export function MenuItemCard({
     item,
     theme,
+    cardStyle = 'classic',
     onEdit,
     onDelete,
     onToggleFavorite,
@@ -41,6 +43,127 @@ export function MenuItemCard({
     const showPlaceholder = !item.image_url || imageError
     const imageSrc = showPlaceholder ? '/MenuImgPlaceholder.png' : item.image_url!
 
+    const actionButtons = (
+        <div className="flex items-center justify-between w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1.5">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onToggleFavorite()
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={`h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center transition-colors border ${getBorderColor()} rounded-lg ${isFavorited
+                        ? isDarkBackground
+                            ? 'text-yellow-400 hover:text-yellow-300'
+                            : 'text-yellow-600 hover:text-yellow-700'
+                        : isDarkBackground
+                            ? 'text-white hover:text-gray-300'
+                            : 'text-black hover:text-gray-700'
+                        }`}
+                    aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                    <Star className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : ''}`} />
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onToggleAvailability()
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={`h-7 sm:h-8 px-2 flex items-center justify-center text-[10px] sm:text-xs font-bold border rounded-lg transition-colors ${!isAvailable
+                        ? 'bg-red-500 text-white border-red-500 hover:bg-red-600'
+                        : isDarkBackground
+                            ? 'border-white text-white hover:bg-red-500 hover:text-white hover:border-red-500'
+                            : 'border-black text-black hover:bg-red-500 hover:text-white hover:border-red-500'
+                        }`}
+                >
+                    86&apos;D
+                </button>
+            </div>
+            <div className="flex items-center gap-1.5">
+                <Button
+                    size="icon-sm"
+                    variant="outline"
+                    className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg h-7 w-7 sm:h-8 sm:w-8`}
+                    onClick={onEdit}
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </Button>
+                <Button
+                    size="icon-sm"
+                    variant="outline"
+                    className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg h-7 w-7 sm:h-8 sm:w-8`}
+                    onClick={onDelete}
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </Button>
+            </div>
+        </div>
+    )
+
+    const image = (
+        <Image
+            key={item.image_url || 'placeholder'}
+            src={imageSrc}
+            alt={item.title}
+            fill
+            className={`object-cover ${showPlaceholder ? 'scale-125' : ''} ${!isAvailable ? 'grayscale' : ''}`}
+            style={showPlaceholder && isDarkBackground ? { filter: 'invert(1)' } : undefined}
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            onError={() => {
+                if (item.image_url) {
+                    console.warn(`Failed to load menu item image: ${item.image_url}`)
+                    setImageError(true)
+                }
+            }}
+        />
+    )
+
+    const unavailableOverlay = !isAvailable && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <span className="font-bold text-white tracking-wider border-2 border-white px-2 py-1 rotate-[-15deg]">
+                86&apos;D
+            </span>
+        </div>
+    )
+
+    if (cardStyle === 'minimal') {
+        return (
+            <div className={`group relative flex flex-col h-full ${!isAvailable ? 'opacity-60' : ''}`}>
+                <button
+                    type="button"
+                    className="cursor-pointer text-left w-full"
+                    onClick={onClick}
+                >
+                    <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
+                        <div
+                            className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${
+                                isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
+                            } shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]`}
+                        >
+                            {image}
+                            {unavailableOverlay}
+                        </div>
+                        <div className="pt-3 px-0.5">
+                            <h3
+                                className={`text-[13.5px] sm:text-[15px] font-semibold leading-tight truncate ${primaryTextClass} ${
+                                    !isAvailable ? 'line-through decoration-slate-500' : ''
+                                }`}
+                                style={{ fontFamily: menuFontFamily, letterSpacing: '-0.01em' }}
+                                title={item.title}
+                            >
+                                {item.title}
+                            </h3>
+                        </div>
+                    </div>
+                </button>
+                <div className="mt-3 pt-0.5">{actionButtons}</div>
+            </div>
+        )
+    }
+
     return (
         <div
             className={`group relative flex flex-col cursor-pointer border h-full overflow-hidden ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${showPlaceholder ? '' : (isDarkBackground ? 'bg-white/5' : 'bg-white')
@@ -48,28 +171,8 @@ export function MenuItemCard({
             onClick={onClick}
         >
             <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                <Image
-                    key={item.image_url || 'placeholder'} // Reset error state when URL changes
-                    src={imageSrc}
-                    alt={item.title}
-                    fill
-                    className={`object-cover ${showPlaceholder ? 'scale-125' : ''} ${!isAvailable ? 'grayscale' : ''}`}
-                    style={showPlaceholder && isDarkBackground ? { filter: 'invert(1)' } : undefined}
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                    onError={() => {
-                        if (item.image_url) {
-                            console.warn(`Failed to load menu item image: ${item.image_url}`)
-                            setImageError(true)
-                        }
-                    }}
-                />
-                {!isAvailable && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <span className="font-bold text-white tracking-wider border-2 border-white px-2 py-1 rotate-[-15deg]">
-                            86&apos;D
-                        </span>
-                    </div>
-                )}
+                {image}
+                {unavailableOverlay}
             </div>
             <div className="flex-1 flex flex-col p-2 sm:p-3">
                 <div className="mb-2">
@@ -81,63 +184,7 @@ export function MenuItemCard({
                         {item.title}
                     </h3>
                 </div>
-                <div className="flex items-center justify-between mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onToggleFavorite()
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            className={`h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center transition-colors border ${getBorderColor()} rounded-lg ${isFavorited
-                                ? isDarkBackground
-                                    ? 'text-yellow-400 hover:text-yellow-300'
-                                    : 'text-yellow-600 hover:text-yellow-700'
-                                : isDarkBackground
-                                    ? 'text-white hover:text-gray-300'
-                                    : 'text-black hover:text-gray-700'
-                                }`}
-                            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                            <Star className={`h-3 w-3 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : ''}`} />
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onToggleAvailability()
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            className={`h-6 sm:h-7 px-1.5 flex items-center justify-center text-[10px] sm:text-xs font-bold border rounded-lg transition-colors ${!isAvailable
-                                ? 'bg-red-500 text-white border-red-500 hover:bg-red-600'
-                                : isDarkBackground
-                                    ? 'border-white text-white hover:bg-red-500 hover:text-white hover:border-red-500'
-                                    : 'border-black text-black hover:bg-red-500 hover:text-white hover:border-red-500'
-                                }`}
-                        >
-                            86&apos;D
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-1 sm:gap-2">
-                        <Button
-                            size="icon-sm"
-                            variant="outline"
-                            className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg`}
-                            onClick={onEdit}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        <Button
-                            size="icon-sm"
-                            variant="outline"
-                            className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg`}
-                            onClick={onDelete}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                    </div>
-                </div>
+                <div className="mt-auto pt-2">{actionButtons}</div>
             </div>
         </div>
     )

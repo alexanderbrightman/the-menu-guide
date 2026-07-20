@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -13,6 +14,7 @@ import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
 import { getAllergenBorderColor, ALLERGEN_TAGS } from '@/lib/utils'
 import { CategoryDivider } from './CategoryDivider'
+import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -122,7 +124,7 @@ const MenuItemCard = memo(({
   isDarkBackground,
   headingFontFamily,
   showPrices,
-
+  cardStyle,
   getBorderColor,
   currency,
   failedImages,
@@ -135,6 +137,7 @@ const MenuItemCard = memo(({
   isDarkBackground: boolean
   headingFontFamily: string
   showPrices: boolean
+  cardStyle: 'classic' | 'minimal'
   getBorderColor: () => string
   currency?: string
   failedImages: Set<string>
@@ -143,6 +146,69 @@ const MenuItemCard = memo(({
   // Determine if we should show placeholder
   const hasValidImage = item.image_url && !failedImages.has(item.image_url)
 
+  const image = hasValidImage ? (
+    <Image
+      src={item.image_url!}
+      alt={item.title}
+      fill
+      className="object-cover"
+      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+      onError={() => {
+        if (item.image_url) {
+          console.warn(`Failed to load menu item image: ${item.image_url}`)
+          onImageError(item.image_url)
+        }
+      }}
+    />
+  ) : (
+    <Image
+      src="/MenuImgPlaceholder.png"
+      alt={item.title}
+      fill
+      className="object-cover scale-125"
+      style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
+      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+    />
+  )
+
+  if (cardStyle === 'minimal') {
+    return (
+      <button
+        type="button"
+        className="group cursor-pointer text-left w-full"
+        onClick={() => onSelect(item)}
+      >
+        <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
+          <div
+            className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${
+              isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
+            } shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]`}
+          >
+            {image}
+          </div>
+          <div className="pt-3 px-0.5">
+            <h3
+              className={`text-[13.5px] sm:text-[15px] font-semibold leading-tight truncate ${priceClass}`}
+              style={{ fontFamily: headingFontFamily, letterSpacing: '-0.01em' }}
+            >
+              {item.title}
+            </h3>
+            {showPrices && item.price != null && (
+              <p className={`mt-1 text-[12px] sm:text-[13px] font-medium notranslate ${priceClass}`}>
+                {formatPrice(item.price, currency)}
+              </p>
+            )}
+            {item.description && (
+              <p className={`mt-1 text-[11px] sm:text-[12px] line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
+                {item.description}
+              </p>
+            )}
+          </div>
+        </div>
+      </button>
+    )
+  }
+
   return (
     <div
       className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${hasValidImage ? (isDarkBackground ? 'bg-white/5' : 'bg-white') : ''
@@ -150,30 +216,7 @@ const MenuItemCard = memo(({
       onClick={() => onSelect(item)}
     >
       <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-        {hasValidImage ? (
-          <Image
-            src={item.image_url!}
-            alt={item.title}
-            fill
-            className="object-cover"
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            onError={() => {
-              if (item.image_url) {
-                console.warn(`Failed to load menu item image: ${item.image_url}`)
-                onImageError(item.image_url)
-              }
-            }}
-          />
-        ) : (
-          <Image
-            src="/MenuImgPlaceholder.png"
-            alt={item.title}
-            fill
-            className="object-cover scale-125"
-            style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-          />
-        )}
+        {image}
       </div>
       <div className="flex-1 flex flex-col p-2 sm:p-3">
         <div className="mb-2">
@@ -194,7 +237,6 @@ const MenuItemCard = memo(({
             {item.description}
           </p>
         )}
-        {/* Allergen tags removed from cards - only show in modal */}
       </div>
     </div>
   )
@@ -228,6 +270,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
   const showPrices = profile.show_prices !== false // default to true if undefined
+  const cardStyle = profile.menu_card_style === 'minimal' ? 'minimal' : 'classic'
   const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
   const isDarkBackground = contrastColor === '#ffffff'
   const menuFontFamily = useMemo(
@@ -437,27 +480,15 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
   const hasActiveFilters = selectedTags.length > 0 || selectedCategory !== 'all'
 
-  // Close modal on Esc key and lock body scroll
+  // Close modal on Esc; paint full-screen scrim into iOS safe areas
+  useFullscreenOverlay(!!selectedItem)
   useEffect(() => {
+    if (!selectedItem) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedItem) {
-        setSelectedItem(null)
-      }
+      if (e.key === 'Escape') setSelectedItem(null)
     }
-
-    if (selectedItem) {
-      // Lock body scroll when modal is open
-      const originalStyle = window.getComputedStyle(document.body).overflow
-      document.body.style.overflow = 'hidden'
-      document.documentElement.style.overflow = 'hidden'
-
-      window.addEventListener('keydown', handleKeyDown)
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown)
-        document.body.style.overflow = originalStyle
-        document.documentElement.style.overflow = originalStyle
-      }
-    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedItem])
 
   useEffect(() => {
@@ -756,7 +787,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                             isDarkBackground={isDarkBackground}
                             fontFamily={menuFontFamily}
                           />
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                          <div
+                            className={
+                              cardStyle === 'minimal'
+                                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6'
+                                : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
+                            }
+                          >
                             {items.map((item) => (
                               <MenuItemCard
                                 key={item.id}
@@ -767,6 +804,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 isDarkBackground={isDarkBackground}
                                 headingFontFamily={menuFontFamily}
                                 showPrices={showPrices}
+                                cardStyle={cardStyle}
                                 getBorderColor={getBorderColor}
                                 currency={profile.currency}
                                 failedImages={failedImages}
@@ -789,7 +827,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                               fontFamily={menuFontFamily}
                             />
                           )}
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                          <div
+                            className={
+                              cardStyle === 'minimal'
+                                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6'
+                                : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
+                            }
+                          >
                             {uncategorizedItems.map((item) => (
                               <MenuItemCard
                                 key={item.id}
@@ -800,6 +844,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 isDarkBackground={isDarkBackground}
                                 headingFontFamily={menuFontFamily}
                                 showPrices={showPrices}
+                                cardStyle={cardStyle}
                                 getBorderColor={getBorderColor}
                                 currency={profile.currency}
                                 failedImages={failedImages}
@@ -816,7 +861,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                 </div>
               ) : (
                 /* Standard grid for single category view */
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                <div
+                  className={
+                    cardStyle === 'minimal'
+                      ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6'
+                      : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
+                  }
+                >
                   {filteredItems.map((item) => (
                     <MenuItemCard
                       key={item.id}
@@ -827,6 +878,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       isDarkBackground={isDarkBackground}
                       headingFontFamily={menuFontFamily}
                       showPrices={showPrices}
+                      cardStyle={cardStyle}
                       getBorderColor={getBorderColor}
                       currency={profile.currency}
                       failedImages={failedImages}
@@ -845,67 +897,34 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
         </div>
       </div>
 
-      {/* Expanded Menu Item Modal */}
-      {
-        selectedItem && (
+      {/* Expanded menu item modal — portaled above page chrome */}
+      {selectedItem &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
-            style={{
-              width: '100vw',
-              overflow: 'hidden',
-            }}
+            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
             onClick={() => setSelectedItem(null)}
           >
             <div
-              className={`w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300`}
+              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 py-8 animate-in slide-in-from-bottom-8 fade-in duration-300"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button - desktop only */}
               <button
                 onClick={() => setSelectedItem(null)}
-                className="hidden md:flex absolute top-3 right-3 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
+                className="hidden md:flex fixed top-3 right-3 z-[110] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              {/* Image */}
-              {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={selectedItem.image_url}
-                  alt={selectedItem.title}
-                  className="max-h-[45vh] max-w-full w-auto mx-auto rounded-2xl block"
-                  onError={() => {
-                    if (selectedItem.image_url) {
-                      console.warn(`Failed to load modal image: ${selectedItem.image_url}`)
-                      handleImageError(selectedItem.image_url)
-                    }
-                  }}
-                />
-              ) : (
-                <div className="w-full aspect-[4/3] relative rounded-2xl overflow-hidden">
-                  <Image
-                    src="/MenuImgPlaceholder.png"
-                    alt={selectedItem.title}
-                    fill
-                    className="object-cover scale-125"
-                    style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
-                    sizes="(min-width: 768px) 600px, 100vw"
-                  />
-                </div>
-              )}
-
-              {/* Info Card */}
               <div
                 className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
-                onClick={(e) => e.stopPropagation()}
                 style={{
                   backgroundColor: menuBackgroundColor,
                   color: contrastColor,
                 }}
               >
                 <div className="flex flex-col gap-4">
-                  {/* Header */}
                   <div className="flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-4">
                       <h2
@@ -937,14 +956,12 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     )}
                   </div>
 
-                  {/* Description */}
                   {selectedItem.description && (
                     <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${primaryTextClass}`}>
                       {selectedItem.description}
                     </p>
                   )}
 
-                  {/* Tags */}
                   {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
                     <div className="pt-2 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
                       <div className="flex flex-wrap gap-2 pt-2">
@@ -971,12 +988,38 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   </div>
                 </div>
               </div>
+
+              <div className="w-full rounded-2xl overflow-hidden shadow-xl">
+                {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedItem.image_url}
+                    alt={selectedItem.title}
+                    className="w-full h-auto block"
+                    onError={() => {
+                      if (selectedItem.image_url) {
+                        console.warn(`Failed to load modal image: ${selectedItem.image_url}`)
+                        handleImageError(selectedItem.image_url)
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full aspect-[4/3] relative">
+                    <Image
+                      src="/MenuImgPlaceholder.png"
+                      alt={selectedItem.title}
+                      fill
+                      className="object-cover scale-125"
+                      style={isDarkBackground ? { filter: 'invert(1)' } : undefined}
+                      sizes="(min-width: 768px) 600px, 100vw"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )
-      }
-
-
-    </div >
+          </div>,
+          document.body
+        )}
+    </div>
   )
 }

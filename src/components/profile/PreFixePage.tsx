@@ -9,12 +9,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Plus, Trash2, Upload, ChevronDown, ChevronRight, X, Search, ImageIcon } from 'lucide-react'
+import { Plus, Trash2, Upload, ChevronDown, ChevronRight, X, Search, ImageIcon, Check } from 'lucide-react'
 import Image from 'next/image'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { useAuth } from '@/contexts/AuthContext'
-import { getAllergenBorderColor } from '@/lib/utils'
-import { glassCardStyle } from '@/lib/glass-styles'
+import { useMenuTheme } from '@/hooks/useMenuTheme'
+import { getAllergenBorderColor, getContrastColor } from '@/lib/utils'
+import { getThemedGlassCardStyle } from '@/lib/glass-styles'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -56,7 +57,28 @@ interface PreFixeMenu {
 }
 
 export function PreFixePage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const theme = useMenuTheme(profile)
+  const {
+    isDarkBackground,
+    primaryTextClass,
+    mutedTextClass,
+    outlineButtonClass,
+    accentButtonClass,
+    getBorderColor,
+    menuBackgroundColor,
+    contrastColor,
+  } = theme
+  const cardStyle = getThemedGlassCardStyle(isDarkBackground)
+  const inputClass = isDarkBackground
+    ? 'border-white/40 text-white placeholder:text-white/40 bg-white/5'
+    : 'border-black/20 text-black bg-white/70'
+  const dayUnselectedClass = isDarkBackground
+    ? 'bg-white/10 text-white border-white/35'
+    : 'bg-black/5 text-gray-700 border-black/15'
+  const uploadClass = isDarkBackground
+    ? 'border-white/35 hover:bg-white/10'
+    : 'border-black/20 hover:bg-black/5'
   const { uploadImage, uploading } = useImageUpload()
   const [menus, setMenus] = useState<PreFixeMenu[]>([])
   const [tags, setTags] = useState<Tag[]>([])
@@ -408,36 +430,108 @@ export function PreFixePage() {
     setItemForm((f) => ({ ...f, image_url: result.url }))
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading...</div>
+  if (loading) {
+    return <div className={`p-8 text-center ${mutedTextClass}`}>Loading...</div>
+  }
 
   if (menuForm) {
     return (
       <div className="max-w-2xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">{menuForm.id ? 'Edit' : 'New'} Pre Fixe Menu</h2>
-          <Button variant="ghost" onClick={() => setMenuForm(null)}>Cancel</Button>
+        <div className="flex justify-between items-center gap-3">
+          <h2 className={`text-xl font-semibold ${primaryTextClass}`}>
+            {menuForm.id ? 'Edit' : 'New'} Pre Fixe Menu
+          </h2>
+          <Button
+            variant="ghost"
+            className={`${primaryTextClass} hover:bg-transparent`}
+            onClick={() => setMenuForm(null)}
+          >
+            Cancel
+          </Button>
         </div>
-        <div className="p-4 space-y-4 rounded-xl" style={glassCardStyle}>
-          <div><Label>Title</Label><Input value={menuForm.title || ''} onChange={(e) => setMenuForm({ ...menuForm, title: e.target.value })} /></div>
-          <div><Label>Description</Label><Textarea rows={3} value={menuForm.description || ''} onChange={(e) => setMenuForm({ ...menuForm, description: e.target.value })} /></div>
-          <div><Label>Price ($)</Label><Input type="number" step="0.01" value={menuForm.price ?? ''} onChange={(e) => setMenuForm({ ...menuForm, price: parseFloat(e.target.value) || null })} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><Label>Start</Label><Input type="time" value={menuForm.start_time?.slice(0, 5) || ''} onChange={(e) => setMenuForm({ ...menuForm, start_time: e.target.value })} /></div>
-            <div><Label>End</Label><Input type="time" value={menuForm.end_time?.slice(0, 5) || ''} onChange={(e) => setMenuForm({ ...menuForm, end_time: e.target.value })} /></div>
+        <div className="p-4 space-y-4 rounded-xl" style={cardStyle}>
+          <div className="space-y-1.5">
+            <Label className={primaryTextClass}>Title</Label>
+            <Input
+              className={inputClass}
+              value={menuForm.title || ''}
+              onChange={(e) => setMenuForm({ ...menuForm, title: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className={primaryTextClass}>Description</Label>
+            <Textarea
+              className={inputClass}
+              rows={3}
+              value={menuForm.description || ''}
+              onChange={(e) => setMenuForm({ ...menuForm, description: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className={primaryTextClass}>Price ($)</Label>
+            <Input
+              className={inputClass}
+              type="number"
+              step="0.01"
+              value={menuForm.price ?? ''}
+              onChange={(e) => setMenuForm({ ...menuForm, price: parseFloat(e.target.value) || null })}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="min-w-0 space-y-1.5">
+              <Label className={primaryTextClass}>Start</Label>
+              <Input
+                type="time"
+                className={`${inputClass} w-full max-w-full`}
+                value={menuForm.start_time?.slice(0, 5) || ''}
+                onChange={(e) => setMenuForm({ ...menuForm, start_time: e.target.value })}
+              />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label className={primaryTextClass}>End</Label>
+              <Input
+                type="time"
+                className={`${inputClass} w-full max-w-full`}
+                value={menuForm.end_time?.slice(0, 5) || ''}
+                onChange={(e) => setMenuForm({ ...menuForm, end_time: e.target.value })}
+              />
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {DAY_LABELS.map((label, i) => (
-              <button key={label} type="button" onClick={() => {
-                const days = menuForm.days_of_week || []
-                setMenuForm({ ...menuForm, days_of_week: days.includes(i) ? days.filter((d) => d !== i) : [...days, i].sort() })
-              }} className={`px-3 py-1 rounded-full text-xs border ${menuForm.days_of_week?.includes(i) ? 'bg-blue-500 text-white' : 'bg-white/60'}`}>{label}</button>
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  const days = menuForm.days_of_week || []
+                  setMenuForm({
+                    ...menuForm,
+                    days_of_week: days.includes(i) ? days.filter((d) => d !== i) : [...days, i].sort(),
+                  })
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  menuForm.days_of_week?.includes(i)
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : dayUnselectedClass
+                }`}
+              >
+                {label}
+              </button>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <Switch checked={menuForm.is_active !== false} onCheckedChange={(v) => setMenuForm({ ...menuForm, is_active: v })} />
-            <Label>Active on homepage</Label>
+            <Switch
+              checked={menuForm.is_active !== false}
+              onCheckedChange={(v) => setMenuForm({ ...menuForm, is_active: v })}
+            />
+            <Label className={primaryTextClass}>Active on homepage</Label>
           </div>
-          <Button onClick={saveMenuMeta} className="w-full">Save Menu</Button>
+          <Button
+            onClick={saveMenuMeta}
+            className={`w-full ${accentButtonClass} border ${getBorderColor()}`}
+          >
+            Save Menu
+          </Button>
         </div>
       </div>
     )
@@ -446,25 +540,54 @@ export function PreFixePage() {
   if (!selectedMenuId || !selectedMenu) {
     return (
       <div className="max-w-2xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-        <div className="flex justify-between">
-          <h2 className="text-xl font-semibold">Pre Fixe Menus</h2>
-          <Button size="sm" onClick={() => setMenuForm({ title: '', description: '', price: null, days_of_week: [0, 1, 2, 3, 4, 5, 6], is_active: true })}>
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className={`text-xl font-semibold ${primaryTextClass}`}>Pre Fixe Menus</h2>
+          <Button
+            size="sm"
+            className={`${accentButtonClass} border ${getBorderColor()}`}
+            onClick={() => setMenuForm({ title: '', description: '', price: null, days_of_week: [0, 1, 2, 3, 4, 5, 6], is_active: true })}
+          >
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
         {menus.map((m) => (
-          <div key={m.id} className="rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-white/40" style={glassCardStyle} onClick={() => setSelectedMenuId(m.id)}>
+          <div
+            key={m.id}
+            className={`rounded-xl p-4 flex justify-between items-center cursor-pointer transition-colors ${
+              isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-white/40'
+            }`}
+            style={cardStyle}
+            onClick={() => setSelectedMenuId(m.id)}
+          >
             <div>
-              <p className="font-semibold">{m.title}</p>
-              {m.price != null && <p className="text-sm text-gray-500">${Number(m.price).toFixed(2)}</p>}
+              <p className={`font-semibold ${primaryTextClass}`}>{m.title}</p>
+              {m.price != null && (
+                <p className={`text-sm ${mutedTextClass}`}>${Number(m.price).toFixed(2)}</p>
+              )}
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setMenuForm(m) }}>Edit</Button>
-              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteMenu(m.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`${outlineButtonClass} border ${getBorderColor()}`}
+                onClick={(e) => { e.stopPropagation(); setMenuForm(m) }}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`${outlineButtonClass} border ${getBorderColor()}`}
+                onClick={(e) => { e.stopPropagation(); deleteMenu(m.id) }}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
             </div>
           </div>
         ))}
-        {menus.length === 0 && <p className="text-center text-gray-500 py-8 text-sm">No pre fixe menus yet.</p>}
+        {menus.length === 0 && (
+          <p className={`text-center ${mutedTextClass} py-8 text-sm`}>No pre fixe menus yet.</p>
+        )}
       </div>
     )
   }
@@ -472,19 +595,33 @@ export function PreFixePage() {
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedMenuId(null)}>← Back</Button>
-        <h2 className="text-xl font-semibold flex-1 truncate">{selectedMenu.title}</h2>
-        <Button variant="ghost" size="sm" onClick={() => setMenuForm(selectedMenu)}>Edit Info</Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`${outlineButtonClass} border ${getBorderColor()}`}
+          onClick={() => setSelectedMenuId(null)}
+        >
+          ← Back
+        </Button>
+        <h2 className={`text-xl font-semibold flex-1 truncate ${primaryTextClass}`}>{selectedMenu.title}</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`${outlineButtonClass} border ${getBorderColor()}`}
+          onClick={() => setMenuForm(selectedMenu)}
+        >
+          Edit Info
+        </Button>
       </div>
 
       {(selectedMenu.prefxe_courses || []).map((course) => {
         const expanded = expandedCourses.has(course.id)
         return (
-          <div key={course.id} className="rounded-xl overflow-hidden" style={glassCardStyle}>
+          <div key={course.id} className="rounded-xl overflow-hidden" style={cardStyle}>
             <div className="flex items-center">
               <button
                 type="button"
-                className="flex-1 flex items-center gap-2 p-4 text-left font-semibold min-w-0"
+                className={`flex-1 flex items-center gap-2 p-4 text-left font-semibold min-w-0 ${primaryTextClass}`}
                 onClick={() => setExpandedCourses((prev) => {
                   const next = new Set(prev)
                   if (next.has(course.id)) next.delete(course.id)
@@ -494,7 +631,9 @@ export function PreFixePage() {
               >
                 {expanded ? <ChevronDown className="h-4 w-4 flex-shrink-0" /> : <ChevronRight className="h-4 w-4 flex-shrink-0" />}
                 <span className="truncate">{course.name}</span>
-                <span className="text-xs text-gray-400 font-normal ml-auto flex-shrink-0">{course.prefxe_items?.length || 0} items</span>
+                <span className={`text-xs font-normal ml-auto flex-shrink-0 ${mutedTextClass}`}>
+                  {course.prefxe_items?.length || 0} items
+                </span>
               </button>
               <button
                 type="button"
@@ -509,21 +648,50 @@ export function PreFixePage() {
               <div className="px-4 pb-4 space-y-3">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {(course.prefxe_items || []).map((item) => (
-                    <div key={item.id} className="rounded-lg border border-black/8 overflow-hidden bg-white/50">
-                      <div className="relative aspect-square bg-gray-100">
-                        {item.image_url ? <Image src={item.image_url} alt="" fill className="object-cover" /> : <div className="flex items-center justify-center h-full">🍽️</div>}
+                    <div
+                      key={item.id}
+                      className={`rounded-xl border overflow-hidden ${
+                        isDarkBackground ? 'border-white/15 bg-white/5' : 'border-black/8 bg-white/50'
+                      }`}
+                    >
+                      <div className={`relative aspect-square ${isDarkBackground ? 'bg-white/10' : 'bg-gray-100'}`}>
+                        {item.image_url ? (
+                          <Image src={item.image_url} alt="" fill className="object-cover" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">🍽️</div>
+                        )}
                       </div>
                       <div className="p-2">
-                        <p className="text-xs font-semibold truncate">{item.title}</p>
+                        <p className={`text-xs font-semibold truncate ${primaryTextClass}`}>{item.title}</p>
                         <div className="flex gap-1 mt-1">
-                          <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => openItemSheet(course.id, item)}>Edit</Button>
-                          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => deleteItem(item.id)} aria-label="Delete item"><Trash2 className="h-3.5 w-3.5 text-red-500" /></Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-7 text-xs px-2 ${outlineButtonClass} border ${getBorderColor()}`}
+                            onClick={() => openItemSheet(course.id, item)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-7 px-2 ${outlineButtonClass} border ${getBorderColor()}`}
+                            onClick={() => deleteItem(item.id)}
+                            aria-label="Delete item"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          </Button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => openItemSheet(course.id)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`${outlineButtonClass} border ${getBorderColor()}`}
+                  onClick={() => openItemSheet(course.id)}
+                >
                   <Plus className="h-3 w-3 mr-1" /> Add Item
                 </Button>
               </div>
@@ -532,23 +700,39 @@ export function PreFixePage() {
         )
       })}
 
-      <Button variant="outline" onClick={addCourse} className="w-full"><Plus className="h-4 w-4 mr-1" /> Add Course</Button>
+      <Button
+        variant="outline"
+        onClick={addCourse}
+        className={`w-full ${outlineButtonClass} border ${getBorderColor()}`}
+      >
+        <Plus className="h-4 w-4 mr-1" /> Add Course
+      </Button>
 
       <Sheet open={!!itemSheet} onOpenChange={(open) => { if (!open) closeItemSheet() }}>
         <SheetContent
           side="bottom"
-          className="w-full h-[100dvh] sm:h-auto sm:max-h-[88vh] sm:max-w-lg border-0 sm:border p-0 gap-0 sm:rounded-2xl overflow-hidden sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 [&>button]:hidden flex flex-col"
+          className={`w-full h-[100dvh] sm:h-auto sm:max-h-[88vh] sm:max-w-lg border-0 sm:border p-0 gap-0 sm:rounded-2xl overflow-hidden sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 [&>button]:hidden flex flex-col ${getBorderColor()}`}
+          style={{ backgroundColor: menuBackgroundColor, color: contrastColor }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-black/10 flex-shrink-0">
-            <Button type="button" variant="ghost" className="px-2 -ml-2 text-base font-normal" onClick={closeItemSheet}>
+          <div className={`flex items-center justify-between p-4 border-b flex-shrink-0 ${getBorderColor()}`}>
+            <Button
+              type="button"
+              variant="ghost"
+              className={`px-2 -ml-2 text-base font-normal ${primaryTextClass}`}
+              onClick={closeItemSheet}
+            >
               Cancel
             </Button>
-            <SheetTitle className="text-base sm:text-lg font-semibold">
+            <SheetTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
               {pickerOpen ? 'Choose Item' : itemSheet?.item ? 'Edit Item' : 'Add Item'}
             </SheetTitle>
             {pickerOpen ? (
-              <Button type="button" variant="ghost" className="px-2 -mr-2 text-base font-normal" onClick={() => setPickerOpen(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                className={`px-2 -mr-2 text-base font-normal ${primaryTextClass}`}
+                onClick={() => setPickerOpen(false)}
+              >
                 Back
               </Button>
             ) : (
@@ -564,26 +748,27 @@ export function PreFixePage() {
             )}
           </div>
 
-          {/* Body */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {pickerOpen ? (
               <div className="space-y-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${mutedTextClass}`} />
                   <Input
                     autoFocus
                     placeholder="Search your menu items..."
-                    className="pl-9"
+                    className={`pl-9 ${inputClass}`}
                     value={pickerQuery}
                     onChange={(e) => setPickerQuery(e.target.value)}
                   />
                 </div>
                 {pickerLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                    <div className={`h-5 w-5 animate-spin rounded-full border-2 border-t-transparent ${isDarkBackground ? 'border-white/40' : 'border-gray-400'}`} />
                   </div>
                 ) : existingItems.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-8">No menu items found. Create items on your menu first.</p>
+                  <p className={`text-sm text-center py-8 ${mutedTextClass}`}>
+                    No menu items found. Create items on your menu first.
+                  </p>
                 ) : (
                   <div className="space-y-2">
                     {existingItems
@@ -593,18 +778,26 @@ export function PreFixePage() {
                           key={it.id}
                           type="button"
                           onClick={() => applyExistingItem(it)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg border border-black/8 bg-white/60 hover:bg-white text-left"
+                          className={`w-full flex items-center gap-3 p-2 rounded-xl border text-left transition-colors ${
+                            isDarkBackground
+                              ? 'border-white/15 bg-white/5 hover:bg-white/10'
+                              : 'border-black/8 bg-white/60 hover:bg-white'
+                          }`}
                         >
-                          <div className="relative w-12 h-12 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                          <div className={`relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 ${isDarkBackground ? 'bg-white/10' : 'bg-gray-100'}`}>
                             {it.image_url ? (
                               <Image src={it.image_url} alt="" fill className="object-cover" />
                             ) : (
-                              <div className="flex items-center justify-center h-full text-gray-300"><ImageIcon className="h-5 w-5" /></div>
+                              <div className={`flex items-center justify-center h-full ${mutedTextClass}`}>
+                                <ImageIcon className="h-5 w-5" />
+                              </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{it.title}</p>
-                            {it.description && <p className="text-xs text-gray-400 truncate">{it.description}</p>}
+                            <p className={`text-sm font-medium truncate ${primaryTextClass}`}>{it.title}</p>
+                            {it.description && (
+                              <p className={`text-xs truncate ${mutedTextClass}`}>{it.description}</p>
+                            )}
                           </div>
                         </button>
                       ))}
@@ -614,22 +807,38 @@ export function PreFixePage() {
             ) : (
               <div className="space-y-4">
                 {!itemSheet?.item && (
-                  <Button type="button" variant="outline" className="w-full" onClick={() => { setPickerQuery(''); setPickerOpen(true); loadExistingItems() }}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`w-full ${outlineButtonClass} border ${getBorderColor()}`}
+                    onClick={() => { setPickerQuery(''); setPickerOpen(true); loadExistingItems() }}
+                  >
                     <Plus className="h-4 w-4 mr-1" /> Add from existing menu
                   </Button>
                 )}
                 <div className="space-y-1.5">
-                  <Label>Title</Label>
-                  <Input value={itemForm.title} onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })} placeholder="e.g. Caesar Salad" />
+                  <Label className={primaryTextClass}>Title</Label>
+                  <Input
+                    className={inputClass}
+                    value={itemForm.title}
+                    onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
+                    placeholder="e.g. Caesar Salad"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Description</Label>
-                  <Textarea rows={3} value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} placeholder="Describe this course item..." />
+                  <Label className={primaryTextClass}>Description</Label>
+                  <Textarea
+                    className={inputClass}
+                    rows={3}
+                    value={itemForm.description}
+                    onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+                    placeholder="Describe this course item..."
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Photo</Label>
+                  <Label className={primaryTextClass}>Photo</Label>
                   {itemForm.image_url ? (
-                    <div className="relative w-32 h-32 rounded-lg overflow-hidden">
+                    <div className="relative w-32 h-32 rounded-xl overflow-hidden">
                       <Image src={itemForm.image_url} alt="" fill className="object-cover" />
                       <button
                         type="button"
@@ -641,35 +850,60 @@ export function PreFixePage() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex w-32 h-32 border-2 border-dashed rounded-lg items-center justify-center cursor-pointer hover:bg-gray-50">
+                    <label
+                      className={`flex w-32 h-32 border-2 border-dashed rounded-xl items-center justify-center cursor-pointer transition-colors ${uploadClass}`}
+                    >
                       {uploading ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                        <div className={`h-5 w-5 animate-spin rounded-full border-2 border-t-transparent ${isDarkBackground ? 'border-white/40' : 'border-gray-400'}`} />
                       ) : (
-                        <Upload className="h-5 w-5 text-gray-400" />
+                        <Upload className={`h-5 w-5 ${isDarkBackground ? 'text-white/70' : 'text-gray-500'}`} />
                       )}
                       <input type="file" accept="image/*" className="hidden" onChange={handleItemPhoto} disabled={uploading} />
                     </label>
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Allergens</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        variant="outline"
-                        className={`cursor-pointer ${itemForm.tag_ids.includes(tag.id) ? 'bg-blue-50' : ''}`}
-                        style={{ borderColor: getAllergenBorderColor(tag.name) }}
-                        onClick={() => setItemForm({
-                          ...itemForm,
-                          tag_ids: itemForm.tag_ids.includes(tag.id)
-                            ? itemForm.tag_ids.filter((id) => id !== tag.id)
-                            : [...itemForm.tag_ids, tag.id],
-                        })}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
+                  <Label className={primaryTextClass}>Allergens</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => {
+                      const isSelected = itemForm.tag_ids.includes(tag.id)
+                      const borderColor = getAllergenBorderColor(tag.name)
+                      const selectedFill = borderColor || (isDarkBackground ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)')
+                      const selectedText = borderColor ? getContrastColor(borderColor) : contrastColor
+                      return (
+                        <Badge
+                          key={tag.id}
+                          variant="outline"
+                          className={`cursor-pointer transition-all px-3 py-1.5 text-sm select-none ${
+                            isSelected ? 'font-semibold shadow-sm' : 'hover:opacity-80'
+                          }`}
+                          style={{
+                            borderWidth: isSelected ? 2 : 1,
+                            borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)'),
+                            backgroundColor: isSelected
+                              ? selectedFill
+                              : isDarkBackground
+                                ? 'rgba(255,255,255,0.06)'
+                                : 'transparent',
+                            color: isSelected ? selectedText : contrastColor,
+                            boxShadow: isSelected
+                              ? `0 0 0 2px ${menuBackgroundColor}, 0 0 0 4px ${borderColor || contrastColor}`
+                              : undefined,
+                          }}
+                          onClick={() =>
+                            setItemForm({
+                              ...itemForm,
+                              tag_ids: isSelected
+                                ? itemForm.tag_ids.filter((id) => id !== tag.id)
+                                : [...itemForm.tag_ids, tag.id],
+                            })
+                          }
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5 mr-1" strokeWidth={2.5} />}
+                          {tag.name}
+                        </Badge>
+                      )
+                    })}
                   </div>
                 </div>
               </div>

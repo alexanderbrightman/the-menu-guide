@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -8,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { HappyHourEntry } from '@/components/landing/HappyHourCard'
 import { formatScheduleBadge } from '@/lib/geo'
 import { glassCardStyle } from '@/lib/glass-styles'
+import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Props {
   entry: HappyHourEntry
@@ -18,13 +20,16 @@ export function HappyHourModal({ entry, onClose }: Props) {
   const { menu, restaurant } = entry
   const photos = menu.photos || []
   const [photoIdx, setPhotoIdx] = useState(0)
+  useFullscreenOverlay(true)
 
   const prev = () => setPhotoIdx((i) => (i > 0 ? i - 1 : photos.length - 1))
   const next = () => setPhotoIdx((i) => (i < photos.length - 1 ? i + 1 : 0))
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-xl"
+      className="fullscreen-overlay flex items-center justify-center p-4 bg-black/30 backdrop-blur-xl"
       onClick={onClose}
     >
       <motion.div
@@ -77,6 +82,7 @@ export function HappyHourModal({ entry, onClose }: Props) {
           </Link>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }

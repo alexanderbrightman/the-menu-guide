@@ -11,7 +11,8 @@ import { Plus, Trash2, Upload, X } from 'lucide-react'
 import Image from 'next/image'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { useAuth } from '@/contexts/AuthContext'
-import { glassCardStyle } from '@/lib/glass-styles'
+import { useMenuTheme } from '@/hooks/useMenuTheme'
+import { getThemedGlassCardStyle } from '@/lib/glass-styles'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -33,12 +34,32 @@ interface HappyHourMenu {
 }
 
 export function HappyHourPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const theme = useMenuTheme(profile)
+  const {
+    isDarkBackground,
+    primaryTextClass,
+    mutedTextClass,
+    outlineButtonClass,
+    accentButtonClass,
+    getBorderColor,
+  } = theme
+  const cardStyle = getThemedGlassCardStyle(isDarkBackground)
   const { uploadImage, uploading } = useImageUpload()
   const [menus, setMenus] = useState<HappyHourMenu[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Partial<HappyHourMenu> | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const inputClass = isDarkBackground
+    ? 'border-white/40 text-white placeholder:text-white/40 bg-white/5'
+    : 'border-black/20 text-black bg-white/70'
+  const dayUnselectedClass = isDarkBackground
+    ? 'bg-white/10 text-white border-white/35'
+    : 'bg-black/5 text-gray-700 border-black/15'
+  const uploadClass = isDarkBackground
+    ? 'border-white/35 hover:bg-white/10'
+    : 'border-black/20 hover:bg-black/5'
 
   const getToken = async () => {
     const { data: { session } } = await supabase!.auth.getSession()
@@ -125,8 +146,6 @@ export function HappyHourPage() {
         return
       }
 
-      // Close the editor immediately; reconcile photos/ids via a background
-      // refetch (server persists photos in a separate table).
       setEditing(null)
       fetchMenus()
     } finally {
@@ -137,7 +156,6 @@ export function HappyHourPage() {
   const deleteMenu = async (id: string) => {
     const token = await getToken()
     if (!token) return
-    // Optimistic remove: drop it from the list right away, revert on failure.
     const snapshot = menus
     setMenus((prev) => prev.filter((m) => m.id !== id))
     const res = await fetch(`/api/happy-hour?id=${id}`, {
@@ -150,48 +168,77 @@ export function HappyHourPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading...</div>
+  if (loading) {
+    return <div className={`p-8 text-center ${mutedTextClass}`}>Loading...</div>
+  }
 
   if (editing) {
     return (
       <div className="max-w-2xl mx-auto p-4 space-y-6 pb-28 lg:pb-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">{editing.id ? 'Edit' : 'New'} Happy Hour</h2>
-          <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className={`text-xl font-semibold ${primaryTextClass}`}>
+            {editing.id ? 'Edit' : 'New'} Happy Hour
+          </h2>
+          <Button
+            variant="ghost"
+            className={`${primaryTextClass} hover:bg-transparent`}
+            onClick={() => setEditing(null)}
+          >
+            Cancel
+          </Button>
         </div>
 
-        <div className="space-y-4" style={glassCardStyle}>
+        <div className="rounded-xl overflow-hidden" style={cardStyle}>
           <div className="p-4 space-y-4">
-            <div>
-              <Label>Title</Label>
-              <Input value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+            <div className="space-y-1.5">
+              <Label className={primaryTextClass}>Title</Label>
+              <Input
+                className={inputClass}
+                value={editing.title || ''}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+              />
             </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea rows={4} value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+            <div className="space-y-1.5">
+              <Label className={primaryTextClass}>Description</Label>
+              <Textarea
+                className={inputClass}
+                rows={4}
+                value={editing.description || ''}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Start Time</Label>
-                <Input type="time" value={editing.start_time?.slice(0, 5) || '16:00'} onChange={(e) => setEditing({ ...editing, start_time: e.target.value })} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <Label className={primaryTextClass}>Start Time</Label>
+                <Input
+                  type="time"
+                  className={`${inputClass} w-full max-w-full`}
+                  value={editing.start_time?.slice(0, 5) || '16:00'}
+                  onChange={(e) => setEditing({ ...editing, start_time: e.target.value })}
+                />
               </div>
-              <div>
-                <Label>End Time</Label>
-                <Input type="time" value={editing.end_time?.slice(0, 5) || '18:00'} onChange={(e) => setEditing({ ...editing, end_time: e.target.value })} />
+              <div className="min-w-0 space-y-1.5">
+                <Label className={primaryTextClass}>End Time</Label>
+                <Input
+                  type="time"
+                  className={`${inputClass} w-full max-w-full`}
+                  value={editing.end_time?.slice(0, 5) || '18:00'}
+                  onChange={(e) => setEditing({ ...editing, end_time: e.target.value })}
+                />
               </div>
             </div>
             <div>
-              <Label className="mb-2 block">Days</Label>
+              <Label className={`mb-2 block ${primaryTextClass}`}>Days</Label>
               <div className="flex flex-wrap gap-2">
                 {DAY_LABELS.map((label, i) => (
                   <button
                     key={label}
                     type="button"
                     onClick={() => toggleDay(i)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                       editing.days_of_week?.includes(i)
                         ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white/60 text-gray-600 border-gray-200'
+                        : dayUnselectedClass
                     }`}
                   >
                     {label}
@@ -200,14 +247,17 @@ export function HappyHourPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Switch checked={editing.is_active !== false} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} />
-              <Label>Active on homepage</Label>
+              <Switch
+                checked={editing.is_active !== false}
+                onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}
+              />
+              <Label className={primaryTextClass}>Active on homepage</Label>
             </div>
             <div>
-              <Label className="mb-2 block">Photos</Label>
+              <Label className={`mb-2 block ${primaryTextClass}`}>Photos</Label>
               <div className="flex flex-wrap gap-2">
                 {(editing.happy_hour_photos || []).map((photo, i) => (
-                  <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden">
+                  <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden">
                     <Image src={photo.image_url} alt="" fill className="object-cover" />
                     <button
                       type="button"
@@ -221,13 +271,19 @@ export function HappyHourPage() {
                     </button>
                   </div>
                 ))}
-                <label className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50">
-                  <Upload className="h-5 w-5 text-gray-400" />
+                <label
+                  className={`w-20 h-20 rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-colors ${uploadClass}`}
+                >
+                  <Upload className={`h-5 w-5 ${isDarkBackground ? 'text-white/70' : 'text-gray-500'}`} />
                   <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
                 </label>
               </div>
             </div>
-            <Button onClick={saveMenu} disabled={saving || uploading} className="w-full">
+            <Button
+              onClick={saveMenu}
+              disabled={saving || uploading}
+              className={`w-full ${accentButtonClass} border ${getBorderColor()}`}
+            >
               {saving ? 'Saving...' : 'Save Happy Hour'}
             </Button>
           </div>
@@ -238,16 +294,24 @@ export function HappyHourPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Happy Hour Menus</h2>
-        <Button onClick={startNew} size="sm"><Plus className="h-4 w-4 mr-1" /> Add</Button>
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className={`text-xl font-semibold ${primaryTextClass}`}>Happy Hour Menus</h2>
+        <Button onClick={startNew} size="sm" className={`${accentButtonClass} border ${getBorderColor()}`}>
+          <Plus className="h-4 w-4 mr-1" /> Add
+        </Button>
       </div>
       {menus.length === 0 ? (
-        <p className="text-gray-500 text-sm text-center py-8">No happy hour menus yet. Add one to appear on the homepage.</p>
+        <p className={`${mutedTextClass} text-sm text-center py-8`}>
+          No happy hour menus yet. Add one to appear on the homepage.
+        </p>
       ) : (
         menus.map((menu) => (
-          <div key={menu.id} className="rounded-xl p-4 flex gap-4" style={glassCardStyle}>
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+          <div key={menu.id} className="rounded-xl p-4 flex gap-4" style={cardStyle}>
+            <div
+              className={`relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 ${
+                isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
+              }`}
+            >
               {menu.happy_hour_photos?.[0] ? (
                 <Image src={menu.happy_hour_photos[0].image_url} alt="" fill className="object-cover" />
               ) : (
@@ -255,13 +319,27 @@ export function HappyHourPage() {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{menu.title}</p>
-              <p className="text-xs text-gray-500">{menu.start_time?.slice(0, 5)} – {menu.end_time?.slice(0, 5)}</p>
+              <p className={`font-semibold truncate ${primaryTextClass}`}>{menu.title}</p>
+              <p className={`text-xs ${mutedTextClass}`}>
+                {menu.start_time?.slice(0, 5)} – {menu.end_time?.slice(0, 5)}
+              </p>
               {!menu.is_active && <span className="text-xs text-orange-500">Inactive</span>}
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="sm" onClick={() => setEditing(menu)}>Edit</Button>
-              <Button variant="ghost" size="sm" onClick={() => deleteMenu(menu.id)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`${outlineButtonClass} border ${getBorderColor()}`}
+                onClick={() => setEditing(menu)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`${outlineButtonClass} border ${getBorderColor()}`}
+                onClick={() => deleteMenu(menu.id)}
+              >
                 <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </div>

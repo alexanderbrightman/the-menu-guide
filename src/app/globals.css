@@ -221,6 +221,24 @@
     min-height: -webkit-fill-available;
   }
 
+  /* Native time inputs are wide on iOS — keep them inside their grid cell */
+  input[type='time'] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Full-screen modal scrim — covers layout + visual viewport on iOS.
+     z-index sits above dashboard nav / safe-area bars (z-40). */
+  .fullscreen-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    width: 100%;
+    height: 100%;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
   /* Remove all borders and outlines from search input */
   input[type="search"][name="search"],
   input[type="text"][name="search"],

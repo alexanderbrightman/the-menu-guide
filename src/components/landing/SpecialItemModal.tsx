@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { getAllergenBorderColor } from '@/lib/utils'
+import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Special {
     item: {
@@ -43,6 +45,7 @@ const islandStyle: CSSProperties = {
 export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
     const { item, restaurant, distance } = special
     const [itemImageError, setItemImageError] = useState(false)
+    useFullscreenOverlay(true)
 
     const formatPrice = (price: number | null) => {
         if (price === null) return null
@@ -56,15 +59,17 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                 : `${distance.toFixed(1)}mi away`
             : restaurant.address || 'View menu'
 
-    return (
+    if (typeof document === 'undefined') return null
+
+    return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
+            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
             onClick={onClose}
         >
             {/* Close — desktop */}
             <button
                 onClick={onClose}
-                className="hidden md:flex fixed top-3 right-3 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
+                className="hidden md:flex fixed top-3 right-3 z-[110] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
                 aria-label="Close"
             >
                 <X className="h-5 w-5" />
@@ -219,6 +224,7 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                     </Link>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
