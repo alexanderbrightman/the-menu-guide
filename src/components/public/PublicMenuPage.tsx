@@ -9,12 +9,13 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { X, Filter, Instagram, Globe, Utensils } from 'lucide-react'
+import { Filter, Instagram, Globe, Utensils } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
 import { getAllergenBorderColor, ALLERGEN_TAGS } from '@/lib/utils'
 import { CategoryDivider } from './CategoryDivider'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
+import { ModalCloseButton } from '@/components/ui/modal-close-button'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -905,18 +906,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
             className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
             onClick={() => setSelectedItem(null)}
           >
+            <ModalCloseButton onClose={() => setSelectedItem(null)} />
             <div
-              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 py-8 animate-in slide-in-from-bottom-8 fade-in duration-300"
+              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] animate-in slide-in-from-bottom-8 fade-in duration-300"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="hidden md:flex fixed top-3 right-3 z-[110] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
               <div
                 className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
                 style={{

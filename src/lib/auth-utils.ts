@@ -65,6 +65,29 @@ export async function getSafeSession() {
       
       return { session: null, error: error.message }
     }
+
+    // getSession() can return an expired access token from local storage.
+    // Refresh proactively so API Bearer calls don't 401.
+    if (session?.access_token) {
+      const expiresAtMs = (session.expires_at ?? 0) * 1000
+      const needsRefresh = !expiresAtMs || expiresAtMs < Date.now() + 60_000
+      if (needsRefresh) {
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError) {
+          if (isRefreshTokenError(refreshError)) {
+            console.log('Refresh token invalid while renewing access token, clearing session')
+            try {
+              await supabase.auth.signOut()
+            } catch {
+              // ignore
+            }
+            return { session: null, error: 'Session expired. Please sign in again.' }
+          }
+          return { session: null, error: refreshError.message }
+        }
+        return { session: refreshed.session, error: null }
+      }
+    }
     
     return { session, error: null }
   } catch (error: unknown) {

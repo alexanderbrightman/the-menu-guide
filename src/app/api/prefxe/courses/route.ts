@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   const { menu_id, name } = await request.json()
@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   const { id, name, sort_order } = await request.json()
@@ -53,7 +53,7 @@ export async function DELETE(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   const id = new URL(request.url).searchParams.get('id')

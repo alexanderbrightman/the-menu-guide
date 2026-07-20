@@ -61,9 +61,14 @@ export function createAuthenticatedClient(token: string) {
     {
       global: {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
     }
   )
 }
@@ -78,5 +83,7 @@ export function getAuthToken(request: Request): string | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null
   }
-  return authHeader.substring(7)
+  // Trim: clients sometimes append accidental whitespace to the JWT
+  const token = authHeader.substring(7).trim()
+  return token || null
 }

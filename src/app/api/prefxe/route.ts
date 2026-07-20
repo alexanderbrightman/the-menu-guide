@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   const { data, error } = await supabase
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   // Pre fixe menus are a premium feature - enforce server-side
@@ -176,7 +176,7 @@ export async function PATCH(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   // Pre fixe menus are a premium feature - enforce server-side
@@ -201,7 +201,7 @@ export async function DELETE(request: NextRequest) {
   const token = getAuthToken(request)
   if (!token) return secureJsonResponse({ error: 'Unauthorized' }, 401)
   const supabase = createAuthenticatedClient(token)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
   const id = new URL(request.url).searchParams.get('id')

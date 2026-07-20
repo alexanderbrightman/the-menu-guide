@@ -18,14 +18,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Tag } from 'lucide-react'
-import { X, Upload, AlertCircle, Check } from 'lucide-react'
+import { Upload, AlertCircle, Check } from 'lucide-react'
 
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
+import { ModalCloseButton } from '@/components/ui/modal-close-button'
 import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
 import { getAllergenBorderColor, getContrastColor } from '@/lib/utils'
 import { verifyUploadedImage } from '@/lib/image-utils'
+import { getSessionToken } from '@/lib/auth-utils'
 
 // Drag and Drop Imports
 import {
@@ -252,17 +254,15 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       if (showLoading) {
         setLoading(true)
       }
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         setTransientMessage('Error: Not authenticated')
         return
       }
 
       const headers = {
-        Authorization: `Bearer ${session.access_token} `,
+        Authorization: `Bearer ${token}`,
       }
 
       const [itemsRes, categoriesRes, tagsRes] = await Promise.all([
@@ -336,16 +336,14 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     if (!supabase) return
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         return
       }
 
       const headers = {
-        Authorization: `Bearer ${session.access_token} `,
+        Authorization: `Bearer ${token}`,
       }
 
       const response = await fetch('/api/favorites', {
@@ -380,15 +378,15 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       console.error('Supabase client not available')
       return
     }
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) {
+    const token = await getSessionToken()
+    if (!token) {
       console.error('No active session')
       return
     }
 
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token} `
+      'Authorization': `Bearer ${token}`
     }
 
     // Check if it's a category
@@ -542,11 +540,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     })
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         // Revert on error
         setFavoritedIds((prev) => {
           const newSet = new Set(prev)
@@ -562,7 +558,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
 
       const headers = {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token} `,
+        Authorization: `Bearer ${token}`,
       }
 
       if (isFavorited) {
@@ -623,11 +619,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     if (!supabase || !user) return
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         // Revert
         setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, is_available: !newStatus } : i)))
         setTransientMessage('Error: Not authenticated')
@@ -638,7 +632,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token} `,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ id: itemId, is_available: newStatus }),
       })
@@ -710,11 +704,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     }
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         setTransientMessage('Error: Not authenticated')
         return
       }
@@ -727,7 +719,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
         method: editingCategory ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token} `,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(
           editingCategory
@@ -767,11 +759,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     ))
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         setCategories(originalCategories)
         setTransientMessage('Error: Not authenticated')
         return
@@ -781,7 +771,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token} `,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           id: categoryId,
@@ -828,11 +818,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     }
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         // Restore on error
         if (categoryToDelete) {
           setCategories((prev) => [...prev, categoryToDelete])
@@ -844,7 +832,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       const response = await fetch(`/api/menu-categories?id=${categoryId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
       })
 
@@ -937,11 +925,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     }
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         setTransientMessage('Error: Not authenticated')
         return
       }
@@ -1007,7 +993,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
           method: currentItem ? 'PATCH' : 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token} `,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(
             currentItem
@@ -1095,11 +1081,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     }
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const token = await getSessionToken()
 
-      if (!session?.access_token) {
+      if (!token) {
         // Restore on error
         if (itemToDelete) {
           setMenuItems((prev) => [...prev, itemToDelete])
@@ -1111,7 +1095,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       const response = await fetch(`/api/menu-items?id=${itemId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
       })
 
@@ -1606,18 +1590,11 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
             onClick={() => setSelectedItem(null)}
           >
+            <ModalCloseButton onClose={() => setSelectedItem(null)} />
             <div
-              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 py-8 animate-in slide-in-from-bottom-8 fade-in duration-300"
+              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] animate-in slide-in-from-bottom-8 fade-in duration-300"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="hidden md:flex fixed top-3 right-3 z-[110] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
               <div
                 className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
                 style={{

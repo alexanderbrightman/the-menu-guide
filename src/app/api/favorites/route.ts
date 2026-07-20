@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Create authenticated Supabase client
     const supabase = createAuthenticatedClient(token)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser(token)
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Create authenticated Supabase client
     const supabase = createAuthenticatedClient(token)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser(token)
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
@@ -176,7 +176,7 @@ export async function DELETE(request: NextRequest) {
     // Create authenticated Supabase client
     const supabase = createAuthenticatedClient(token)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser(token)
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })

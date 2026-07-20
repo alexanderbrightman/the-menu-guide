@@ -3,8 +3,8 @@
 import { useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { ModalCloseButton } from '@/components/ui/modal-close-button'
 import { getAllergenBorderColor } from '@/lib/utils'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
@@ -66,18 +66,11 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
             className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
             onClick={onClose}
         >
-            {/* Close — desktop */}
-            <button
-                onClick={onClose}
-                className="hidden md:flex fixed top-3 right-3 z-[110] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/20 items-center justify-center"
-                aria-label="Close"
-            >
-                <X className="h-5 w-5" />
-            </button>
+            <ModalCloseButton onClose={onClose} />
 
             {/* Scrollable column of equally spaced islands */}
             <div
-                className="w-full max-w-md flex flex-col gap-4 my-auto px-4 py-8 animate-in slide-in-from-bottom-8 fade-in duration-300"
+                className="w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] animate-in slide-in-from-bottom-8 fade-in duration-300"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* 1. Description island */}
