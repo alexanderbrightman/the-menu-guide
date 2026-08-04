@@ -89,7 +89,7 @@ export interface Profile {
   subscription_status: 'free' | 'pro' | 'canceled'
   menu_font?: string
   menu_background_color?: string
-  /** Menu item card layout: classic bordered box or minimal discover-style */
+  /** Menu item card shape: minimal = rounded (default), classic = square */
   menu_card_style?: 'classic' | 'minimal'
   show_prices?: boolean
   show_display_name?: boolean

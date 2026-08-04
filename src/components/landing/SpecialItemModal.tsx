@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
-import { getAllergenBorderColor } from '@/lib/utils'
+import {
+    ModalRestaurantPill,
+    formatDistanceSubtitle,
+} from '@/components/ui/modal-restaurant-pill'
+import { getAllergenTagStyle } from '@/lib/utils'
+import { glassCardStyle, modalContentTopPadClass, floatingImageShadow } from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Special {
@@ -35,12 +39,13 @@ interface SpecialItemModalProps {
 
 const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
 
-const islandStyle: CSSProperties = {
-    background: 'rgba(255,255,255,0.92)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
-}
+const glassChipStyle = {
+    background: 'rgba(255,255,255,0.45)',
+    backdropFilter: 'blur(12px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(12px) saturate(160%)',
+    border: '0.5px solid rgba(255,255,255,0.55)',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+} as const
 
 export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
     const { item, restaurant, distance } = special
@@ -52,29 +57,26 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
         return `$${price.toFixed(2)}`
     }
 
-    const distanceLabel =
-        distance !== null
-            ? distance < 0.1
-                ? `${Math.round(distance * 5280)}ft away`
-                : `${distance.toFixed(1)}mi away`
-            : restaurant.address || 'View menu'
-
     if (typeof document === 'undefined') return null
 
     return createPortal(
         <div
-            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
+            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
             onClick={onClose}
         >
+            <ModalRestaurantPill
+                username={restaurant.username}
+                displayName={restaurant.display_name}
+                avatarUrl={restaurant.avatar_url}
+                subtitle={formatDistanceSubtitle(distance)}
+            />
             <ModalCloseButton onClose={onClose} />
 
-            {/* Scrollable column of equally spaced islands */}
             <div
-                className="w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] animate-in slide-in-from-bottom-8 fade-in duration-300"
+                className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* 1. Description island */}
-                <div className="w-full rounded-2xl p-6" style={islandStyle}>
+                <div className="w-full rounded-[22px] p-6" style={glassCardStyle}>
                     <div className="flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-4">
                             <h2
@@ -98,8 +100,7 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                                 variant="secondary"
                                 className="self-start text-xs py-1 px-2.5 rounded-full"
                                 style={{
-                                    background: 'rgba(0,0,0,0.05)',
-                                    border: '0.5px solid rgba(0,0,0,0.1)',
+                                    ...glassChipStyle,
                                     color: '#555',
                                     fontFamily: APPLE_FONT,
                                 }}
@@ -119,30 +120,30 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
 
                         {item.tags && item.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-1">
-                                {item.tags.map((tag) => {
-                                    const borderColor = getAllergenBorderColor(tag.name)
-                                    return (
-                                        <span
-                                            key={tag.id}
-                                            className="text-[11px] font-medium py-1 px-2.5 rounded-full"
-                                            style={{
-                                                border: `1px solid ${borderColor || 'rgba(0,0,0,0.12)'}`,
-                                                color: borderColor || '#666',
-                                                background: borderColor ? `${borderColor}10` : 'rgba(0,0,0,0.03)',
-                                                fontFamily: APPLE_FONT,
-                                            }}
-                                        >
-                                            {tag.name}
-                                        </span>
-                                    )
-                                })}
+                                {item.tags.map((tag) => (
+                                    <span
+                                        key={tag.id}
+                                        className="text-[11px] font-semibold py-1 px-2.5 rounded-full"
+                                        style={{
+                                            ...getAllergenTagStyle(tag.name),
+                                            backdropFilter: 'blur(10px) saturate(160%)',
+                                            WebkitBackdropFilter: 'blur(10px) saturate(160%)',
+                                            fontFamily: APPLE_FONT,
+                                        }}
+                                    >
+                                        {tag.name}
+                                    </span>
+                                ))}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* 2. Image island */}
-                <div className="w-full rounded-2xl overflow-hidden" style={islandStyle}>
+                {/* Image floats on its own — no glass border/frame */}
+                <div
+                    className="w-full overflow-hidden rounded-[22px]"
+                    style={{ boxShadow: floatingImageShadow }}
+                >
                     {item.image_url && !itemImageError ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -152,69 +153,13 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                             onError={() => setItemImageError(true)}
                         />
                     ) : (
-                        <div className="flex w-full aspect-[4/3] items-center justify-center text-sm text-gray-400 bg-gray-50">
+                        <div className="flex w-full aspect-[4/3] items-center justify-center text-sm text-gray-500/80 bg-black/5">
                             <div className="flex flex-col items-center gap-2">
-                                <span className="text-4xl">🍽️</span>
+                                <span className="text-4xl opacity-60">🍽️</span>
                                 <span>No image available</span>
                             </div>
                         </div>
                     )}
-                </div>
-
-                {/* 3. Restaurant island */}
-                <div className="w-full rounded-2xl p-4" style={islandStyle}>
-                    <Link
-                        href={`/menu/${restaurant.username}`}
-                        className="flex items-center gap-3 transition-opacity hover:opacity-90 active:opacity-80"
-                    >
-                        <div
-                            className="flex-shrink-0 w-11 h-11 rounded-full overflow-hidden bg-gray-100"
-                            style={{ border: '0.5px solid rgba(0,0,0,0.08)' }}
-                        >
-                            {restaurant.avatar_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={restaurant.avatar_url}
-                                    alt={restaurant.display_name}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div
-                                    className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-semibold"
-                                    style={{ fontFamily: APPLE_FONT }}
-                                >
-                                    {restaurant.display_name.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                            <p
-                                className="font-semibold text-gray-900 truncate text-[15px]"
-                                style={{ fontFamily: APPLE_FONT, letterSpacing: '-0.01em' }}
-                            >
-                                {restaurant.display_name}
-                            </p>
-                            <p
-                                className="text-xs text-gray-400 truncate"
-                                style={{ fontFamily: APPLE_FONT }}
-                            >
-                                {distanceLabel}
-                            </p>
-                        </div>
-
-                        <span
-                            className="flex-shrink-0 text-white text-xs font-semibold px-3.5 py-1.5 rounded-full"
-                            style={{
-                                background: 'linear-gradient(135deg, #FF6259, #E8453C)',
-                                boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
-                                fontFamily: APPLE_FONT,
-                                letterSpacing: '-0.01em',
-                            }}
-                        >
-                            View Menu
-                        </span>
-                    </Link>
                 </div>
             </div>
         </div>,

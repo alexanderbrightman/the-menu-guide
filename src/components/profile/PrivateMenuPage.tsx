@@ -3,7 +3,6 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, MenuCategory, MenuItemWithRelations, Tag as TagType } from '@/lib/supabase'
@@ -25,7 +24,13 @@ import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
 import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
-import { getAllergenBorderColor, getContrastColor } from '@/lib/utils'
+import { getAllergenBorderColor, getAllergenTagStyle } from '@/lib/utils'
+import {
+  getThemedGlassCardStyle,
+  modalContentTopPadClass,
+  floatingImageShadow,
+  glassTokens,
+} from '@/lib/glass-styles'
 import { verifyUploadedImage } from '@/lib/image-utils'
 import { getSessionToken } from '@/lib/auth-utils'
 
@@ -90,60 +95,6 @@ const EMPTY_ITEM_FORM: ItemFormState = {
 }
 
 
-const hexToRgba = (hexColor: string, alpha: number) => {
-  const cleanHex = hexColor.replace('#', '')
-  const normalized = cleanHex.length === 3
-    ? cleanHex.split('').map((char) => char + char).join('')
-    : cleanHex
-
-  if (normalized.length !== 6) return `rgba(255,255,255,${alpha})`
-
-  const r = parseInt(normalized.substring(0, 2), 16)
-  const g = parseInt(normalized.substring(2, 4), 16)
-  const b = parseInt(normalized.substring(4, 6), 16)
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
-const buildTagStyles = (
-  tagName: string,
-  {
-    isDarkBackground,
-    isSelected = false,
-  }: {
-    isDarkBackground: boolean
-    isSelected?: boolean
-  }
-): CSSProperties => {
-  const borderColor = getAllergenBorderColor(tagName)
-
-  if (!borderColor) {
-    if (isDarkBackground) {
-      return {
-        borderColor: '#ffffff',
-        color: 'rgba(255,255,255,0.92)',
-        backgroundColor: isSelected ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
-      }
-    }
-
-    return {
-      borderColor: '#000000',
-      color: '#1f2937',
-      backgroundColor: isSelected ? 'rgba(17,24,39,0.08)' : 'transparent',
-    }
-  }
-
-  return {
-    borderColor,
-    color: isDarkBackground ? borderColor : '#1f2937',
-    backgroundColor: isSelected
-      ? hexToRgba(borderColor, isDarkBackground ? 0.32 : 0.16)
-      : isDarkBackground
-        ? 'rgba(255,255,255,0.05)'
-        : 'transparent',
-  }
-}
-
 interface PrivateMenuPageProps {
 }
 
@@ -202,7 +153,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
 
   // Use the new theme hook
   const theme = useMenuTheme(profile)
-  const cardStyle = profile?.menu_card_style === 'minimal' ? 'minimal' : 'classic'
+  const cardStyle = profile?.menu_card_style === 'classic' ? 'classic' : 'minimal'
   const {
     menuBackgroundColor,
     contrastColor,
@@ -513,7 +464,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
   }, [resetProgress])
 
   // Close modal on Esc; paint full-screen scrim into iOS safe areas
-  useFullscreenOverlay(!!selectedItem)
+  useFullscreenOverlay(!!selectedItem, { isDarkBackground })
   useEffect(() => {
     if (!selectedItem) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1538,8 +1489,11 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                             {tags.map((tag) => {
                               const isSelected = itemTags.includes(tag.id)
                               const borderColor = getAllergenBorderColor(tag.name)
-                              const selectedFill = borderColor || (isDarkBackground ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)')
-                              const selectedText = borderColor ? getContrastColor(borderColor) : contrastColor
+                              const tagStyle = getAllergenTagStyle(tag.name, {
+                                isDarkBackground,
+                                isSelected,
+                                solidSelected: true,
+                              })
 
                               return (
                                 <Badge
@@ -1550,14 +1504,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                                   }`}
                                   onClick={() => toggleFormTag(tag.id)}
                                   style={{
-                                    borderWidth: isSelected ? 2 : 1,
-                                    borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)'),
-                                    backgroundColor: isSelected
-                                      ? selectedFill
-                                      : isDarkBackground
-                                        ? 'rgba(255,255,255,0.06)'
-                                        : 'transparent',
-                                    color: isSelected ? selectedText : contrastColor,
+                                    ...tagStyle,
                                     boxShadow: isSelected
                                       ? `0 0 0 2px ${menuBackgroundColor}, 0 0 0 4px ${borderColor || contrastColor}`
                                       : undefined,
@@ -1587,18 +1534,18 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
+            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
             onClick={() => setSelectedItem(null)}
           >
             <ModalCloseButton onClose={() => setSelectedItem(null)} />
             <div
-              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] animate-in slide-in-from-bottom-8 fade-in duration-300"
+              className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}
             >
               <div
-                className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
+                className="w-full rounded-[22px] p-6 overflow-hidden relative"
                 style={{
-                  backgroundColor: menuBackgroundColor,
+                  ...getThemedGlassCardStyle(isDarkBackground),
                   color: contrastColor,
                 }}
               >
@@ -1608,7 +1555,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       <h2
                         id="private-menu-item-heading"
                         className={`text-2xl font-bold leading-tight ${primaryTextClass}`}
-                        style={{ fontFamily: menuFontFamily }}
+                        style={{ fontFamily: menuFontFamily, letterSpacing: '-0.02em' }}
                       >
                         {selectedItem.title}
                       </h2>
@@ -1622,11 +1569,17 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                     {selectedItem.menu_categories && (
                       <Badge
                         variant="secondary"
-                        className="self-start border"
+                        className="self-start text-xs py-1 px-2.5 rounded-full border"
                         style={{
-                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          background: isDarkBackground
+                            ? 'rgba(255,255,255,0.12)'
+                            : 'rgba(255,255,255,0.45)',
+                          backdropFilter: `blur(12px) saturate(${glassTokens.saturate})`,
+                          WebkitBackdropFilter: `blur(12px) saturate(${glassTokens.saturate})`,
                           color: contrastColor,
-                          borderColor: getBorderColor(),
+                          borderColor: isDarkBackground
+                            ? 'rgba(255,255,255,0.22)'
+                            : glassTokens.border,
                         }}
                       >
                         {selectedItem.menu_categories.name}
@@ -1641,29 +1594,29 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                   )}
 
                   {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                    <div className="pt-2 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {selectedItem.menu_item_tags.map((itemTag, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="text-xs border cursor-default py-1.5 px-3"
-                            style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
-                          >
-                            {itemTag.tags.name}
-                          </Badge>
-                        ))}
-                      </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedItem.menu_item_tags.map((itemTag, index) => (
+                        <span
+                          key={index}
+                          className="text-[11px] font-semibold py-1 px-2.5 rounded-full"
+                          style={getAllergenTagStyle(itemTag.tags.name, { isDarkBackground })}
+                        >
+                          {itemTag.tags.name}
+                        </span>
+                      ))}
                     </div>
                   )}
 
-                  <div className={`mt-2 text-[10px] leading-tight ${primaryTextClass}`}>
+                  <div className={`mt-1 text-[10px] leading-tight opacity-70 ${primaryTextClass}`}>
                     Allergen info provided by restaurant, always notify your waiter
                   </div>
                 </div>
               </div>
 
-              <div className="w-full rounded-2xl overflow-hidden shadow-xl">
+              <div
+                className="w-full rounded-[22px] overflow-hidden"
+                style={{ boxShadow: floatingImageShadow }}
+              >
                 {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -1680,7 +1633,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                 ) : (
                   <div className="flex w-full aspect-[4/3] items-center justify-center text-sm text-white/60 bg-black/20">
                     <div className="flex flex-col items-center gap-2">
-                      <span className="text-4xl">🍽️</span>
+                      <span className="text-4xl opacity-60">🍽️</span>
                       <span>No image available</span>
                     </div>
                   </div>

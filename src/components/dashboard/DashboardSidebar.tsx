@@ -328,18 +328,13 @@ export function DashboardSidebar({
                         profileUsername={profile?.username || ''}
                         isDarkBackground={isDarkBackground}
                         contrastColor={contrastColor}
-                        outlineButtonClass={outlineButtonClass}
                         onDownload={onDownloadQr}
                     >
-                        {/* We need to wrap the custom button in a div or fragment because QrCodeDialog expects a trigger */}
-                        {/* Actually QrCodeDialog uses cloneElement or just renders children, let's treat it as a trigger */}
                         {renderCustomButton(
                             'qr-code',
                             <QrCode className="h-5 w-5 flex-shrink-0" />,
                             'QR Code',
-                            () => { } // Dialog handles the click usually, but we need to set active state. 
-                            // The QrCodeDialog likely passes onClick to its child.
-                            // To be safe, we wrap the button logic inside the trigger
+                            () => setActiveItem('qr-code')
                         )}
                     </QrCodeDialog>
                     {renderCustomButton(

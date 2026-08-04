@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, Image as ImageIcon, DollarSign, Tag, ChevronDown, ChevronUp, Upload, X } from 'lucide-react'
 import { MenuItem, MenuCategory, Tag as TagType, supabase } from '@/lib/supabase'
 import { useImageUpload } from '@/hooks/useImageUpload'
-import { getAllergenBorderColor } from '@/lib/utils'
+import { getAllergenTagStyle } from '@/lib/utils'
 import { verifyUploadedImage } from '@/lib/image-utils'
 
 interface MenuItemWithTags extends MenuItem {
@@ -723,20 +723,24 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant={selectedTagsSet.has(tag.id) ? "default" : "outline"}
-                    className="cursor-pointer transition-colors"
-                    onClick={() => toggleTag(tag.id)}
-                    style={{
-                      borderColor: selectedTagsSet.has(tag.id) ? undefined : getAllergenBorderColor(tag.name)
-                    }}
-                  >
-                    <Tag className="h-3 w-3 mr-1" />
-                    {tag.name}
-                  </Badge>
-                ))}
+                {tags.map((tag) => {
+                  const isSelected = selectedTagsSet.has(tag.id)
+                  return (
+                    <Badge
+                      key={tag.id}
+                      variant="outline"
+                      className={`cursor-pointer transition-colors ${isSelected ? 'font-semibold' : ''}`}
+                      onClick={() => toggleTag(tag.id)}
+                      style={getAllergenTagStyle(tag.name, {
+                        isSelected,
+                        solidSelected: true,
+                      })}
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      {tag.name}
+                    </Badge>
+                  )
+                })}
               </div>
             </div>
 
@@ -861,20 +865,24 @@ export function MenuItemManager({ onDataChange }: MenuItemManagerProps) {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant={selectedTagsSet.has(tag.id) ? "default" : "outline"}
-                    className="cursor-pointer transition-colors"
-                    onClick={() => toggleTag(tag.id)}
-                    style={{
-                      borderColor: selectedTagsSet.has(tag.id) ? undefined : getAllergenBorderColor(tag.name)
-                    }}
-                  >
-                    <Tag className="h-3 w-3 mr-1" />
-                    {tag.name}
-                  </Badge>
-                ))}
+                {tags.map((tag) => {
+                  const isSelected = selectedTagsSet.has(tag.id)
+                  return (
+                    <Badge
+                      key={tag.id}
+                      variant="outline"
+                      className={`cursor-pointer transition-colors ${isSelected ? 'font-semibold' : ''}`}
+                      onClick={() => toggleTag(tag.id)}
+                      style={getAllergenTagStyle(tag.name, {
+                        isSelected,
+                        solidSelected: true,
+                      })}
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      {tag.name}
+                    </Badge>
+                  )
+                })}
               </div>
             </div>
 

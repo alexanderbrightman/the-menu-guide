@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -12,9 +11,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Filter, Instagram, Globe, Utensils } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
-import { getAllergenBorderColor, ALLERGEN_TAGS } from '@/lib/utils'
+import { getContrastColor, getAllergenTagStyle, ALLERGEN_TAGS } from '@/lib/utils'
+import {
+  getThemedGlassCardStyle,
+  modalContentTopPadClass,
+  floatingImageShadow,
+  glassTokens,
+} from '@/lib/glass-styles'
 import { CategoryDivider } from './CategoryDivider'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
+import { useChromeColor } from '@/hooks/useChromeColor'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
 
 interface MenuItemWithTags extends MenuItem {
@@ -42,79 +48,6 @@ const FONT_FAMILY_MAP: Record<string, string> = {
 }
 
 
-
-const getContrastColor = (hexColor: string) => {
-  if (!hexColor) return '#1f2937'
-  const cleanHex = hexColor.replace('#', '')
-  const normalizedHex = cleanHex.length === 3
-    ? cleanHex.split('').map(char => char + char).join('')
-    : cleanHex
-
-  if (normalizedHex.length !== 6) return '#1f2937'
-
-  const r = parseInt(normalizedHex.substring(0, 2), 16)
-  const g = parseInt(normalizedHex.substring(2, 4), 16)
-  const b = parseInt(normalizedHex.substring(4, 6), 16)
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? '#1f2937' : '#ffffff'
-}
-
-
-
-const hexToRgba = (hexColor: string, alpha: number) => {
-  const cleanHex = hexColor.replace('#', '')
-  const normalized = cleanHex.length === 3
-    ? cleanHex.split('').map((char) => char + char).join('')
-    : cleanHex
-
-  if (normalized.length !== 6) return `rgba(255,255,255,${alpha})`
-
-  const r = parseInt(normalized.substring(0, 2), 16)
-  const g = parseInt(normalized.substring(2, 4), 16)
-  const b = parseInt(normalized.substring(4, 6), 16)
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
-const buildTagStyles = (
-  tagName: string,
-  {
-    isDarkBackground,
-    isSelected = false,
-  }: {
-    isDarkBackground: boolean
-    isSelected?: boolean
-  }
-): CSSProperties => {
-  const borderColor = getAllergenBorderColor(tagName)
-
-  if (!borderColor) {
-    if (isDarkBackground) {
-      return {
-        borderColor: '#ffffff',
-        color: 'rgba(255,255,255,0.92)',
-        backgroundColor: isSelected ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
-      }
-    }
-
-    return {
-      borderColor: '#000000',
-      color: '#1f2937',
-      backgroundColor: isSelected ? 'rgba(17,24,39,0.08)' : 'transparent',
-    }
-  }
-
-  return {
-    borderColor,
-    color: isDarkBackground ? borderColor : '#1f2937',
-    backgroundColor: isSelected
-      ? hexToRgba(borderColor, isDarkBackground ? 0.32 : 0.16)
-      : isDarkBackground
-        ? 'rgba(255,255,255,0.05)'
-        : 'transparent',
-  }
-}
 
 // Memoized menu item card component to prevent unnecessary re-renders
 const MenuItemCard = memo(({
@@ -271,7 +204,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
   const showPrices = profile.show_prices !== false // default to true if undefined
-  const cardStyle = profile.menu_card_style === 'minimal' ? 'minimal' : 'classic'
+  const cardStyle = profile.menu_card_style === 'classic' ? 'classic' : 'minimal'
   const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
   const isDarkBackground = contrastColor === '#ffffff'
   const menuFontFamily = useMemo(
@@ -482,7 +415,8 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   const hasActiveFilters = selectedTags.length > 0 || selectedCategory !== 'all'
 
   // Close modal on Esc; paint full-screen scrim into iOS safe areas
-  useFullscreenOverlay(!!selectedItem)
+  useChromeColor(menuBackgroundColor)
+  useFullscreenOverlay(!!selectedItem, { isDarkBackground })
   useEffect(() => {
     if (!selectedItem) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -491,25 +425,6 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedItem])
-
-  useEffect(() => {
-    if (typeof document === 'undefined') {
-      return
-    }
-
-    const previousBodyBg = document.body.style.backgroundColor
-    const previousHtmlBg = document.documentElement.style.backgroundColor
-
-    document.body.style.backgroundColor = menuBackgroundColor
-    document.documentElement.style.backgroundColor = menuBackgroundColor
-
-    return () => {
-      document.body.style.backgroundColor = previousBodyBg
-      document.documentElement.style.backgroundColor = previousHtmlBg
-    }
-  }, [menuBackgroundColor])
-
-
 
   return (
     <div className="min-h-screen transition-colors" style={themeStyle}>
@@ -669,7 +584,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                         } ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
                       onClick={() => toggleTag(tag.id)}
                       disabled={isPending}
-                      style={buildTagStyles(tag.name, { isDarkBackground, isSelected })}
+                      style={getAllergenTagStyle(tag.name, { isDarkBackground, isSelected })}
                     >
                       {tag.name}
                     </Button>
@@ -903,18 +818,18 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-xl animate-in fade-in duration-200"
+            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
             onClick={() => setSelectedItem(null)}
           >
             <ModalCloseButton onClose={() => setSelectedItem(null)} />
             <div
-              className="w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] animate-in slide-in-from-bottom-8 fade-in duration-300"
+              className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}
             >
               <div
-                className="w-full rounded-2xl p-6 shadow-xl overflow-hidden relative"
+                className="w-full rounded-[22px] p-6 overflow-hidden relative"
                 style={{
-                  backgroundColor: menuBackgroundColor,
+                  ...getThemedGlassCardStyle(isDarkBackground),
                   color: contrastColor,
                 }}
               >
@@ -924,7 +839,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       <h2
                         id="public-menu-item-heading"
                         className={`text-2xl font-bold leading-tight ${primaryTextClass}`}
-                        style={{ fontFamily: menuFontFamily }}
+                        style={{ fontFamily: menuFontFamily, letterSpacing: '-0.02em' }}
                       >
                         {selectedItem.title}
                       </h2>
@@ -938,11 +853,17 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                     {selectedItem.menu_categories && (
                       <Badge
                         variant="secondary"
-                        className="self-start border"
+                        className="self-start text-xs py-1 px-2.5 rounded-full border"
                         style={{
-                          backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          background: isDarkBackground
+                            ? 'rgba(255,255,255,0.12)'
+                            : 'rgba(255,255,255,0.45)',
+                          backdropFilter: `blur(12px) saturate(${glassTokens.saturate})`,
+                          WebkitBackdropFilter: `blur(12px) saturate(${glassTokens.saturate})`,
                           color: contrastColor,
-                          borderColor: getBorderColor(),
+                          borderColor: isDarkBackground
+                            ? 'rgba(255,255,255,0.22)'
+                            : glassTokens.border,
                         }}
                       >
                         {selectedItem.menu_categories.name}
@@ -957,33 +878,34 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   )}
 
                   {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
-                    <div className="pt-2 border-t" style={{ borderColor: isDarkBackground ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {selectedItem.menu_item_tags.map((itemTag, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="text-xs border cursor-pointer hover:opacity-80 transition-opacity py-1.5 px-3"
-                            style={buildTagStyles(itemTag.tags.name, { isDarkBackground })}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleTagClickFromModal(itemTag.tags.id)
-                            }}
-                          >
-                            {itemTag.tags.name}
-                          </Badge>
-                        ))}
-                      </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedItem.menu_item_tags.map((itemTag, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="text-[11px] font-semibold py-1 px-2.5 rounded-full transition-opacity hover:opacity-80"
+                          style={getAllergenTagStyle(itemTag.tags.name, { isDarkBackground })}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleTagClickFromModal(itemTag.tags.id)
+                          }}
+                        >
+                          {itemTag.tags.name}
+                        </button>
+                      ))}
                     </div>
                   )}
 
-                  <div className={`mt-2 text-[10px] leading-tight ${primaryTextClass}`}>
+                  <div className={`mt-1 text-[10px] leading-tight opacity-70 ${primaryTextClass}`}>
                     Allergen info provided by restaurant, always notify your waiter
                   </div>
                 </div>
               </div>
 
-              <div className="w-full rounded-2xl overflow-hidden shadow-xl">
+              <div
+                className="w-full rounded-[22px] overflow-hidden"
+                style={{ boxShadow: floatingImageShadow }}
+              >
                 {selectedItem.image_url && !failedImages.has(selectedItem.image_url) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

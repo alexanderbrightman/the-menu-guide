@@ -4,9 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { PasswordResetModal } from '@/components/auth/PasswordResetModal'
+import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
+import { useChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 export function GettingStartedPage() {
     const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
+    useChromeColor(CHROME_COLORS.app)
 
     const steps = [
         {
@@ -86,13 +90,7 @@ export function GettingStartedPage() {
                         <div
                             key={step.number}
                             className="group relative rounded-2xl p-6 md:p-8 transition-all duration-300"
-                            style={{
-                                background: 'rgba(255,255,255,0.6)',
-                                backdropFilter: 'blur(12px)',
-                                WebkitBackdropFilter: 'blur(12px)',
-                                border: '0.5px solid rgba(0,0,0,0.06)',
-                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                            }}
+                            style={glassCardStyle}
                         >
                             <div className="flex gap-5 md:gap-6">
                                 {/* Step number + icon */}
@@ -133,13 +131,7 @@ export function GettingStartedPage() {
 
                     <div
                         className="rounded-2xl p-6 md:p-8"
-                        style={{
-                            background: 'rgba(255,255,255,0.82)',
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            border: '0.5px solid rgba(0,0,0,0.1)',
-                            boxShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
-                        }}
+                        style={{ ...glassCardStyle, boxShadow: glassTokens.shadowLg }}
                     >
                         <AuthForm
                             onSuccess={() => {

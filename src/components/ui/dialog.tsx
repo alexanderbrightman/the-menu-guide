@@ -5,6 +5,13 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useOverlayChromeColor } from "@/hooks/useChromeColor"
+import { CHROME_COLORS } from "@/lib/chrome-color"
+
+function DialogChromeSync() {
+  useOverlayChromeColor(true, CHROME_COLORS.overlayDim)
+  return null
+}
 
 function Dialog({
   ...props
@@ -42,7 +49,9 @@ function DialogOverlay({
         className
       )}
       {...props}
-    />
+    >
+      <DialogChromeSync />
+    </DialogPrimitive.Overlay>
   )
 }
 
@@ -60,7 +69,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-white/90 backdrop-blur-md fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 border border-gray-200/60 p-6 shadow-xl shadow-gray-300/12 duration-200 sm:max-w-lg rounded-xl",
+          "bg-white/40 backdrop-blur-[40px] backdrop-saturate-[1.8] fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 border border-white/55 p-6 shadow-xl shadow-gray-300/12 duration-200 sm:max-w-lg rounded-xl",
           className
         )}
         {...props}

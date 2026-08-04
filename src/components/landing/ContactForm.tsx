@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
 
 export function ContactForm() {
     const [isOpen, setIsOpen] = useState(false)
@@ -50,7 +51,7 @@ export function ContactForm() {
 
     return (
         <div className="w-full max-w-md mx-auto mt-6 mb-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-6">
+            <div className="rounded-2xl p-6" style={{ ...glassCardStyle, boxShadow: glassTokens.shadowLg }}>
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-semibold text-gray-900">Contact the Builder</h3>
                     <button

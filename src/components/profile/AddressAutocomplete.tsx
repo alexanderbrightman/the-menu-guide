@@ -141,7 +141,7 @@ export function AddressAutocomplete({
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Search for your restaurant address..."
-            className={`h-11 border rounded-lg ${borderClass} bg-white/60 backdrop-blur-md text-base pr-10`}
+            className={`h-11 border rounded-lg ${borderClass} bg-white/40 backdrop-blur-xl backdrop-saturate-[1.8] text-base pr-10`}
             onFocus={() => query.length >= 3 && setOpen(true)}
           />
           {loading && (
@@ -149,12 +149,8 @@ export function AddressAutocomplete({
           )}
           {open && suggestions.length > 0 && (
             <ul
-              className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden shadow-xl border border-white/40 max-h-60 overflow-y-auto"
-              style={{
-                background: 'rgba(255,255,255,0.85)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-              }}
+              className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden max-h-60 overflow-y-auto"
+              style={glassCardStyle}
             >
               {suggestions.map((s, i) => (
                 <li key={`${s.latitude}-${s.longitude}-${i}`}>

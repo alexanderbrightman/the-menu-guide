@@ -14,8 +14,9 @@ import Image from 'next/image'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
-import { getAllergenBorderColor, getContrastColor } from '@/lib/utils'
-import { getThemedGlassCardStyle } from '@/lib/glass-styles'
+import { getAllergenBorderColor, getAllergenTagStyle } from '@/lib/utils'
+import { getThemedGlassCardStyle, floatingImageShadow } from '@/lib/glass-styles'
+import { formatScheduleBadge } from '@/lib/geo'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -72,7 +73,7 @@ export function PreFixePage() {
   const cardStyle = getThemedGlassCardStyle(isDarkBackground)
   const inputClass = isDarkBackground
     ? 'border-white/40 text-white placeholder:text-white/40 bg-white/5'
-    : 'border-black/20 text-black bg-white/70'
+    : 'border-black/15 text-black bg-white/40 backdrop-blur-xl'
   const dayUnselectedClass = isDarkBackground
     ? 'bg-white/10 text-white border-white/35'
     : 'bg-black/5 text-gray-700 border-black/15'
@@ -166,19 +167,34 @@ export function PreFixePage() {
     const token = await getToken()
     if (!token) return
 
+    // Never send nested courses / relation payloads — only menu columns.
+    const payload = {
+      id: form.id,
+      title: form.title,
+      description: form.description ?? null,
+      price: form.price ?? null,
+      start_time: form.start_time || null,
+      end_time: form.end_time || null,
+      days_of_week: form.days_of_week || [0, 1, 2, 3, 4, 5, 6],
+      is_active: form.is_active !== false,
+    }
+
     if (form.id) {
       // Optimistic edit: patch the menu in place immediately.
       const snapshot = menus
-      setMenus((prev) => prev.map((m) => (m.id === form.id ? { ...m, ...form } as PreFixeMenu : m)))
+      setMenus((prev) =>
+        prev.map((m) => (m.id === form.id ? { ...m, ...payload } as PreFixeMenu : m))
+      )
       setMenuForm(null)
       const res = await fetch('/api/prefxe', {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         setMenus(snapshot)
-        alert('Could not save changes. Please try again.')
+        const data = await res.json().catch(() => null)
+        alert(data?.error || 'Could not save changes. Please try again.')
       }
     } else {
       // Create needs the server-generated id, so await the response, then
@@ -186,16 +202,16 @@ export function PreFixePage() {
       const res = await fetch('/api/prefxe', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
-      const data = await res.json()
-      if (res.ok) {
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.menu) {
         const newMenu: PreFixeMenu = { ...(data.menu), prefxe_courses: [] }
         setMenus((prev) => [...prev, newMenu])
         setSelectedMenuId(newMenu.id)
         setMenuForm(null)
       } else {
-        alert('Could not create menu. Please try again.')
+        alert(data?.error || 'Could not create menu. Please try again.')
       }
     }
   }
@@ -436,29 +452,34 @@ export function PreFixePage() {
 
   if (menuForm) {
     return (
-      <div className="max-w-2xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-        <div className="flex justify-between items-center gap-3">
-          <h2 className={`text-xl font-semibold ${primaryTextClass}`}>
-            {menuForm.id ? 'Edit' : 'New'} Pre Fixe Menu
-          </h2>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-28 lg:pb-10">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <h2 className={`text-2xl font-semibold tracking-tight ${primaryTextClass}`}>
+              {menuForm.id ? 'Edit Pre Fixe' : 'New Pre Fixe'}
+            </h2>
+            <p className={`text-sm ${mutedTextClass}`}>
+              Price, schedule, and homepage visibility.
+            </p>
+          </div>
           <Button
             variant="ghost"
-            className={`${primaryTextClass} hover:bg-transparent`}
+            className={`h-10 px-3 ${primaryTextClass} hover:bg-transparent shrink-0`}
             onClick={() => setMenuForm(null)}
           >
             Cancel
           </Button>
         </div>
-        <div className="p-4 space-y-4 rounded-xl" style={cardStyle}>
-          <div className="space-y-1.5">
+        <div className="p-5 sm:p-6 space-y-5 rounded-[22px]" style={cardStyle}>
+          <div className="space-y-2">
             <Label className={primaryTextClass}>Title</Label>
             <Input
-              className={inputClass}
+              className={`h-11 ${inputClass}`}
               value={menuForm.title || ''}
               onChange={(e) => setMenuForm({ ...menuForm, title: e.target.value })}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className={primaryTextClass}>Description</Label>
             <Textarea
               className={inputClass}
@@ -467,59 +488,62 @@ export function PreFixePage() {
               onChange={(e) => setMenuForm({ ...menuForm, description: e.target.value })}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className={primaryTextClass}>Price ($)</Label>
             <Input
-              className={inputClass}
+              className={`h-11 ${inputClass}`}
               type="number"
               step="0.01"
               value={menuForm.price ?? ''}
               onChange={(e) => setMenuForm({ ...menuForm, price: parseFloat(e.target.value) || null })}
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="min-w-0 space-y-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="min-w-0 space-y-2">
               <Label className={primaryTextClass}>Start</Label>
               <Input
                 type="time"
-                className={`${inputClass} w-full max-w-full`}
+                className={`h-11 ${inputClass} w-full max-w-full`}
                 value={menuForm.start_time?.slice(0, 5) || ''}
                 onChange={(e) => setMenuForm({ ...menuForm, start_time: e.target.value })}
               />
             </div>
-            <div className="min-w-0 space-y-1.5">
+            <div className="min-w-0 space-y-2">
               <Label className={primaryTextClass}>End</Label>
               <Input
                 type="time"
-                className={`${inputClass} w-full max-w-full`}
+                className={`h-11 ${inputClass} w-full max-w-full`}
                 value={menuForm.end_time?.slice(0, 5) || ''}
                 onChange={(e) => setMenuForm({ ...menuForm, end_time: e.target.value })}
               />
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {DAY_LABELS.map((label, i) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => {
-                  const days = menuForm.days_of_week || []
-                  setMenuForm({
-                    ...menuForm,
-                    days_of_week: days.includes(i) ? days.filter((d) => d !== i) : [...days, i].sort(),
-                  })
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  menuForm.days_of_week?.includes(i)
-                    ? 'bg-blue-500 text-white border-blue-500'
-                    : dayUnselectedClass
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="space-y-2.5">
+            <Label className={`block ${primaryTextClass}`}>Days</Label>
+            <div className="flex flex-wrap gap-2">
+              {DAY_LABELS.map((label, i) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    const days = menuForm.days_of_week || []
+                    setMenuForm({
+                      ...menuForm,
+                      days_of_week: days.includes(i) ? days.filter((d) => d !== i) : [...days, i].sort(),
+                    })
+                  }}
+                  className={`px-3.5 py-2 rounded-full text-[13px] font-medium border transition-colors ${
+                    menuForm.days_of_week?.includes(i)
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : dayUnselectedClass
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 py-1">
             <Switch
               checked={menuForm.is_active !== false}
               onCheckedChange={(v) => setMenuForm({ ...menuForm, is_active: v })}
@@ -528,7 +552,7 @@ export function PreFixePage() {
           </div>
           <Button
             onClick={saveMenuMeta}
-            className={`w-full ${accentButtonClass} border ${getBorderColor()}`}
+            className={`w-full h-11 rounded-full ${accentButtonClass} border ${getBorderColor()}`}
           >
             Save Menu
           </Button>
@@ -539,75 +563,129 @@ export function PreFixePage() {
 
   if (!selectedMenuId || !selectedMenu) {
     return (
-      <div className="max-w-2xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className={`text-xl font-semibold ${primaryTextClass}`}>Pre Fixe Menus</h2>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-28 lg:pb-10">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <h2 className={`text-2xl font-semibold tracking-tight ${primaryTextClass}`}>
+              Pre Fixe
+            </h2>
+            <p className={`text-sm ${mutedTextClass}`}>
+              Multi-course menus featured on the homepage.
+            </p>
+          </div>
           <Button
-            size="sm"
-            className={`${accentButtonClass} border ${getBorderColor()}`}
+            className={`h-11 rounded-full px-5 ${accentButtonClass} border ${getBorderColor()}`}
             onClick={() => setMenuForm({ title: '', description: '', price: null, days_of_week: [0, 1, 2, 3, 4, 5, 6], is_active: true })}
           >
-            <Plus className="h-4 w-4 mr-1" /> Add
+            <Plus className="h-4 w-4 mr-1.5" /> Add Pre Fixe
           </Button>
-        </div>
-        {menus.map((m) => (
+        </header>
+
+        {menus.length === 0 ? (
           <div
-            key={m.id}
-            className={`rounded-xl p-4 flex justify-between items-center cursor-pointer transition-colors ${
-              isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-white/40'
-            }`}
+            className="rounded-[22px] px-6 py-14 text-center space-y-2"
             style={cardStyle}
-            onClick={() => setSelectedMenuId(m.id)}
           >
-            <div>
-              <p className={`font-semibold ${primaryTextClass}`}>{m.title}</p>
-              {m.price != null && (
-                <p className={`text-sm ${mutedTextClass}`}>${Number(m.price).toFixed(2)}</p>
-              )}
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                onClick={(e) => { e.stopPropagation(); setMenuForm(m) }}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                onClick={(e) => { e.stopPropagation(); deleteMenu(m.id) }}
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
-            </div>
+            <p className={`text-base font-medium ${primaryTextClass}`}>No pre fixe menus yet</p>
+            <p className={`text-sm ${mutedTextClass} max-w-sm mx-auto`}>
+              Create a priced multi-course menu to appear under Pre Fixe on the homepage.
+            </p>
           </div>
-        ))}
-        {menus.length === 0 && (
-          <p className={`text-center ${mutedTextClass} py-8 text-sm`}>No pre fixe menus yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {menus.map((m) => {
+              const courseCount = m.prefxe_courses?.length || 0
+              const itemCount = (m.prefxe_courses || []).reduce(
+                (sum, c) => sum + (c.prefxe_items?.length || 0),
+                0
+              )
+              const schedule =
+                m.start_time && m.end_time && m.days_of_week?.length
+                  ? formatScheduleBadge(m.days_of_week, m.start_time, m.end_time)
+                  : null
+
+              return (
+                <div
+                  key={m.id}
+                  className="rounded-[22px] p-5 sm:p-6 flex flex-col gap-5 cursor-pointer transition-opacity active:opacity-90"
+                  style={cardStyle}
+                  onClick={() => setSelectedMenuId(m.id)}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 space-y-1.5">
+                      <h3
+                        className={`text-lg font-semibold tracking-tight truncate ${primaryTextClass}`}
+                      >
+                        {m.title}
+                      </h3>
+                      <p className={`text-sm ${mutedTextClass}`}>
+                        {[
+                          m.price != null ? `$${Number(m.price).toFixed(2)}` : null,
+                          schedule,
+                          `${courseCount} course${courseCount === 1 ? '' : 's'}`,
+                          `${itemCount} item${itemCount === 1 ? '' : 's'}`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                      {!m.is_active && (
+                        <span className="inline-block text-[11px] font-semibold tracking-wide uppercase text-orange-500">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-sm shrink-0 pt-0.5 ${mutedTextClass}`}>
+                      Open →
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2.5" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      className={`flex-1 h-10 rounded-full ${outlineButtonClass} border ${getBorderColor()}`}
+                      onClick={() => setMenuForm(m)}
+                    >
+                      Edit Info
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className={`h-10 w-10 rounded-full px-0 ${outlineButtonClass} border ${getBorderColor()}`}
+                      onClick={() => deleteMenu(m.id)}
+                      aria-label={`Delete ${m.title}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-      <div className="flex items-center gap-2">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-28 lg:pb-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <Button
           variant="ghost"
-          size="sm"
-          className={`${outlineButtonClass} border ${getBorderColor()}`}
+          className={`h-10 rounded-full px-4 self-start ${outlineButtonClass} border ${getBorderColor()}`}
           onClick={() => setSelectedMenuId(null)}
         >
           ← Back
         </Button>
-        <h2 className={`text-xl font-semibold flex-1 truncate ${primaryTextClass}`}>{selectedMenu.title}</h2>
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <h2 className={`text-2xl font-semibold tracking-tight truncate ${primaryTextClass}`}>
+            {selectedMenu.title}
+          </h2>
+          <p className={`text-sm ${mutedTextClass}`}>
+            Manage courses and dishes for this menu.
+          </p>
+        </div>
         <Button
           variant="ghost"
-          size="sm"
-          className={`${outlineButtonClass} border ${getBorderColor()}`}
+          className={`h-10 rounded-full px-4 self-start sm:self-auto ${outlineButtonClass} border ${getBorderColor()}`}
           onClick={() => setMenuForm(selectedMenu)}
         >
           Edit Info
@@ -617,11 +695,11 @@ export function PreFixePage() {
       {(selectedMenu.prefxe_courses || []).map((course) => {
         const expanded = expandedCourses.has(course.id)
         return (
-          <div key={course.id} className="rounded-xl overflow-hidden" style={cardStyle}>
+          <div key={course.id} className="rounded-[22px] overflow-hidden" style={cardStyle}>
             <div className="flex items-center">
               <button
                 type="button"
-                className={`flex-1 flex items-center gap-2 p-4 text-left font-semibold min-w-0 ${primaryTextClass}`}
+                className={`flex-1 flex items-center gap-3 p-5 sm:p-6 text-left font-semibold min-w-0 ${primaryTextClass}`}
                 onClick={() => setExpandedCourses((prev) => {
                   const next = new Set(prev)
                   if (next.has(course.id)) next.delete(course.id)
@@ -629,15 +707,19 @@ export function PreFixePage() {
                   return next
                 })}
               >
-                {expanded ? <ChevronDown className="h-4 w-4 flex-shrink-0" /> : <ChevronRight className="h-4 w-4 flex-shrink-0" />}
-                <span className="truncate">{course.name}</span>
-                <span className={`text-xs font-normal ml-auto flex-shrink-0 ${mutedTextClass}`}>
+                {expanded ? (
+                  <ChevronDown className="h-4 w-4 flex-shrink-0 opacity-70" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-70" />
+                )}
+                <span className="truncate text-base sm:text-lg tracking-tight">{course.name}</span>
+                <span className={`text-sm font-normal ml-auto flex-shrink-0 ${mutedTextClass}`}>
                   {course.prefxe_items?.length || 0} items
                 </span>
               </button>
               <button
                 type="button"
-                className="p-4 flex-shrink-0 text-red-500 hover:text-red-600"
+                className="p-5 sm:p-6 flex-shrink-0 text-red-500 hover:text-red-600"
                 onClick={() => deleteCourse(course.id, course.name)}
                 aria-label={`Delete ${course.name} course`}
               >
@@ -645,29 +727,33 @@ export function PreFixePage() {
               </button>
             </div>
             {expanded && (
-              <div className="px-4 pb-4 space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="px-5 sm:px-6 pb-5 sm:pb-6 space-y-4 border-t border-white/10">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-4">
                   {(course.prefxe_items || []).map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-xl border overflow-hidden ${
-                        isDarkBackground ? 'border-white/15 bg-white/5' : 'border-black/8 bg-white/50'
-                      }`}
-                    >
-                      <div className={`relative aspect-square ${isDarkBackground ? 'bg-white/10' : 'bg-gray-100'}`}>
+                    <div key={item.id} className="flex flex-col gap-2.5">
+                      <div
+                        className={`relative aspect-square rounded-2xl overflow-hidden ${
+                          isDarkBackground ? 'bg-white/10' : 'bg-black/[0.04]'
+                        }`}
+                        style={{ boxShadow: floatingImageShadow }}
+                      >
                         {item.image_url ? (
                           <Image src={item.image_url} alt="" fill className="object-cover" />
                         ) : (
-                          <div className="flex items-center justify-center h-full">🍽️</div>
+                          <div className="flex items-center justify-center h-full text-xl opacity-60">
+                            🍽️
+                          </div>
                         )}
                       </div>
-                      <div className="p-2">
-                        <p className={`text-xs font-semibold truncate ${primaryTextClass}`}>{item.title}</p>
-                        <div className="flex gap-1 mt-1">
+                      <div className="space-y-2 px-0.5">
+                        <p className={`text-[13px] font-semibold leading-snug line-clamp-2 ${primaryTextClass}`}>
+                          {item.title}
+                        </p>
+                        <div className="flex gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`h-7 text-xs px-2 ${outlineButtonClass} border ${getBorderColor()}`}
+                            className={`flex-1 h-8 text-xs rounded-full ${outlineButtonClass} border ${getBorderColor()}`}
                             onClick={() => openItemSheet(course.id, item)}
                           >
                             Edit
@@ -675,7 +761,7 @@ export function PreFixePage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`h-7 px-2 ${outlineButtonClass} border ${getBorderColor()}`}
+                            className={`h-8 w-8 rounded-full px-0 ${outlineButtonClass} border ${getBorderColor()}`}
                             onClick={() => deleteItem(item.id)}
                             aria-label="Delete item"
                           >
@@ -688,11 +774,10 @@ export function PreFixePage() {
                 </div>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className={`${outlineButtonClass} border ${getBorderColor()}`}
+                  className={`h-10 rounded-full ${outlineButtonClass} border ${getBorderColor()}`}
                   onClick={() => openItemSheet(course.id)}
                 >
-                  <Plus className="h-3 w-3 mr-1" /> Add Item
+                  <Plus className="h-4 w-4 mr-1.5" /> Add Item
                 </Button>
               </div>
             )}
@@ -703,9 +788,9 @@ export function PreFixePage() {
       <Button
         variant="outline"
         onClick={addCourse}
-        className={`w-full ${outlineButtonClass} border ${getBorderColor()}`}
+        className={`w-full h-11 rounded-full ${outlineButtonClass} border ${getBorderColor()}`}
       >
-        <Plus className="h-4 w-4 mr-1" /> Add Course
+        <Plus className="h-4 w-4 mr-1.5" /> Add Course
       </Button>
 
       <Sheet open={!!itemSheet} onOpenChange={(open) => { if (!open) closeItemSheet() }}>
@@ -868,8 +953,11 @@ export function PreFixePage() {
                     {tags.map((tag) => {
                       const isSelected = itemForm.tag_ids.includes(tag.id)
                       const borderColor = getAllergenBorderColor(tag.name)
-                      const selectedFill = borderColor || (isDarkBackground ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)')
-                      const selectedText = borderColor ? getContrastColor(borderColor) : contrastColor
+                      const tagStyle = getAllergenTagStyle(tag.name, {
+                        isDarkBackground,
+                        isSelected,
+                        solidSelected: true,
+                      })
                       return (
                         <Badge
                           key={tag.id}
@@ -878,14 +966,7 @@ export function PreFixePage() {
                             isSelected ? 'font-semibold shadow-sm' : 'hover:opacity-80'
                           }`}
                           style={{
-                            borderWidth: isSelected ? 2 : 1,
-                            borderColor: borderColor || (isDarkBackground ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)'),
-                            backgroundColor: isSelected
-                              ? selectedFill
-                              : isDarkBackground
-                                ? 'rgba(255,255,255,0.06)'
-                                : 'transparent',
-                            color: isSelected ? selectedText : contrastColor,
+                            ...tagStyle,
                             boxShadow: isSelected
                               ? `0 0 0 2px ${menuBackgroundColor}, 0 0 0 4px ${borderColor || contrastColor}`
                               : undefined,

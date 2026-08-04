@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X } from 'lucide-react'
 import { SearchPanel } from '@/components/landing/SearchPanel'
 import { glassFabStyle, glassTokens } from '@/lib/glass-styles'
+import { useOverlayChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 interface FloatingSearchButtonProps {
   open: boolean
@@ -11,6 +13,7 @@ interface FloatingSearchButtonProps {
 }
 
 export function FloatingSearchButton({ open, onOpenChange }: FloatingSearchButtonProps) {
+  useOverlayChromeColor(open, CHROME_COLORS.overlayDim)
   return (
     <>
       {/* Dimmed backdrop */}

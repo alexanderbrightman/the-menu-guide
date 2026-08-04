@@ -184,8 +184,24 @@ export async function PATCH(request: NextRequest) {
   if (!premiumGate.ok) return secureJsonResponse(premiumGate.body, premiumGate.status)
 
   const body = await request.json()
-  const { id, ...updates } = body
+  const { id } = body
   if (!id) return secureJsonResponse({ error: 'ID required' }, 400)
+
+  // Only persist real columns — clients often send the full menu object
+  // including nested `prefxe_courses`, which is not a column and would 500.
+  const updates: Record<string, unknown> = {}
+  if (typeof body.title === 'string') updates.title = body.title.trim()
+  if ('description' in body) updates.description = body.description?.trim?.() || body.description || null
+  if ('price' in body) updates.price = body.price ?? null
+  if ('start_time' in body) updates.start_time = body.start_time || null
+  if ('end_time' in body) updates.end_time = body.end_time || null
+  if (Array.isArray(body.days_of_week)) updates.days_of_week = body.days_of_week
+  if (typeof body.is_active === 'boolean') updates.is_active = body.is_active
+  if (typeof body.sort_order === 'number') updates.sort_order = body.sort_order
+
+  if (Object.keys(updates).length === 0) {
+    return secureJsonResponse({ error: 'No valid fields to update' }, 400)
+  }
 
   const { error } = await supabase
     .from('prefxe_menus')

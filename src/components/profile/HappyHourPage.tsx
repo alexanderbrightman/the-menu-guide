@@ -12,7 +12,8 @@ import Image from 'next/image'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
-import { getThemedGlassCardStyle } from '@/lib/glass-styles'
+import { getThemedGlassCardStyle, floatingImageShadow } from '@/lib/glass-styles'
+import { formatScheduleBadge } from '@/lib/geo'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -53,7 +54,7 @@ export function HappyHourPage() {
 
   const inputClass = isDarkBackground
     ? 'border-white/40 text-white placeholder:text-white/40 bg-white/5'
-    : 'border-black/20 text-black bg-white/70'
+    : 'border-black/15 text-black bg-white/40 backdrop-blur-xl'
   const dayUnselectedClass = isDarkBackground
     ? 'bg-white/10 text-white border-white/35'
     : 'bg-black/5 text-gray-700 border-black/15'
@@ -174,31 +175,36 @@ export function HappyHourPage() {
 
   if (editing) {
     return (
-      <div className="max-w-2xl mx-auto p-4 space-y-6 pb-28 lg:pb-8">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className={`text-xl font-semibold ${primaryTextClass}`}>
-            {editing.id ? 'Edit' : 'New'} Happy Hour
-          </h2>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-28 lg:pb-10">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <h2 className={`text-2xl font-semibold tracking-tight ${primaryTextClass}`}>
+              {editing.id ? 'Edit Happy Hour' : 'New Happy Hour'}
+            </h2>
+            <p className={`text-sm ${mutedTextClass}`}>
+              Schedule, description, and photos for the homepage.
+            </p>
+          </div>
           <Button
             variant="ghost"
-            className={`${primaryTextClass} hover:bg-transparent`}
+            className={`h-10 px-3 ${primaryTextClass} hover:bg-transparent shrink-0`}
             onClick={() => setEditing(null)}
           >
             Cancel
           </Button>
         </div>
 
-        <div className="rounded-xl overflow-hidden" style={cardStyle}>
-          <div className="p-4 space-y-4">
-            <div className="space-y-1.5">
+        <div className="rounded-[22px] overflow-hidden" style={cardStyle}>
+          <div className="p-5 sm:p-6 space-y-5">
+            <div className="space-y-2">
               <Label className={primaryTextClass}>Title</Label>
               <Input
-                className={inputClass}
+                className={`h-11 ${inputClass}`}
                 value={editing.title || ''}
                 onChange={(e) => setEditing({ ...editing, title: e.target.value })}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className={primaryTextClass}>Description</Label>
               <Textarea
                 className={inputClass}
@@ -207,35 +213,35 @@ export function HappyHourPage() {
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="min-w-0 space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="min-w-0 space-y-2">
                 <Label className={primaryTextClass}>Start Time</Label>
                 <Input
                   type="time"
-                  className={`${inputClass} w-full max-w-full`}
+                  className={`h-11 ${inputClass} w-full max-w-full`}
                   value={editing.start_time?.slice(0, 5) || '16:00'}
                   onChange={(e) => setEditing({ ...editing, start_time: e.target.value })}
                 />
               </div>
-              <div className="min-w-0 space-y-1.5">
+              <div className="min-w-0 space-y-2">
                 <Label className={primaryTextClass}>End Time</Label>
                 <Input
                   type="time"
-                  className={`${inputClass} w-full max-w-full`}
+                  className={`h-11 ${inputClass} w-full max-w-full`}
                   value={editing.end_time?.slice(0, 5) || '18:00'}
                   onChange={(e) => setEditing({ ...editing, end_time: e.target.value })}
                 />
               </div>
             </div>
-            <div>
-              <Label className={`mb-2 block ${primaryTextClass}`}>Days</Label>
+            <div className="space-y-2.5">
+              <Label className={`block ${primaryTextClass}`}>Days</Label>
               <div className="flex flex-wrap gap-2">
                 {DAY_LABELS.map((label, i) => (
                   <button
                     key={label}
                     type="button"
                     onClick={() => toggleDay(i)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    className={`px-3.5 py-2 rounded-full text-[13px] font-medium border transition-colors ${
                       editing.days_of_week?.includes(i)
                         ? 'bg-blue-500 text-white border-blue-500'
                         : dayUnselectedClass
@@ -246,33 +252,37 @@ export function HappyHourPage() {
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 py-1">
               <Switch
                 checked={editing.is_active !== false}
                 onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}
               />
               <Label className={primaryTextClass}>Active on homepage</Label>
             </div>
-            <div>
-              <Label className={`mb-2 block ${primaryTextClass}`}>Photos</Label>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-2.5">
+              <Label className={`block ${primaryTextClass}`}>Photos</Label>
+              <div className="flex flex-wrap gap-3">
                 {(editing.happy_hour_photos || []).map((photo, i) => (
-                  <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden">
+                  <div
+                    key={i}
+                    className="relative w-24 h-24 rounded-2xl overflow-hidden"
+                    style={{ boxShadow: floatingImageShadow }}
+                  >
                     <Image src={photo.image_url} alt="" fill className="object-cover" />
                     <button
                       type="button"
-                      className="absolute top-0.5 right-0.5 p-0.5 bg-black/50 rounded-full text-white"
+                      className="absolute top-1.5 right-1.5 p-1 bg-black/50 rounded-full text-white"
                       onClick={() => setEditing({
                         ...editing,
                         happy_hour_photos: editing.happy_hour_photos?.filter((_, j) => j !== i),
                       })}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))}
                 <label
-                  className={`w-20 h-20 rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-colors ${uploadClass}`}
+                  className={`w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-colors ${uploadClass}`}
                 >
                   <Upload className={`h-5 w-5 ${isDarkBackground ? 'text-white/70' : 'text-gray-500'}`} />
                   <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
@@ -282,7 +292,7 @@ export function HappyHourPage() {
             <Button
               onClick={saveMenu}
               disabled={saving || uploading}
-              className={`w-full ${accentButtonClass} border ${getBorderColor()}`}
+              className={`w-full h-11 rounded-full ${accentButtonClass} border ${getBorderColor()}`}
             >
               {saving ? 'Saving...' : 'Save Happy Hour'}
             </Button>
@@ -293,58 +303,103 @@ export function HappyHourPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4 pb-28 lg:pb-8">
-      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className={`text-xl font-semibold ${primaryTextClass}`}>Happy Hour Menus</h2>
-        <Button onClick={startNew} size="sm" className={`${accentButtonClass} border ${getBorderColor()}`}>
-          <Plus className="h-4 w-4 mr-1" /> Add
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-28 lg:pb-10">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h2 className={`text-2xl font-semibold tracking-tight ${primaryTextClass}`}>
+            Happy Hour
+          </h2>
+          <p className={`text-sm ${mutedTextClass}`}>
+            Featured on the homepage discover tab.
+          </p>
+        </div>
+        <Button
+          onClick={startNew}
+          className={`h-11 rounded-full px-5 ${accentButtonClass} border ${getBorderColor()}`}
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> Add Happy Hour
         </Button>
-      </div>
+      </header>
+
       {menus.length === 0 ? (
-        <p className={`${mutedTextClass} text-sm text-center py-8`}>
-          No happy hour menus yet. Add one to appear on the homepage.
-        </p>
+        <div
+          className="rounded-[22px] px-6 py-14 text-center space-y-2"
+          style={cardStyle}
+        >
+          <p className={`text-base font-medium ${primaryTextClass}`}>No happy hours yet</p>
+          <p className={`text-sm ${mutedTextClass} max-w-sm mx-auto`}>
+            Add a menu with hours and photos to appear under Happy Hour on the homepage.
+          </p>
+        </div>
       ) : (
-        menus.map((menu) => (
-          <div key={menu.id} className="rounded-xl p-4 flex gap-4" style={cardStyle}>
+        <div className="space-y-4">
+          {menus.map((menu) => (
             <div
-              className={`relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 ${
-                isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
-              }`}
+              key={menu.id}
+              className="rounded-[22px] p-5 sm:p-6 flex flex-col gap-5"
+              style={cardStyle}
             >
-              {menu.happy_hour_photos?.[0] ? (
-                <Image src={menu.happy_hour_photos[0].image_url} alt="" fill className="object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full text-xl">🍸</div>
-              )}
+              <div className="flex gap-4 sm:gap-5">
+                <div
+                  className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 ${
+                    isDarkBackground ? 'bg-white/10' : 'bg-black/[0.04]'
+                  }`}
+                  style={{ boxShadow: floatingImageShadow }}
+                >
+                  {menu.happy_hour_photos?.[0] ? (
+                    <Image
+                      src={menu.happy_hour_photos[0].image_url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-2xl opacity-70">
+                      🍸
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                  <h3
+                    className={`text-lg font-semibold tracking-tight truncate ${primaryTextClass}`}
+                  >
+                    {menu.title}
+                  </h3>
+                  <p className={`text-sm leading-snug ${mutedTextClass}`}>
+                    {formatScheduleBadge(
+                      menu.days_of_week || [],
+                      menu.start_time,
+                      menu.end_time
+                    )}
+                  </p>
+                  {!menu.is_active && (
+                    <span className="self-start text-[11px] font-semibold tracking-wide uppercase text-orange-500 mt-0.5">
+                      Inactive
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2.5">
+                <Button
+                  variant="ghost"
+                  className={`flex-1 h-10 rounded-full ${outlineButtonClass} border ${getBorderColor()}`}
+                  onClick={() => setEditing(menu)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={`h-10 w-10 rounded-full px-0 ${outlineButtonClass} border ${getBorderColor()}`}
+                  onClick={() => deleteMenu(menu.id)}
+                  aria-label={`Delete ${menu.title}`}
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className={`font-semibold truncate ${primaryTextClass}`}>{menu.title}</p>
-              <p className={`text-xs ${mutedTextClass}`}>
-                {menu.start_time?.slice(0, 5)} – {menu.end_time?.slice(0, 5)}
-              </p>
-              {!menu.is_active && <span className="text-xs text-orange-500">Inactive</span>}
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                onClick={() => setEditing(menu)}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`${outlineButtonClass} border ${getBorderColor()}`}
-                onClick={() => deleteMenu(menu.id)}
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
-            </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   )

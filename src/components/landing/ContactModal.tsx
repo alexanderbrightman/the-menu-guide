@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
+import { useOverlayChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 interface ContactModalProps {
     isOpen: boolean
@@ -15,6 +18,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+    useOverlayChromeColor(isOpen, CHROME_COLORS.overlayDim)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -46,7 +50,8 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md bg-white/60 backdrop-blur-md rounded-2xl shadow-2xl p-6"
+                className="w-full max-w-md rounded-2xl p-6"
+                style={{ ...glassCardStyle, boxShadow: glassTokens.shadowLg }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-6">

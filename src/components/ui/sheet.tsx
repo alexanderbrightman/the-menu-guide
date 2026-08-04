@@ -5,6 +5,13 @@ import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useOverlayChromeColor } from "@/hooks/useChromeColor"
+import { CHROME_COLORS } from "@/lib/chrome-color"
+
+function SheetChromeSync() {
+  useOverlayChromeColor(true, CHROME_COLORS.overlayDim)
+  return null
+}
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -40,7 +47,9 @@ function SheetOverlay({
         className
       )}
       {...props}
-    />
+    >
+      <SheetChromeSync />
+    </SheetPrimitive.Overlay>
   )
 }
 
@@ -58,7 +67,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "bg-white/90 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-xl shadow-gray-300/12 border border-gray-200/60 transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+          "bg-white/40 backdrop-blur-[40px] backdrop-saturate-[1.8] data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-xl shadow-gray-300/12 border border-white/55 transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
           side === "right" &&
           "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
           side === "left" &&

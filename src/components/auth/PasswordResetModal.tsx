@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { X } from 'lucide-react'
+import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
+import { useOverlayChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 export function PasswordResetModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [success, setSuccess] = useState(false)
+  useOverlayChromeColor(true, CHROME_COLORS.overlayDim)
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +55,10 @@ export function PasswordResetModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="rounded-2xl shadow-xl shadow-gray-300/12 border border-gray-200/60 max-w-sm w-full bg-white/90 backdrop-blur-md">
+      <div
+        className="rounded-2xl max-w-sm w-full"
+        style={{ ...glassCardStyle, boxShadow: glassTokens.shadowLg }}
+      >
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start">
             <div>

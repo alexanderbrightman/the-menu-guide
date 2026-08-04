@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -16,6 +18,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null)
   const router = useRouter()
+  useChromeColor(CHROME_COLORS.app)
 
   useEffect(() => {
     // Check if we have a valid session/token from the URL hash

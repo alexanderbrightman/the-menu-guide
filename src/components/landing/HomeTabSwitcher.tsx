@@ -1,6 +1,6 @@
 'use client'
 
-import { glassPanelStyle } from '@/lib/glass-styles'
+import { glassPanelStyle, glassTokens } from '@/lib/glass-styles'
 
 export type HomeTab = 'specials' | 'happy-hour' | 'prefxe'
 
@@ -37,9 +37,11 @@ export function HomeTabSwitcher({ activeTab, onTabChange }: HomeTabSwitcherProps
                 fontFamily: APPLE_FONT,
                 ...(isActive
                   ? {
-                      background: 'rgba(255,255,255,0.95)',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-                      border: '0.5px solid rgba(255,255,255,0.8)',
+                      background: 'rgba(255,255,255,0.72)',
+                      backdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
+                      WebkitBackdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
+                      border: `0.5px solid ${glassTokens.border}`,
                     }
                   : glassPanelStyle),
               }}

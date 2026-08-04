@@ -15,6 +15,8 @@ import { MobileTabBar } from '@/components/landing/MobileTabBar'
 import { FloatingSearchButton } from '@/components/landing/FloatingSearchButton'
 import { useUserLocation } from '@/hooks/useUserLocation'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 const TAB_ORDER: HomeTab[] = ['specials', 'happy-hour', 'prefxe']
 const SWIPE_THRESHOLD_PX = 56
@@ -33,6 +35,7 @@ export function LandingPage() {
   const { location, denied, loading: locationLoading } = useUserLocation()
 
   const isMobile = useIsMobile()
+  useChromeColor(CHROME_COLORS.app)
 
   // Collapse the header as the user scrolls down through the items so the
   // cards get full view; reveal it again on scroll up / at the top. Mobile only.
@@ -63,20 +66,6 @@ export function LandingPage() {
     }
     lastScrollY.current = y
   }
-
-  // Extend the home background through safe areas and overscroll on mobile.
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const apply = () => {
-      document.documentElement.classList.toggle('landing-mobile-bg', mq.matches)
-    }
-    apply()
-    mq.addEventListener('change', apply)
-    return () => {
-      mq.removeEventListener('change', apply)
-      document.documentElement.classList.remove('landing-mobile-bg')
-    }
-  }, [])
 
   const handleTabChange = (tab: HomeTab) => {
     setActiveTab(tab)

@@ -3,6 +3,9 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { AuthForm } from '@/components/auth/AuthForm'
+import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
+import { useOverlayChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 interface LoginModalProps {
     onClose: () => void
@@ -10,6 +13,7 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ onClose, onResetPasswordClick }: LoginModalProps) {
+    useOverlayChromeColor(true, CHROME_COLORS.overlayDim)
     // Lock body scroll when modal is open
     useEffect(() => {
         document.body.style.overflow = 'hidden'
@@ -21,7 +25,8 @@ export function LoginModal({ onClose, onResetPasswordClick }: LoginModalProps) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div
-                className="relative w-full max-w-md bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-gray-200/50 animate-in zoom-in-95 duration-200"
+                className="relative w-full max-w-md rounded-2xl p-6 animate-in zoom-in-95 duration-200"
+                style={{ ...glassCardStyle, boxShadow: glassTokens.shadowLg }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <button

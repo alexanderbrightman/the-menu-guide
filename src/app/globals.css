@@ -118,15 +118,23 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-body), sans-serif;
+  /*
+   * Safe-area continuity: html/body paint the iOS status bar + home
+   * indicator regions. JS (chrome-color stack) updates these to match
+   * each page and open overlay; this default covers first paint / SSR.
+   */
+  html {
+    background-color: #F5F5F5;
+    min-height: 100%;
+    min-height: 100dvh;
   }
 
-  /* Mobile landing page: match home screen gray through safe areas / overscroll */
-  html.landing-mobile-bg,
-  html.landing-mobile-bg body {
+  body {
+    @apply text-foreground;
     background-color: #F5F5F5;
+    font-family: var(--font-body), sans-serif;
+    min-height: 100%;
+    min-height: 100dvh;
   }
 
   h1,

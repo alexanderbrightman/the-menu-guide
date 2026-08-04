@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { AuthForm } from '@/components/auth/AuthForm'
+import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
+import { useOverlayChromeColor } from '@/hooks/useChromeColor'
+import { CHROME_COLORS } from '@/lib/chrome-color'
 
 interface HeaderProps {
     onLoginClick?: () => void
@@ -13,6 +16,8 @@ interface HeaderProps {
 export function Header({ onResetPasswordClick }: HeaderProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [expandedSection, setExpandedSection] = useState<'contact' | 'login' | null>(null)
+    // Full-screen mobile menu shares app chrome; keep stack in sync for overscroll.
+    useOverlayChromeColor(isMobileMenuOpen, CHROME_COLORS.app)
     const [isFlipped, setIsFlipped] = useState(false)
     const [contactFormData, setContactFormData] = useState({ name: '', email: '', message: '' })
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -121,11 +126,11 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                 style={{
                                     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
                                     letterSpacing: '-0.01em',
-                                    background: expandedSection === 'login' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.65)',
-                                    backdropFilter: 'blur(24px) saturate(180%)',
-                                    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                                    border: '0.5px solid rgba(255,255,255,0.5)',
-                                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                                    background: expandedSection === 'login' ? 'rgba(0,0,0,0.08)' : glassTokens.bg,
+                                    backdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
+                                    WebkitBackdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
+                                    border: `0.5px solid ${glassTokens.border}`,
+                                    boxShadow: glassTokens.shadow,
                                     color: '#1a1a1a',
                                 }}
                             >
@@ -161,11 +166,8 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                     className="absolute inset-0 w-full rounded-2xl p-6 [backface-visibility:hidden]"
                                     style={{
                                         height: 'fit-content',
-                                        background: 'rgba(255,255,255,0.88)',
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
-                                        border: '0.5px solid rgba(0,0,0,0.1)',
-                                        boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+                                        ...glassCardStyle,
+                                        boxShadow: glassTokens.shadowLg,
                                     }}
                                 >
                                     <div className="flex justify-between items-center mb-4">
@@ -196,11 +198,8 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                     className="absolute inset-0 w-full rounded-2xl p-6 [backface-visibility:hidden] [transform:rotateY(180deg)]"
                                     style={{
                                         height: 'fit-content',
-                                        background: 'rgba(255,255,255,0.88)',
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
-                                        border: '0.5px solid rgba(0,0,0,0.1)',
-                                        boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+                                        ...glassCardStyle,
+                                        boxShadow: glassTokens.shadowLg,
                                     }}
                                 >
                                     <div className="flex justify-between items-center mb-4">
@@ -288,11 +287,11 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="md:hidden flex items-center gap-1.5 h-9 px-3 rounded-full transition-all duration-200"
                         style={{
-                            background: 'rgba(255,255,255,0.65)',
-                            backdropFilter: 'blur(24px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '0.5px solid rgba(255,255,255,0.5)',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                            background: glassTokens.bg,
+                            backdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
+                            WebkitBackdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
+                            border: `0.5px solid ${glassTokens.border}`,
+                            boxShadow: glassTokens.shadow,
                             fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
                         }}
                         aria-label="Open menu"
