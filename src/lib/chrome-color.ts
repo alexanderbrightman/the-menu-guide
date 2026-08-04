@@ -11,8 +11,11 @@
 export const CHROME_COLORS = {
   /** Default app gray (landing, getting started). */
   app: '#F5F5F5',
-  /** Approximate composite of bg-black/20 + blur over a light page. */
-  overlayLight: '#6a6a6a',
+  /**
+   * Light overlays no longer push a mid-grey theme-color — that painted
+   * solid letterbox bars in iOS Safari. Kept for callers that opt in.
+   */
+  overlayLight: '#F5F5F5',
   /** Approximate composite of bg-black/20 + blur over a dark menu. */
   overlayDark: '#1f1f1f',
   /** Approximate composite of bg-black/40–50 dialog/sheet dimmers. */
@@ -74,21 +77,21 @@ export function getOverlayChromeColor(isDarkBackground = false): string {
 /** Reference-counted body scroll lock for stacked overlays. */
 export function acquireScrollLock(): () => void {
   if (typeof document === 'undefined') return () => {}
-  const html = document.documentElement
   const body = document.body
   if (scrollLocks === 0) {
     previousOverflow = {
-      html: html.style.overflow,
+      html: document.documentElement.style.overflow,
       body: body.style.overflow,
     }
-    html.style.overflow = 'hidden'
+    // Lock only body — locking <html> on iOS Safari can shrink fixed
+    // overlays to the layout viewport and expose solid theme-color bars
+    // in the regions behind the browser chrome.
     body.style.overflow = 'hidden'
   }
   scrollLocks += 1
   return () => {
     scrollLocks = Math.max(0, scrollLocks - 1)
     if (scrollLocks === 0 && previousOverflow) {
-      html.style.overflow = previousOverflow.html
       body.style.overflow = previousOverflow.body
       previousOverflow = null
     }

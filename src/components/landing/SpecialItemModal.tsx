@@ -9,7 +9,12 @@ import {
     formatDistanceSubtitle,
 } from '@/components/ui/modal-restaurant-pill'
 import { getAllergenTagStyle } from '@/lib/utils'
-import { glassCardStyle, modalContentTopPadClass, floatingImageShadow } from '@/lib/glass-styles'
+import {
+  glassCardStyle,
+  modalContentTopPadClass,
+  modalContentBottomPadClass,
+  floatingImageShadow,
+} from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Special {
@@ -73,7 +78,7 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
             <ModalCloseButton onClose={onClose} />
 
             <div
-                className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
+                className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="w-full rounded-[22px] p-6" style={glassCardStyle}>

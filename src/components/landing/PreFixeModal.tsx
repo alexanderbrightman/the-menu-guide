@@ -11,7 +11,12 @@ import {
 import { CategoryDivider } from '@/components/public/CategoryDivider'
 import { getAllergenTagStyle } from '@/lib/utils'
 import { formatScheduleBadge } from '@/lib/geo'
-import { glassCardStyle, modalContentTopPadClass, floatingImageShadow } from '@/lib/glass-styles'
+import {
+  glassCardStyle,
+  modalContentTopPadClass,
+  modalContentBottomPadClass,
+  floatingImageShadow,
+} from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Props {
@@ -66,7 +71,7 @@ export function PreFixeModal({ entry, onClose }: Props) {
       <ModalCloseButton onClose={onClose} />
 
       <div
-        className={`w-full max-w-md md:max-w-2xl lg:max-w-3xl flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
+        className={`w-full max-w-md md:max-w-2xl lg:max-w-3xl flex flex-col gap-4 my-auto px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Info island — mirrors specials layout */}
@@ -148,7 +153,10 @@ export function PreFixeModal({ entry, onClose }: Props) {
               <div
                 className={
                   scrollable
-                    ? 'flex gap-3 overflow-x-auto overscroll-x-contain pb-1 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0'
+                    ? // Bleed only on the right so cards can scroll past the edge;
+                      // keep the parent’s left px-4 so the first card lines up with
+                      // the info island and course dividers.
+                      'flex gap-3 overflow-x-auto overscroll-x-contain pb-1 snap-x snap-mandatory scrollbar-hide -mr-4 md:mr-0'
                     : items.length === 1
                       ? 'grid grid-cols-1 sm:max-w-xs'
                       : 'grid grid-cols-2 gap-3'
@@ -217,6 +225,9 @@ export function PreFixeModal({ entry, onClose }: Props) {
                     </div>
                   </div>
                 ))}
+                {scrollable ? (
+                  <div className="w-4 shrink-0 md:hidden" aria-hidden />
+                ) : null}
               </div>
             </div>
           )

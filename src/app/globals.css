@@ -235,15 +235,22 @@
     max-width: 100%;
   }
 
-  /* Full-screen modal scrim — covers layout + visual viewport on iOS.
+  /* Full-screen modal scrim — paints behind iOS Safari chrome.
+     Use the large viewport (lvh) so the frosted layer reaches under the
+     collapsible URL / toolbar instead of leaving solid theme-color bars.
      z-index sits above dashboard nav / safe-area bars (z-40). */
   .fullscreen-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 100;
     width: 100%;
     height: 100%;
+    min-height: 100vh;
     min-height: 100dvh;
+    min-height: 100lvh;
     min-height: -webkit-fill-available;
   }
 

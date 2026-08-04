@@ -70,6 +70,13 @@ export const glassClasses = {
 export const modalContentTopPadClass =
   'pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]'
 
+/**
+ * Bottom padding so modal content can scroll under iOS Safari’s translucent
+ * toolbar (similar to public profile), with safe-area for the home indicator.
+ */
+export const modalContentBottomPadClass =
+  'pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)]'
+
 /** Soft lift for floating images (no glass rim). */
 export const floatingImageShadow =
   '0 1px 3px rgba(0,0,0,0.08), 0 6px 20px rgba(0,0,0,0.10)'

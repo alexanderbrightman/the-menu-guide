@@ -11,7 +11,13 @@ import {
   formatDistanceSubtitle,
 } from '@/components/ui/modal-restaurant-pill'
 import { formatScheduleBadge } from '@/lib/geo'
-import { glassCardStyle, glassTokens, modalContentTopPadClass, floatingImageShadow } from '@/lib/glass-styles'
+import {
+  glassCardStyle,
+  glassTokens,
+  modalContentTopPadClass,
+  modalContentBottomPadClass,
+  floatingImageShadow,
+} from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 
 interface Props {
@@ -71,7 +77,7 @@ export function HappyHourModal({ entry, onClose }: Props) {
       <ModalCloseButton onClose={onClose} />
 
       <div
-        className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
+        className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Info island */}
