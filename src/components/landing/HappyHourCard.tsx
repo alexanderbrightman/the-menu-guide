@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import type { UserLocation } from '@/hooks/useUserLocation'
 import { formatScheduleBadge, formatDistanceMiles } from '@/lib/geo'
 import {
   DiscoverCardShell,
   DiscoverCardBody,
   PaginationControls,
-  LoadingPanel,
+  DiscoverSkeleton,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
+import { SmartImage } from '@/components/ui/smart-image'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
 
 export interface HappyHourEntry {
   menu: {
@@ -38,44 +39,53 @@ interface Props {
   onItemClick: (entry: HappyHourEntry) => void
   location?: UserLocation | null
   locationDenied?: boolean
-  locationLoading?: boolean
   className?: string
 }
 
-export function HappyHourCard({ onItemClick, location, locationDenied, locationLoading, className }: Props) {
+const CARD_SIZES = '(max-width: 640px) 50vw, 33vw'
+
+export function HappyHourCard({ onItemClick, location, locationDenied, className }: Props) {
   const isMobile = useIsMobile()
   const [menus, setMenus] = useState<HappyHourEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(0)
   const itemsPerPage = 6
+  const { visibleCount, sentinelRef, hasMore } = useRevealOnScroll(menus.length)
+
+  const lat = location?.latitude
+  const lng = location?.longitude
 
   useEffect(() => {
-    if (locationLoading) return
+    let cancelled = false
     const fetchData = async () => {
       try {
         const params = new URLSearchParams({ discover: '1' })
-        if (location) {
-          params.append('lat', String(location.latitude))
-          params.append('lng', String(location.longitude))
+        if (lat != null && lng != null) {
+          params.set('lat', String(lat))
+          params.set('lng', String(lng))
         }
         const res = await fetch(`/api/happy-hour?${params}`)
         const data = await res.json()
-        if (res.ok) setMenus(data.menus || [])
+        if (!cancelled && res.ok) setMenus(data.menus || [])
       } catch (e) {
         console.error(e)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     fetchData()
-  }, [location, locationLoading])
+    return () => {
+      cancelled = true
+    }
+  }, [lat, lng])
 
   const totalPages = Math.ceil(menus.length / itemsPerPage)
   const displayedItems = isMobile
-    ? menus
+    ? menus.slice(0, visibleCount)
     : menus.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
 
-  if (loading || locationLoading) return <LoadingPanel message="Loading happy hours..." />
+  if (loading && menus.length === 0) return <DiscoverSkeleton />
   if (menus.length === 0) return <EmptyPanel message="No happy hours nearby yet. Check back soon!" />
 
   return (
@@ -84,14 +94,21 @@ export function HappyHourCard({ onItemClick, location, locationDenied, locationL
         <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all happy hours</p>
       )}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-        {displayedItems.map((entry) => {
+        {displayedItems.map((entry, index) => {
           const photos = entry.menu.photos || []
           const photo = photos[0]?.image_url
           return (
             <DiscoverCardShell key={entry.menu.id} onClick={() => onItemClick(entry)}>
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]">
-                {photo ? (
-                  <Image src={photo} alt={entry.menu.title} fill className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
+                {photo && !failedImages.has(photo) ? (
+                  <SmartImage
+                    src={photo}
+                    alt={entry.menu.title}
+                    className="object-cover"
+                    sizes={CARD_SIZES}
+                    priority={index < 4}
+                    onFatalError={() => setFailedImages((prev) => new Set(prev).add(photo))}
+                  />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-2xl">🍸</div>
                 )}
@@ -116,6 +133,7 @@ export function HappyHourCard({ onItemClick, location, locationDenied, locationL
           )
         })}
       </div>
+      {isMobile && hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
       {!isMobile && (
         <PaginationControls
           currentPage={currentPage}

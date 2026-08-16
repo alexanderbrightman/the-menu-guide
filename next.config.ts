@@ -86,14 +86,12 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // API responses are user-specific by default; never let CDNs or
-        // shared caches store them. Routes that ARE safely cacheable
-        // (e.g. public discover feeds) set their own Cache-Control header.
-        source: '/api/(.*)',
+        // Long-cache hashed static files. HTML/API caching is set per-route.
+        source: '/:all*(png|jpg|jpeg|gif|webp|svg|ico|woff2)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'private, no-store'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
           }
         ],
       },

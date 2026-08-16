@@ -32,7 +32,16 @@ export function LandingPage() {
 
   // User location feeds the discover APIs, which sort results by
   // nearest restaurant server-side (lat/lng query params).
-  const { location, denied, loading: locationLoading } = useUserLocation()
+  const { location, denied } = useUserLocation()
+
+  // Warm the other tabs after first paint so switching does not wait on JSON.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetch('/api/happy-hour?discover=1')
+      void fetch('/api/prefxe?discover=1')
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const isMobile = useIsMobile()
   useChromeColor(CHROME_COLORS.app)
@@ -103,7 +112,6 @@ export function LandingPage() {
   const tabPanelProps = {
     location,
     locationDenied: denied,
-    locationLoading,
     className: 'w-full',
   }
 

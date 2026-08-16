@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import type { UserLocation } from '@/hooks/useUserLocation'
 import {
   DiscoverCardShell,
   DiscoverCardBody,
   PaginationControls,
-  LoadingPanel,
+  DiscoverSkeleton,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
+import { SmartImage } from '@/components/ui/smart-image'
 import { formatDistanceMiles } from '@/lib/geo'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
 
 export interface Special {
   item: {
@@ -38,15 +39,15 @@ export interface SpecialsCardProps {
   className?: string
   location?: UserLocation | null
   locationDenied?: boolean
-  locationLoading?: boolean
 }
+
+const CARD_SIZES = '(max-width: 640px) 50vw, 33vw'
 
 export function SpecialsCard({
   onItemClick,
   className,
   location,
   locationDenied,
-  locationLoading,
 }: SpecialsCardProps) {
   const isMobile = useIsMobile()
   const [specials, setSpecials] = useState<Special[]>([])
@@ -54,37 +55,46 @@ export function SpecialsCard({
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(0)
   const itemsPerPage = 6
+  const { visibleCount, sentinelRef, hasMore } = useRevealOnScroll(specials.length)
+
+  const lat = location?.latitude
+  const lng = location?.longitude
 
   useEffect(() => {
-    if (locationLoading) return
+    let cancelled = false
 
     const fetchSpecials = async () => {
       try {
         const params = new URLSearchParams()
-        if (location) {
-          params.append('lat', location.latitude.toString())
-          params.append('lng', location.longitude.toString())
+        if (lat != null && lng != null) {
+          params.set('lat', lat.toString())
+          params.set('lng', lng.toString())
         }
         const response = await fetch(`/api/specials?${params.toString()}`)
         const data = await response.json()
-        if (response.ok && data.specials) setSpecials(data.specials)
+        if (!cancelled && response.ok && data.specials) {
+          setSpecials(data.specials)
+        }
       } catch (error) {
         console.error('Error fetching specials:', error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchSpecials()
-  }, [location, locationLoading])
+    return () => {
+      cancelled = true
+    }
+  }, [lat, lng])
 
   const totalPages = Math.ceil(specials.length / itemsPerPage)
   const displayedSpecials = isMobile
-    ? specials
+    ? specials.slice(0, visibleCount)
     : specials.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
 
-  if (loading || locationLoading) {
-    return <LoadingPanel message="Loading specials..." />
+  if (loading && specials.length === 0) {
+    return <DiscoverSkeleton />
   }
 
   if (specials.length === 0) {
@@ -100,16 +110,16 @@ export function SpecialsCard({
       )}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
         {displayedSpecials.map((special, index) => (
-          <DiscoverCardShell key={`${special.item.id}-${index}`} onClick={() => onItemClick(special)}>
+          <DiscoverCardShell key={special.item.id} onClick={() => onItemClick(special)}>
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]">
               {special.item.image_url && !failedImages.has(special.item.image_url) ? (
-                <Image
+                <SmartImage
                   src={special.item.image_url}
                   alt={special.item.title}
-                  fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 50vw, 33vw"
-                  onError={() => setFailedImages((prev) => new Set(prev).add(special.item.image_url!))}
+                  sizes={CARD_SIZES}
+                  priority={index < 4}
+                  onFatalError={() => setFailedImages((prev) => new Set(prev).add(special.item.image_url!))}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-2xl text-gray-300">🍽️</div>
@@ -123,6 +133,7 @@ export function SpecialsCard({
           </DiscoverCardShell>
         ))}
       </div>
+      {isMobile && hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
       {!isMobile && (
         <PaginationControls
           currentPage={currentPage}

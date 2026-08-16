@@ -12,6 +12,8 @@ import { Filter, Instagram, Globe, Utensils } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
 import { getContrastColor, getAllergenTagStyle, ALLERGEN_TAGS } from '@/lib/utils'
+import { DEFAULT_MENU_FONT, FONT_FAMILY_MAP } from '@/lib/fonts'
+import { SmartImage } from '@/components/ui/smart-image'
 import {
   getThemedGlassCardStyle,
   modalContentTopPadClass,
@@ -37,15 +39,6 @@ interface PublicMenuPageProps {
 }
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
-const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
-const FONT_FAMILY_MAP: Record<string, string> = {
-  'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
-  'Fjalla One': '"Fjalla One", sans-serif',
-  'Georgia': 'Georgia, serif',
-  'Times New Roman': '"Times New Roman", serif',
-  'Arial': 'Arial, sans-serif',
-  'Courier New': '"Courier New", monospace',
-}
 
 
 
@@ -63,6 +56,7 @@ const MenuItemCard = memo(({
   currency,
   failedImages,
   onImageError,
+  priority = false,
 }: {
   item: MenuItemWithTags
   onSelect: (item: MenuItemWithTags) => void
@@ -76,20 +70,20 @@ const MenuItemCard = memo(({
   currency?: string
   failedImages: Set<string>
   onImageError: (url: string) => void
+  priority?: boolean
 }) => {
   // Determine if we should show placeholder
   const hasValidImage = item.image_url && !failedImages.has(item.image_url)
 
   const image = hasValidImage ? (
-    <Image
+    <SmartImage
       src={item.image_url!}
       alt={item.title}
-      fill
       className="object-cover"
       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-      onError={() => {
+      priority={priority}
+      onFatalError={() => {
         if (item.image_url) {
-          console.warn(`Failed to load menu item image: ${item.image_url}`)
           onImageError(item.image_url)
         }
       }}
@@ -710,7 +704,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
                             }
                           >
-                            {items.map((item) => (
+                            {items.map((item, index) => (
                               <MenuItemCard
                                 key={item.id}
                                 item={item}
@@ -725,6 +719,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 currency={profile.currency}
                                 failedImages={failedImages}
                                 onImageError={handleImageError}
+                                priority={index < 4}
                               />
                             ))}
                           </div>
@@ -750,7 +745,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
                             }
                           >
-                            {uncategorizedItems.map((item) => (
+                            {uncategorizedItems.map((item, index) => (
                               <MenuItemCard
                                 key={item.id}
                                 item={item}
@@ -765,6 +760,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                                 currency={profile.currency}
                                 failedImages={failedImages}
                                 onImageError={handleImageError}
+                                priority={index < 4}
                               />
                             ))}
                           </div>
@@ -784,7 +780,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
                   }
                 >
-                  {filteredItems.map((item) => (
+                  {filteredItems.map((item, index) => (
                     <MenuItemCard
                       key={item.id}
                       item={item}
@@ -799,6 +795,7 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                       currency={profile.currency}
                       failedImages={failedImages}
                       onImageError={handleImageError}
+                      priority={index < 4}
                     />
                   ))}
                 </div>

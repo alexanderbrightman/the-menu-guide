@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
  * Security headers middleware for Next.js API routes
  */
 
-export function getSecurityHeaders() {
+export function getSecurityHeaders(overrides: Record<string, string> = {}) {
   return {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
@@ -12,6 +12,10 @@ export function getSecurityHeaders() {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    // Default: APIs are user-specific. Pass Cache-Control to override
+    // (public discover feeds, QR images, tag lists).
+    'Cache-Control': 'private, no-store',
+    ...overrides,
   }
 }
 

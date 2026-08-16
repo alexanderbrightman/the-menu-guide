@@ -7,16 +7,17 @@ export interface UserLocation {
   longitude: number
 }
 
+/**
+ * Ask for GPS in the background. Discover feeds fetch immediately without
+ * waiting; they refetch when coordinates arrive. Browser `maximumAge`
+ * reuses a recent fix so we do not block on a new satellite lock.
+ */
 export function useUserLocation() {
   const [location, setLocation] = useState<UserLocation | null>(null)
   const [denied, setDenied] = useState(false)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!('geolocation' in navigator)) {
-      setLoading(false)
-      return
-    }
+    if (!('geolocation' in navigator)) return
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -24,15 +25,14 @@ export function useUserLocation() {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         })
-        setLoading(false)
+        setDenied(false)
       },
       () => {
         setDenied(true)
-        setLoading(false)
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
     )
   }, [])
 
-  return { location, denied, loading }
+  return { location, denied }
 }

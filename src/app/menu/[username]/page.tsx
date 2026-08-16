@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { PublicMenuPage } from '@/components/public/PublicMenuPage'
 import { validatePremiumAccess } from '@/lib/premium-validation'
+import { getGoogleMenuFontHref } from '@/lib/fonts'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,6 +88,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .eq('user_id', profile.id)
 
   const favoritedIds = favorites?.map((fav) => fav.menu_item_id) || []
+  const menuFontHref = getGoogleMenuFontHref(profile.menu_font)
 
   // Increment view count
   await supabase
@@ -95,13 +97,16 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .eq('id', profile.id)
 
   return (
-    <PublicMenuPage
-      profile={profile}
-      categories={categories || []}
-      menuItems={menuItems || []}
-      tags={tags || []}
-      favoritedIds={favoritedIds}
-    />
+    <>
+      {menuFontHref && <link rel="stylesheet" href={menuFontHref} />}
+      <PublicMenuPage
+        profile={profile}
+        categories={categories || []}
+        menuItems={menuItems || []}
+        tags={tags || []}
+        favoritedIds={favoritedIds}
+      />
+    </>
   )
 }
 

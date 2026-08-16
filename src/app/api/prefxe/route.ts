@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     return secureJsonResponse(
       { menus: menus.slice(0, limit) },
       200,
-      { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+      { 'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600' }
     )
   }
 

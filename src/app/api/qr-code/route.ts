@@ -102,8 +102,9 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="menu-qr-code-${profile.username}.png"`,
-        'Cache-Control': 'public, max-age=3600', // Override premium headers for QR code caching
-        ...getSecurityHeaders(),
+        ...getSecurityHeaders({
+          'Cache-Control': 'public, max-age=3600',
+        }),
         ...getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime, rateLimit.limit),
       },
     })

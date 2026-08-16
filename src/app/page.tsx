@@ -1,20 +1,38 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { Dashboard } from '@/components/dashboard/Dashboard'
-import { SetupGuide } from '@/components/setup/SetupGuide'
 import { LandingPage } from '@/components/landing/LandingPage'
+import { BootShell } from '@/components/ui/boot-shell'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, Suspense, useCallback } from 'react'
+import { useEffect, Suspense, useCallback, useSyncExternalStore } from 'react'
+import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
 
-function HomeContent() {
-  const { user, loading, refreshProfile } = useAuth()
+const Dashboard = dynamic(
+  () => import('@/components/dashboard/Dashboard').then((mod) => ({ default: mod.Dashboard })),
+  { ssr: false, loading: () => <BootShell /> }
+)
+
+const SetupGuide = dynamic(
+  () => import('@/components/setup/SetupGuide').then((mod) => ({ default: mod.SetupGuide })),
+  { ssr: false }
+)
+
+function hasStoredSupabaseSession() {
+  try {
+    return Object.keys(localStorage).some(
+      (key) => key.startsWith('sb-') && key.includes('auth-token')
+    )
+  } catch {
+    return false
+  }
+}
+
+function PaymentRedirectHandler() {
+  const { user, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Verify the completed checkout with the server. The server checks the
-  // session against Stripe, so a forged ?success=true URL cannot grant premium.
   const verifyPayment = useCallback(async (sessionId: string) => {
     if (!user || !supabase) return null
 
@@ -45,14 +63,12 @@ function HomeContent() {
     }
   }, [user])
 
-  // Handle payment success/cancel redirects from Stripe Checkout
   useEffect(() => {
     const success = searchParams.get('success')
     const canceled = searchParams.get('canceled')
     const sessionId = searchParams.get('session_id')
 
     const finish = () => {
-      // Clean up URL params without adding to history
       setTimeout(() => router.replace('/'), 1000)
     }
 
@@ -62,8 +78,6 @@ function HomeContent() {
           if (result?.success) {
             alert('🎉 Payment successful! Your account has been upgraded to Premium!')
           } else {
-            // Payment may still be processing; the Stripe webhook will
-            // upgrade the account once it confirms.
             alert('Thanks! Your payment is being confirmed. Your account will update automatically in a moment.')
           }
           return refreshProfile()
@@ -74,7 +88,6 @@ function HomeContent() {
         })
         .finally(finish)
     } else if (success === 'true') {
-      // No session ID: rely on the webhook, just refresh what we have
       refreshProfile().finally(finish)
     } else if (canceled === 'true') {
       alert('❌ Payment was canceled. You can try again anytime.')
@@ -82,38 +95,49 @@ function HomeContent() {
     }
   }, [searchParams, router, refreshProfile, verifyPayment])
 
-  // Check if Supabase is configured
-  const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+  return null
+}
+
+function subscribeToAuthStorage(onStoreChange: () => void) {
+  window.addEventListener('storage', onStoreChange)
+  return () => window.removeEventListener('storage', onStoreChange)
+}
+
+function HomeContent() {
+  const { user, loading } = useAuth()
+  const sessionHint = useSyncExternalStore(
+    subscribeToAuthStorage,
+    hasStoredSupabaseSession,
+    () => false
+  )
+
+  const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
     !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your_supabase_project_url')
 
   if (!isSupabaseConfigured) {
     return <SetupGuide />
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
+  // Restaurant owners with a stored session: keep a blank shell so the
+  // marketing grid does not flash. Guests never wait on auth.
+  if (user && !loading) {
+    return <Dashboard />
   }
 
-  if (!user) {
-    return <LandingPage />
+  if (loading && sessionHint) {
+    return <BootShell />
   }
 
-  // If user is authenticated, show dashboard
-  return <Dashboard />
+  return <LandingPage />
 }
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    }>
+    <>
       <HomeContent />
-    </Suspense>
+      <Suspense fallback={null}>
+        <PaymentRedirectHandler />
+      </Suspense>
+    </>
   )
 }

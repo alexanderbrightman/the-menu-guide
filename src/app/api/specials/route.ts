@@ -140,10 +140,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             { specials: limitedSpecials },
             {
-                headers: {
-                    ...getSecurityHeaders(),
-                    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // Cache for 5 minutes
-                },
+                headers: getSecurityHeaders({
+                    'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+                }),
             }
         )
     } catch (error) {

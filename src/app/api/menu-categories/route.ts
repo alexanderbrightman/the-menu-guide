@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
       { categories },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
           ...getSecurityHeaders(),
@@ -309,7 +308,6 @@ export async function DELETE(request: NextRequest) {
       { success: true },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
           ...getSecurityHeaders(),

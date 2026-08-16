@@ -78,7 +78,9 @@ export function useImageUpload() {
       const { error } = await supabase.storage
         .from(bucket)
         .upload(fileName, optimizedImage.file, {
-          cacheControl: '3600',
+          // Filenames are unique (userId/timestamp-random), so browsers can
+          // keep the object for a year without serving a stale replacement.
+          cacheControl: '31536000',
           upsert: false
         })
 

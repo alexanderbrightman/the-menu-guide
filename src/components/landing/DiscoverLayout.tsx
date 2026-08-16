@@ -144,6 +144,27 @@ export function LoadingPanel({ message }: { message: string }) {
   )
 }
 
+/** Gray plates that match discover cards so the grid is usable immediately. */
+export function DiscoverSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div
+      className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3"
+      role="status"
+      aria-label="Loading"
+    >
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index}>
+          <div className="aspect-[4/3] rounded-2xl bg-gray-200/80 animate-pulse" />
+          <div className="p-3 sm:p-3.5 space-y-2">
+            <div className="h-3.5 w-3/4 rounded bg-gray-200/80 animate-pulse" />
+            <div className="h-3 w-1/2 rounded bg-gray-200/70 animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function EmptyPanel({ message }: { message: string }) {
   return (
     <div className="p-8 text-center text-gray-500 text-sm">{message}</div>

@@ -16,17 +16,8 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 import { MobileDashboardNav } from '@/components/dashboard/MobileDashboardNav'
 import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
 import { useChromeColor } from '@/hooks/useChromeColor'
-
-const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
-const DEFAULT_MENU_FONT = 'Plus Jakarta Sans'
-const FONT_FAMILY_MAP: Record<string, string> = {
-  'Plus Jakarta Sans': '"Plus Jakarta Sans", sans-serif',
-  'Fjalla One': '"Fjalla One", sans-serif',
-  Georgia: 'Georgia, serif',
-  'Times New Roman': '"Times New Roman", serif',
-  Arial: 'Arial, sans-serif',
-  'Courier New': '"Courier New", monospace',
-}
+import { DEFAULT_MENU_BACKGROUND_COLOR, DEFAULT_MENU_FONT, FONT_FAMILY_MAP } from '@/lib/fonts'
+import { menuThemeFontClassName } from '@/lib/menu-theme-fonts'
 
 const getContrastColor = (hexColor: string) => {
   if (!hexColor) return '#1f2937'
@@ -201,7 +192,7 @@ export function Dashboard() {
 
   return (
     <div
-      className="min-h-screen transition-colors flex"
+      className={`min-h-screen transition-colors flex ${menuThemeFontClassName}`}
       style={{
         backgroundColor: menuBackgroundColor,
         color: contrastColor,

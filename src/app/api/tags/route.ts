@@ -34,8 +34,9 @@ export async function GET(request: NextRequest) {
       { tags },
       {
         headers: {
-          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
-          ...getSecurityHeaders(),
+          ...getSecurityHeaders({
+            'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+          }),
         },
       }
     )
