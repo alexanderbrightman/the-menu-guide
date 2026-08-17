@@ -1,22 +1,34 @@
 import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { PublicMenuPage } from '@/components/public/PublicMenuPage'
+import { JsonLd } from '@/components/public/JsonLd'
 import { validatePremiumAccess } from '@/lib/premium-validation'
 import { getGoogleMenuFontHref } from '@/lib/fonts'
+import { menuItemJsonLd, restaurantJsonLd } from '@/lib/menu-json-ld'
+import { parseItemSearchParam, publicMenuMetadata } from '@/lib/menu-metadata'
+import { siteOrigin } from '@/lib/site-url'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-interface PublicProfilePageProps {
-  params: {
-    username: string
-  }
+function isShareCrawler(userAgent: string) {
+  return /bot|crawler|spider|facebookexternalhit|WhatsApp|Slackbot|Twitterbot|LinkedInBot|Discordbot|TelegramBot|Applebot/i.test(
+    userAgent
+  )
 }
 
-export default async function PublicProfilePage({ params }: PublicProfilePageProps) {
+interface PublicProfilePageProps {
+  params: Promise<{ username: string }>
+  searchParams: Promise<{ item?: string | string[] }>
+}
+
+export default async function PublicProfilePage({ params, searchParams }: PublicProfilePageProps) {
   const { username } = await params
+  const query = await searchParams
+  const initialItemId = parseItemSearchParam(query.item)
 
   // Fetch profile by username
   const { data: profile, error: profileError } = await supabase
@@ -89,33 +101,46 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   const favoritedIds = favorites?.map((fav) => fav.menu_item_id) || []
   const menuFontHref = getGoogleMenuFontHref(profile.menu_font)
+  const origin = siteOrigin()
+  const sharedItem = initialItemId
+    ? (menuItems || []).find((item) => item.id === initialItemId)
+    : null
 
-  // Increment view count
-  await supabase
-    .from('profiles')
-    .update({ view_count: (profile.view_count || 0) + 1 })
-    .eq('id', profile.id)
+  const userAgent = (await headers()).get('user-agent') || ''
+  if (!isShareCrawler(userAgent)) {
+    await supabase
+      .from('profiles')
+      .update({ view_count: (profile.view_count || 0) + 1 })
+      .eq('id', profile.id)
+  }
 
   return (
     <>
       {menuFontHref && <link rel="stylesheet" href={menuFontHref} />}
+      <JsonLd data={restaurantJsonLd(profile, origin)} />
+      {sharedItem && (
+        <JsonLd data={menuItemJsonLd(profile, sharedItem, profile.currency, origin)} />
+      )}
       <PublicMenuPage
         profile={profile}
         categories={categories || []}
         menuItems={menuItems || []}
         tags={tags || []}
         favoritedIds={favoritedIds}
+        initialItemId={sharedItem?.id ?? null}
       />
     </>
   )
 }
 
-export async function generateMetadata({ params }: PublicProfilePageProps) {
+export async function generateMetadata({ params, searchParams }: PublicProfilePageProps) {
   const { username } = await params
+  const query = await searchParams
+  const itemId = parseItemSearchParam(query.item)
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, bio')
+    .select('id, username, display_name, bio, avatar_url, currency')
     .eq('username', username)
     .eq('is_public', true)
     .single()
@@ -126,8 +151,24 @@ export async function generateMetadata({ params }: PublicProfilePageProps) {
     }
   }
 
-  return {
-    title: `${profile.display_name} - Menu`,
-    description: profile.bio || `View ${profile.display_name}'s digital menu`,
+  let dish: {
+    id: string
+    title: string
+    description?: string | null
+    image_url?: string | null
+    price?: number | null
+  } | null = null
+
+  if (itemId) {
+    const { data: item } = await supabase
+      .from('menu_items')
+      .select('id, title, description, image_url, price')
+      .eq('id', itemId)
+      .eq('user_id', profile.id)
+      .eq('is_available', true)
+      .maybeSingle()
+    dish = item
   }
+
+  return publicMenuMetadata(profile, dish, profile.currency)
 }

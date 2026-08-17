@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback } from 'react'
+import { useState, useMemo, useEffect, useTransition, useDeferredValue, memo, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -25,6 +25,9 @@ import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { useChromeColor } from '@/hooks/useChromeColor'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
 import { PlaceActions } from '@/components/public/PlaceActions'
+import { ShareButton } from '@/components/public/ShareButton'
+import { dishShareDescription, dishShareTitle } from '@/lib/menu-json-ld'
+import { menuShareUrl, replaceMenuItemQuery } from '@/lib/site-url'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -37,6 +40,7 @@ interface PublicMenuPageProps {
   menuItems: MenuItemWithTags[]
   tags: TagType[]
   favoritedIds?: string[]
+  initialItemId?: string | null
 }
 
 const DEFAULT_MENU_BACKGROUND_COLOR = '#F5F5F5'
@@ -173,12 +177,33 @@ const MenuItemCard = memo(({
 
 MenuItemCard.displayName = 'MenuItemCard'
 
-export function PublicMenuPage({ profile, categories, menuItems, tags, favoritedIds = [] }: PublicMenuPageProps) {
+export function PublicMenuPage({
+  profile,
+  categories,
+  menuItems,
+  tags,
+  favoritedIds = [],
+  initialItemId = null,
+}: PublicMenuPageProps) {
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedItem, setSelectedItem] = useState<MenuItemWithTags | null>(null)
+  const [portalReady, setPortalReady] = useState(false)
+  const openedSharedItem = useRef(false)
   const [isPending, startTransition] = useTransition()
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    setPortalReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (openedSharedItem.current || !initialItemId) return
+    const item = menuItems.find((entry) => entry.id === initialItemId)
+    if (!item) return
+    openedSharedItem.current = true
+    setSelectedItem(item)
+  }, [initialItemId, menuItems])
 
   // Handler for image load errors
   const handleImageError = useCallback((url: string) => {
@@ -388,21 +413,24 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
 
   const handleItemSelect = useCallback((item: MenuItemWithTags) => {
     setSelectedItem(item)
+    replaceMenuItemQuery(item.id)
+  }, [])
+
+  const closeSelectedItem = useCallback(() => {
+    setSelectedItem(null)
+    replaceMenuItemQuery(null)
   }, [])
 
   const handleTagClickFromModal = useCallback((tagId: number) => {
-    // Close the modal
-    setSelectedItem(null)
-    // Set the selected tag filter
+    closeSelectedItem()
     startTransition(() => {
       setSelectedTags([tagId])
-      setSelectedCategory('all') // Reset category to show all items with this tag
+      setSelectedCategory('all')
     })
-    // Scroll to top of menu section after a brief delay to allow modal to close
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 100)
-  }, [])
+  }, [closeSelectedItem])
 
   // Memoize selectedTagsSet for tag button checks
   const selectedTagsSetForButtons = useMemo(() => new Set(selectedTags), [selectedTags])
@@ -415,11 +443,11 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
   useEffect(() => {
     if (!selectedItem) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedItem(null)
+      if (e.key === 'Escape') closeSelectedItem()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedItem])
+  }, [selectedItem, closeSelectedItem])
 
   return (
     <div className="min-h-screen transition-colors" style={themeStyle}>
@@ -528,6 +556,13 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
                   <Globe size={16} className="sm:w-5 sm:h-5" />
                 </a>
               )}
+              <ShareButton
+                url={menuShareUrl(profile.username)}
+                title={profile.display_name}
+                text={profile.bio || `${profile.display_name} menu`}
+                label="Share menu"
+                isDark={isDarkBackground}
+              />
             </div>
           </div>
         </div>
@@ -825,14 +860,27 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       </div>
 
       {/* Expanded menu item modal — portaled above page chrome */}
-      {selectedItem &&
-        typeof document !== 'undefined' &&
+      {portalReady &&
+        selectedItem &&
         createPortal(
           <div
             className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
-            onClick={() => setSelectedItem(null)}
+            onClick={closeSelectedItem}
           >
-            <ModalCloseButton onClose={() => setSelectedItem(null)} />
+            <ShareButton
+              variant="overlay"
+              url={menuShareUrl(profile.username, selectedItem.id)}
+              title={dishShareTitle(selectedItem.title, profile.display_name)}
+              text={
+                dishShareDescription(
+                  selectedItem.description,
+                  selectedItem.price,
+                  profile.currency
+                ) || undefined
+              }
+              label="Share dish"
+            />
+            <ModalCloseButton onClose={closeSelectedItem} />
             <div
               className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}

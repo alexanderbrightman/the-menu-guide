@@ -7,6 +7,7 @@ import {
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { siteOrigin } from "@/lib/site-url";
 
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
 
@@ -35,6 +36,7 @@ const raleway = Raleway({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: "The Menu Guide",
   description: "Create and manage your restaurant's digital menu",
   icons: {
