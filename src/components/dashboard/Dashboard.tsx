@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Utensils, LogOut } from 'lucide-react'
 import Image from 'next/image'
-import { ProfileEditForm } from '@/components/profile/ProfileEditForm'
+import { ProfileEditForm, type ProfileEditSection } from '@/components/profile/ProfileEditForm'
 import { ScanMenuModal } from '@/components/menu/ScanMenuModal'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
@@ -15,6 +15,7 @@ import { PreFixePage } from '@/components/profile/PreFixePage'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 import { MobileDashboardNav } from '@/components/dashboard/MobileDashboardNav'
 import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
+import { SetupChecklist } from '@/components/dashboard/SetupChecklist'
 import { useChromeColor } from '@/hooks/useChromeColor'
 import { DEFAULT_MENU_BACKGROUND_COLOR, DEFAULT_MENU_FONT, FONT_FAMILY_MAP } from '@/lib/fonts'
 import { menuThemeFontClassName } from '@/lib/menu-theme-fonts'
@@ -40,6 +41,7 @@ export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
   const [activeView, setActiveView] = useState<'menu' | 'happy-hour' | 'pre-fixe'>('menu')
   const [showProfileEdit, setShowProfileEdit] = useState(false)
+  const [profileEditSection, setProfileEditSection] = useState<ProfileEditSection | undefined>()
   const [showQrDialog, setShowQrDialog] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
 
@@ -67,6 +69,16 @@ export function Dashboard() {
   const profileUsername = profile?.username || ''
 
   // Sidebar action handlers
+  const openProfileEdit = useCallback((section?: ProfileEditSection) => {
+    setProfileEditSection(section)
+    setShowProfileEdit(true)
+  }, [])
+
+  const closeProfileEdit = useCallback(() => {
+    setShowProfileEdit(false)
+    setProfileEditSection(undefined)
+  }, [])
+
   const handleViewMenu = useCallback(() => {
     if (profile?.username && typeof window !== 'undefined') {
       window.open(`${window.location.origin}/menu/${profile.username}`, '_blank')
@@ -176,7 +188,7 @@ export function Dashboard() {
 
   // Listen for edit profile event from mobile toolbar
   useEffect(() => {
-    const handleOpenEditProfile = () => setShowProfileEdit(true)
+    const handleOpenEditProfile = () => openProfileEdit()
     const handleOpenQrCode = () => setShowQrDialog(true)
     window.addEventListener('open-edit-profile', handleOpenEditProfile)
     window.addEventListener('open-qr-code', handleOpenQrCode)
@@ -184,7 +196,7 @@ export function Dashboard() {
       window.removeEventListener('open-edit-profile', handleOpenEditProfile)
       window.removeEventListener('open-qr-code', handleOpenQrCode)
     }
-  }, [])
+  }, [openProfileEdit])
 
   if (!user || !profile) {
     return <div>Loading...</div>
@@ -220,7 +232,7 @@ export function Dashboard() {
         onScanMenu={handleScanMenu}
         onHappyHour={handleHappyHour}
         onPreFixe={handlePreFixe}
-        onEditProfile={() => setShowProfileEdit(true)}
+        onEditProfile={() => openProfileEdit()}
         onSignOut={handleSignOut}
         signingOut={signingOut}
         qrCodeUrl={qrCodeUrl}
@@ -301,6 +313,17 @@ export function Dashboard() {
         </header>
 
         <div className="flex flex-col gap-16 lg:gap-4 pb-20 lg:pt-4">
+          {activeView === 'menu' && (
+            <SetupChecklist
+              profile={profile}
+              isDark={isDarkBackground}
+              contrastColor={contrastColor}
+              backgroundColor={menuBackgroundColor}
+              borderClass={isDarkBackground ? 'border-white/10' : 'border-black/8'}
+              onEditProfile={openProfileEdit}
+              onGoToMenu={handleMenuView}
+            />
+          )}
           {activeView === 'menu' && <PrivateMenuPage />}
           {activeView === 'happy-hour' && <HappyHourPage />}
           {activeView === 'pre-fixe' && <PreFixePage />}
@@ -325,13 +348,15 @@ export function Dashboard() {
         onNewItem={handleNewItem}
         onNewCategory={handleNewCategory}
         onScanMenu={handleScanMenu}
-        onEditProfile={() => setShowProfileEdit(true)}
+        onEditProfile={() => openProfileEdit()}
         backgroundColor={menuBackgroundColor}
         contrastColor={contrastColor}
         isDarkBackground={isDarkBackground}
       />
 
-      {showProfileEdit && <ProfileEditForm onClose={() => setShowProfileEdit(false)} />}
+      {showProfileEdit && (
+        <ProfileEditForm onClose={closeProfileEdit} focusSection={profileEditSection} />
+      )}
 
       <QrCodeDialog
         open={showQrDialog}

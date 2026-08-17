@@ -189,7 +189,7 @@ export function DashboardSidebar({
 
         if (item.isDialog && item.id === 'settings') {
             return (
-                <SettingsDialog key={item.id}>
+                <SettingsDialog key={item.id} listenForGlobalOpen>
                     <button
                         {...buttonProps}
                     >

@@ -107,6 +107,10 @@ export interface Profile {
   latitude?: number
   longitude?: number
   address?: string
+  phone?: string | null
+  reservation_url?: string | null
+  /** Per-day hours keyed "0"–"6" (Sunday–Saturday). */
+  opening_hours?: Record<string, { closed: boolean; open: string; close: string }> | null
   created_at: string
 }
 

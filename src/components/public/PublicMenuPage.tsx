@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Filter, Instagram, Globe, Utensils } from 'lucide-react'
+import { Filter, Instagram, Globe, Home } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
 import { formatPrice } from '@/lib/currency'
 import { getContrastColor, getAllergenTagStyle, ALLERGEN_TAGS } from '@/lib/utils'
@@ -24,6 +24,7 @@ import { CategoryDivider } from './CategoryDivider'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { useChromeColor } from '@/hooks/useChromeColor'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
+import { PlaceActions } from '@/components/public/PlaceActions'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -426,14 +427,27 @@ export function PublicMenuPage({ profile, categories, menuItems, tags, favorited
       <div id="google_translate_element" className="hidden"></div>
 
       <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-1">
-        {/* Home Link Icon */}
-        <div className="flex justify-end mb-4">
+        <div className="mb-4 flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <PlaceActions
+              layout="bar"
+              place={{
+                address: profile.address,
+                latitude: profile.latitude,
+                longitude: profile.longitude,
+                phone: profile.phone,
+                reservation_url: profile.reservation_url,
+                opening_hours: profile.opening_hours,
+              }}
+              isDark={isDarkBackground}
+            />
+          </div>
           <Link
             href="/"
-            className={`p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-            aria-label="Go to The Menu Guide home"
+            className={`flex-shrink-0 p-2 rounded-full transition-colors ${isDarkBackground ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+            aria-label="Home"
           >
-            <Utensils className="h-5 w-5" strokeWidth={1.5} style={{ color: isDarkBackground ? '#ffffff' : '#000000' }} />
+            <Home className="h-5 w-5" strokeWidth={1.5} style={{ color: isDarkBackground ? '#ffffff' : '#000000' }} />
           </Link>
         </div>
 

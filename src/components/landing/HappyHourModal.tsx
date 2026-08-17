@@ -19,6 +19,7 @@ import {
   floatingImageShadow,
 } from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
+import { PlaceActions } from '@/components/public/PlaceActions'
 
 interface Props {
   entry: HappyHourEntry
@@ -125,6 +126,8 @@ export function HappyHourModal({ entry, onClose }: Props) {
                 {menu.description}
               </p>
             )}
+
+            <PlaceActions place={restaurant} compact surface="glass" />
           </div>
         </div>
 

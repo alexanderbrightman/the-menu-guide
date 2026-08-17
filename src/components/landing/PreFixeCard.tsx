@@ -13,6 +13,7 @@ import {
 import { SmartImage } from '@/components/ui/smart-image'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
+import type { DiscoverRestaurant } from '@/lib/place-links'
 
 export interface PreFixeEntry {
   menu: {
@@ -36,13 +37,7 @@ export interface PreFixeEntry {
     }[]
     is_active_now: boolean
   }
-  restaurant: {
-    id: string
-    username: string
-    display_name: string
-    avatar_url: string | null
-    address: string | null
-  }
+  restaurant: DiscoverRestaurant
   distance: number | null
 }
 

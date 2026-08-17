@@ -22,9 +22,10 @@ import { useMenuTheme } from '@/hooks/useMenuTheme'
 interface SettingsDialogProps {
   triggerClassName?: string
   children?: React.ReactNode
+  listenForGlobalOpen?: boolean
 }
 
-export function SettingsDialog({ triggerClassName, children }: SettingsDialogProps) {
+export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen = false }: SettingsDialogProps) {
   const { user, profile, refreshProfile } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
   const [isPublic, setIsPublic] = useState(profile?.is_public || false)
@@ -60,6 +61,13 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
       }
     }
   }, [profile])
+
+  useEffect(() => {
+    if (!listenForGlobalOpen) return
+    const handler = () => setShowSettings(true)
+    window.addEventListener('open-settings', handler)
+    return () => window.removeEventListener('open-settings', handler)
+  }, [listenForGlobalOpen])
 
   // Username validation
   const validateUsername = useCallback(async (usernameValue: string) => {
@@ -482,6 +490,9 @@ export function SettingsDialog({ triggerClassName, children }: SettingsDialogPro
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600">✗</div>
                   )}
                 </div>
+                <p className={`text-xs ${mutedTextClass}`}>
+                  When changed, the unique QR code changes as well
+                </p>
                 {usernameMessage && (
                   <p className={`text-xs ${usernameStatus === 'available'
                     ? 'text-green-600'

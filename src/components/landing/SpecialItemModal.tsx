@@ -16,26 +16,8 @@ import {
   floatingImageShadow,
 } from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
-
-interface Special {
-    item: {
-        id: string
-        title: string
-        description: string | null
-        price: number | null
-        image_url: string | null
-        category: string | null
-        tags?: { id: number; name: string }[]
-    }
-    restaurant: {
-        id: string
-        username: string
-        display_name: string
-        avatar_url: string | null
-        address: string | null
-    }
-    distance: number | null
-}
+import type { Special } from '@/components/landing/SpecialsCard'
+import { PlaceActions } from '@/components/public/PlaceActions'
 
 interface SpecialItemModalProps {
     special: Special
@@ -141,6 +123,8 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                                 ))}
                             </div>
                         )}
+
+                        <PlaceActions place={restaurant} compact surface="glass" />
                     </div>
                 </div>
 

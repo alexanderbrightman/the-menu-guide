@@ -4,6 +4,7 @@ import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
 import { secureJsonResponse } from '@/lib/security'
 import { calculateDistanceMiles, isActiveNow } from '@/lib/geo'
 import { requirePremium } from '@/lib/premium-server'
+import { toDiscoverRestaurant } from '@/lib/place-links'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
             prefxe_item_tags ( tags ( id, name ) )
           )
         ),
-        profiles!inner ( id, username, display_name, avatar_url, address, latitude, longitude )
+        profiles!inner ( id, username, display_name, avatar_url, address, latitude, longitude, phone, reservation_url, opening_hours )
       `)
       .eq('is_active', true)
       .eq('profiles.is_public', true)
@@ -87,13 +88,7 @@ export async function GET(request: NextRequest) {
           courses,
           is_active_now: startTime && endTime ? isActiveNow(days, startTime, endTime) : false,
         },
-        restaurant: {
-          id: profile.id,
-          username: profile.username,
-          display_name: profile.display_name,
-          avatar_url: profile.avatar_url,
-          address: profile.address,
-        },
+        restaurant: toDiscoverRestaurant(profile),
         distance,
       }
     })

@@ -26,6 +26,19 @@ export function sanitizeFilename(filename: string): string {
 }
 
 /**
+ * Validate a phone number guests can tap-to-call.
+ * Allows common formatting; requires 7–15 digits.
+ */
+export function sanitizePhone(input: string): string | null {
+  const trimmed = input.trim().slice(0, 32)
+  if (!trimmed) return null
+  if (!/^[+\d().\s-]+$/.test(trimmed)) return null
+  const digits = trimmed.replace(/\D/g, '')
+  if (digits.length < 7 || digits.length > 15) return null
+  return trimmed
+}
+
+/**
  * Validate and sanitize URL input
  */
 export function sanitizeUrl(url: string): string | null {

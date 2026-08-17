@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSecurityHeaders } from '@/lib/security'
 import { createClient } from '@supabase/supabase-js'
 import { calculateDistanceMiles } from '@/lib/geo'
+import { toDiscoverRestaurant } from '@/lib/place-links'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -46,7 +47,10 @@ export async function GET(request: NextRequest) {
           avatar_url,
           latitude,
           longitude,
-          address
+          address,
+          phone,
+          reservation_url,
+          opening_hours
         )
       `)
             .eq('profiles.is_public', true)
@@ -110,15 +114,7 @@ export async function GET(request: NextRequest) {
                             name: t.tags.name,
                         })),
                     },
-                    restaurant: {
-                        id: restaurant.id,
-                        username: restaurant.username,
-                        display_name: restaurant.display_name,
-                        avatar_url: restaurant.avatar_url,
-                        address: restaurant.address,
-                        latitude: restaurant.latitude,
-                        longitude: restaurant.longitude,
-                    },
+                    restaurant: toDiscoverRestaurant(restaurant),
                     distance,
                 }
             })

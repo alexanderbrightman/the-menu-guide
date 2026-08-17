@@ -13,6 +13,7 @@ import { SmartImage } from '@/components/ui/smart-image'
 import { formatDistanceMiles } from '@/lib/geo'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
+import type { DiscoverRestaurant } from '@/lib/place-links'
 
 export interface Special {
   item: {
@@ -24,13 +25,7 @@ export interface Special {
     category: string | null
     tags?: { id: number; name: string }[]
   }
-  restaurant: {
-    id: string
-    username: string
-    display_name: string
-    avatar_url: string | null
-    address: string | null
-  }
+  restaurant: DiscoverRestaurant
   distance: number | null
 }
 

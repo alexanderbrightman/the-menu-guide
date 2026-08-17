@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, type RefObject } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -9,14 +9,21 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Upload, X, Check, MapPin } from 'lucide-react'
+import { MapPin, Clock, Phone } from 'lucide-react'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
-import { getContrastColor } from '@/lib/utils'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { resolveAddressViaApi } from '@/lib/geocoding'
 import { AddressAutocomplete } from '@/components/profile/AddressAutocomplete'
+import { OpeningHoursEditor } from '@/components/profile/OpeningHoursEditor'
+import {
+  emptyOpeningHours,
+  parseOpeningHours,
+  serializeOpeningHours,
+  type OpeningHours,
+} from '@/lib/opening-hours'
+import { sanitizePhone, sanitizeUrl } from '@/lib/sanitize'
 import {
   DEFAULT_MENU_FONT,
   LIGHT_MODE_BACKGROUND,
@@ -25,11 +32,14 @@ import {
   FONT_FAMILY_MAP
 } from '@/lib/fonts'
 
+export type ProfileEditSection = 'photo' | 'address' | 'hours' | 'contact'
+
 interface ProfileEditFormProps {
   onClose: () => void
+  focusSection?: ProfileEditSection
 }
 
-export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
+export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps) {
   const { profile, refreshProfile } = useAuth()
   const { uploadImage, uploading } = useImageUpload()
 
@@ -45,11 +55,21 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     instagram_url: profile?.instagram_url || '',
     website_url: profile?.website_url || '',
     address: profile?.address || '',
+    phone: profile?.phone || '',
+    reservation_url: profile?.reservation_url || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
     is_dark_mode: isDarkModeFromColor(profile?.menu_background_color),
     menu_card_style: (profile?.menu_card_style === 'classic' ? 'classic' : 'minimal') as 'classic' | 'minimal',
     show_display_name: true
   })
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(
+    parseOpeningHours(profile?.opening_hours) ?? emptyOpeningHours()
+  )
+  const [hoursTouched, setHoursTouched] = useState(focusSection === 'hours')
+  const photoSectionRef = useRef<HTMLDivElement>(null)
+  const addressSectionRef = useRef<HTMLDivElement>(null)
+  const hoursSectionRef = useRef<HTMLDivElement>(null)
+  const contactSectionRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [avatarError, setAvatarError] = useState(false)
@@ -87,11 +107,15 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         instagram_url: profile.instagram_url || '',
         website_url: profile.website_url || '',
         address: profile.address || '',
+        phone: profile.phone || '',
+        reservation_url: profile.reservation_url || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
         is_dark_mode: isDarkModeFromColor(profile.menu_background_color),
         menu_card_style: profile.menu_card_style === 'classic' ? 'classic' : 'minimal',
         show_display_name: true
       })
+      const parsedHours = parseOpeningHours(profile.opening_hours)
+      if (parsedHours) setOpeningHours(parsedHours)
       if (profile.latitude != null && profile.longitude != null) {
         setPendingCoords({ latitude: profile.latitude, longitude: profile.longitude })
         setCoordsFromSelection(true)
@@ -145,6 +169,25 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
     }
   }, []) // Run once when component mounts (when dialog opens)
 
+  useEffect(() => {
+    if (!focusSection) return
+    const refs: Record<ProfileEditSection, RefObject<HTMLDivElement | null>> = {
+      photo: photoSectionRef,
+      address: addressSectionRef,
+      hours: hoursSectionRef,
+      contact: contactSectionRef,
+    }
+    const timeoutId = window.setTimeout(() => {
+      refs[focusSection].current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 550)
+    return () => window.clearTimeout(timeoutId)
+  }, [focusSection])
+
+  const handleHoursChange = (hours: OpeningHours) => {
+    setHoursTouched(true)
+    setOpeningHours(hours)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -174,6 +217,8 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
       // Validate URLs if provided
       const instagramUrl = formData.instagram_url.trim()
       const websiteUrl = formData.website_url.trim()
+      const reservationUrl = formData.reservation_url.trim()
+      const phoneInput = formData.phone.trim()
 
       if (instagramUrl && !instagramUrl.match(/^https?:\/\//)) {
         clearTimeout(timeoutId)
@@ -187,6 +232,47 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         setMessage('Website URL must start with http:// or https://')
         setLoading(false)
         return
+      }
+
+      if (reservationUrl && !reservationUrl.match(/^https?:\/\//)) {
+        clearTimeout(timeoutId)
+        setMessage('Reservation link must start with http:// or https://')
+        setLoading(false)
+        return
+      }
+
+      const sanitizedInstagram = instagramUrl ? sanitizeUrl(instagramUrl) : null
+      const sanitizedWebsite = websiteUrl ? sanitizeUrl(websiteUrl) : null
+      const sanitizedReservation = reservationUrl ? sanitizeUrl(reservationUrl) : null
+
+      if (instagramUrl && !sanitizedInstagram) {
+        clearTimeout(timeoutId)
+        setMessage('Instagram URL is not valid')
+        setLoading(false)
+        return
+      }
+      if (websiteUrl && !sanitizedWebsite) {
+        clearTimeout(timeoutId)
+        setMessage('Website URL is not valid')
+        setLoading(false)
+        return
+      }
+      if (reservationUrl && !sanitizedReservation) {
+        clearTimeout(timeoutId)
+        setMessage('Reservation link is not valid')
+        setLoading(false)
+        return
+      }
+
+      let phone: string | null = null
+      if (phoneInput) {
+        phone = sanitizePhone(phoneInput)
+        if (!phone) {
+          clearTimeout(timeoutId)
+          setMessage('Enter a valid phone number guests can tap to call')
+          setLoading(false)
+          return
+        }
       }
 
       // Resolve coordinates for address
@@ -213,22 +299,29 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
         }
       }
 
-      // Update profile
+      const hadHours = Boolean(parseOpeningHours(profile.opening_hours))
+      const updatePayload: Record<string, unknown> = {
+        display_name: formData.display_name.trim(),
+        bio: formData.bio.trim(),
+        instagram_url: sanitizedInstagram,
+        website_url: sanitizedWebsite,
+        address: address || null,
+        latitude: latitude,
+        longitude: longitude,
+        phone,
+        reservation_url: sanitizedReservation,
+        menu_font: formData.menu_font,
+        menu_background_color: formData.is_dark_mode ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND,
+        menu_card_style: formData.menu_card_style,
+        show_display_name: true
+      }
+      if (hadHours || hoursTouched) {
+        updatePayload.opening_hours = serializeOpeningHours(openingHours)
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          display_name: formData.display_name.trim(),
-          bio: formData.bio.trim(),
-          instagram_url: instagramUrl || null,
-          website_url: websiteUrl || null,
-          address: address || null,
-          latitude: latitude,
-          longitude: longitude,
-          menu_font: formData.menu_font,
-          menu_background_color: formData.is_dark_mode ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND,
-          menu_card_style: formData.menu_card_style,
-          show_display_name: true
-        })
+        .update(updatePayload)
         .eq('id', profile.id)
 
       if (error) {
@@ -397,7 +490,7 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
 
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               {/* Header Photo */}
-              <div className="space-y-2">
+              <div ref={photoSectionRef} className="space-y-2 scroll-mt-4">
                 <Label className={primaryTextClass}>Profile Image</Label>
                 <div className="flex justify-center">
                   <div className={`relative h-36 w-36 overflow-hidden rounded-full bg-secondary/20 group`}>
@@ -452,6 +545,77 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                   />
                 </div>
 
+              </div>
+
+              {/* Location, hours, and how guests reach you */}
+              <div ref={addressSectionRef} className="space-y-4 pt-2 scroll-mt-4">
+                <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </Label>
+                <AddressAutocomplete
+                  value={formData.address}
+                  latitude={pendingCoords?.latitude ?? null}
+                  longitude={pendingCoords?.longitude ?? null}
+                  onChange={handleAddressChange}
+                  primaryTextClass={primaryTextClass}
+                  secondaryTextClass={secondaryTextClass}
+                  borderClass={getBorderColor()}
+                />
+                <p className={`text-xs ${secondaryTextClass}`}>
+                  Start typing and pick a suggestion so locals can find you on the homepage.
+                </p>
+              </div>
+
+              <div ref={hoursSectionRef} className="space-y-3 pt-2 scroll-mt-4">
+                <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
+                  <Clock className="h-4 w-4" />
+                  Hours
+                </Label>
+                <p className={`text-xs ${secondaryTextClass}`}>
+                  Tap Open or Closed for each day. Overnight (5:00pm–2:00am) is supported.
+                </p>
+                <OpeningHoursEditor
+                  value={openingHours}
+                  onChange={handleHoursChange}
+                  primaryTextClass={primaryTextClass}
+                  secondaryTextClass={secondaryTextClass}
+                  borderClass={getBorderColor()}
+                />
+              </div>
+
+              <div ref={contactSectionRef} className="space-y-4 pt-2 scroll-mt-4">
+                <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
+                  <Phone className="h-4 w-4" />
+                  Call &amp; reserve
+                </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className={secondaryTextClass}>Phone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="(555) 123-4567"
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reservation_url" className={secondaryTextClass}>Reservation link</Label>
+                  <Input
+                    id="reservation_url"
+                    type="url"
+                    value={formData.reservation_url}
+                    onChange={(e) => setFormData({ ...formData, reservation_url: e.target.value })}
+                    placeholder="https://resy.com/... or OpenTable"
+                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                  />
+                  <p className={`text-xs ${secondaryTextClass}`}>
+                    Guests get a Reserve button on your menu and on homepage specials.
+                  </p>
+                </div>
               </div>
 
               {/* Theme controls */}
@@ -518,27 +682,6 @@ export function ProfileEditForm({ onClose }: ProfileEditFormProps) {
                 </div>
               </div>
 
-              {/* Location */}
-              <div className="space-y-4 pt-2">
-                <Label className={`${primaryTextClass} text-base font-semibold flex items-center gap-2`}>
-                  <MapPin className="h-4 w-4" />
-                  Location
-                </Label>
-                <AddressAutocomplete
-                  value={formData.address}
-                  latitude={pendingCoords?.latitude ?? null}
-                  longitude={pendingCoords?.longitude ?? null}
-                  onChange={handleAddressChange}
-                  primaryTextClass={primaryTextClass}
-                  secondaryTextClass={secondaryTextClass}
-                  borderClass={getBorderColor()}
-                />
-                <p className={`text-xs ${secondaryTextClass}`}>
-                  Used for Local Specials, Happy Hour, and Pre Fixe on the homepage.
-                </p>
-              </div>
-
-              {/* Bio */}
               <div className="space-y-2 pt-2">
                 <Label htmlFor="bio" className={primaryTextClass}>Bio</Label>
                 <Textarea
