@@ -1,75 +1,99 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { sanitizeTextInput, sanitizePrice } from '@/lib/sanitize'
+import { sanitizePrice } from '@/lib/sanitize'
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
 import { checkRateLimit, getRateLimitHeaders, AI_SCAN_RATE_LIMIT } from '@/lib/rate-limiting'
 import { PREMIUM_API_HEADERS } from '@/lib/premium-validation'
 import { requirePremium } from '@/lib/premium-server'
+import { isExtraKind, type ExtraKind, type ScannedExtra, type ScannedMenuItem } from '@/lib/menu-extras'
 
 export const runtime = 'nodejs'
-// Allow enough time for the Gemini call plus DB writes on Vercel
 export const maxDuration = 60
 
-// Maximum file size (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MIN_FILE_SIZE = 5 * 1024
-
-// Abort the Gemini call if it takes longer than this
 const GEMINI_TIMEOUT_MS = 45000
+const MAX_SCAN_ITEMS = 50
+const MAX_EXTRAS = 20
 
-// Initialize Gemini client lazily (only when needed)
 const getGeminiClient = () => {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
   if (!apiKey) throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured')
   return new GoogleGenerativeAI(apiKey)
 }
 
-interface ParsedMenuItem {
-  title: string
-  description?: string | null
-  price?: number | null
-  category?: string | null
+function namedPrices(raw: unknown, kind: ExtraKind): ScannedExtra[] {
+  if (!Array.isArray(raw)) return []
+  const extras: ScannedExtra[] = []
+  for (const entry of raw) {
+    if (extras.length >= MAX_EXTRAS) break
+    if (typeof entry !== 'object' || entry === null) continue
+    const record = entry as Record<string, unknown>
+    const name = typeof record.name === 'string' ? record.name.trim() : ''
+    if (!name) continue
+    const price = sanitizePrice(record.price as string | number)
+    if (price === null) continue
+    extras.push({ kind, name: name.slice(0, 120), price })
+  }
+  return extras
 }
 
-interface ParsedMenu {
-  items: ParsedMenuItem[]
-}
-
-type CategoryRecord = { id: string; name: string }
-
-/**
- * Validate and normalize the AI's JSON output. The model's response is
- * untrusted input: fields may be missing, of the wrong type, or absurdly
- * long. Returns null when the payload doesn't match the expected shape.
- */
-function normalizeParsedMenu(raw: unknown): ParsedMenu | null {
+function normalizeParsedMenu(raw: unknown): ScannedMenuItem[] | null {
   if (typeof raw !== 'object' || raw === null) return null
   const items = (raw as { items?: unknown }).items
   if (!Array.isArray(items)) return null
 
-  const normalized: ParsedMenuItem[] = []
+  const normalized: ScannedMenuItem[] = []
   for (const item of items) {
     if (typeof item !== 'object' || item === null) continue
     const record = item as Record<string, unknown>
 
-    const title = typeof record.title === 'string' ? record.title : ''
-    if (!title.trim()) continue
+    const title = typeof record.title === 'string' ? record.title.trim() : ''
+    if (!title) continue
+
+    const variants = namedPrices(record.variants, 'variant')
+    const addons = namedPrices(record.addons, 'addon')
+    const extrasFromModel = Array.isArray(record.extras)
+      ? record.extras.flatMap((entry) => {
+          if (typeof entry !== 'object' || entry === null) return []
+          const extra = entry as Record<string, unknown>
+          if (!isExtraKind(extra.kind)) return []
+          return namedPrices([extra], extra.kind)
+        })
+      : []
+
+    const extras = [...variants, ...addons, ...extrasFromModel].slice(0, MAX_EXTRAS)
+    const variantPrices = extras.filter((extra) => extra.kind === 'variant').map((extra) => extra.price)
+
+    let price =
+      typeof record.price === 'number' || typeof record.price === 'string'
+        ? sanitizePrice(record.price)
+        : null
+    if (price === null && variantPrices.length > 0) {
+      price = Math.min(...variantPrices)
+    }
 
     normalized.push({
-      title,
-      description: typeof record.description === 'string' ? record.description : null,
-      price: typeof record.price === 'number' || typeof record.price === 'string' ? sanitizePrice(record.price) : null,
-      category: typeof record.category === 'string' ? record.category : null,
+      title: title.slice(0, 200),
+      description:
+        typeof record.description === 'string' && record.description.trim()
+          ? record.description.trim().slice(0, 1000)
+          : null,
+      price,
+      category:
+        typeof record.category === 'string' && record.category.trim()
+          ? record.category.trim().slice(0, 80)
+          : null,
+      extras,
     })
   }
 
-  return { items: normalized }
+  return normalized
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Get and validate auth token
     const token = getAuthToken(request)
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
@@ -81,8 +105,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getSecurityHeaders() })
     }
 
-    // AI scanning is a premium feature - enforce server-side (the client UI
-    // gate alone can be bypassed with a direct API call)
     const premiumGate = await requirePremium(supabase, user.id, 'AI menu scanning')
     if (!premiumGate.ok) {
       return NextResponse.json(premiumGate.body, {
@@ -94,7 +116,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Tight rate limiting: each scan is a paid Gemini vision call
     const rateLimit = checkRateLimit(
       request,
       user.id,
@@ -116,7 +137,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const userId = formData.get('userId') as string | null
@@ -129,7 +149,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400, headers: getSecurityHeaders() })
     }
 
-    // Validate file
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
@@ -152,41 +171,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to base64
     const arrayBuffer = await file.arrayBuffer()
     const base64 = Buffer.from(arrayBuffer).toString('base64')
-    const mimeType = file.type
 
-    // Prepare Gemini client and structured extraction prompt
     const genAI = getGeminiClient()
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0,
-        maxOutputTokens: 3000,
+        maxOutputTokens: 8192,
       },
     })
 
-    const structuredPrompt = `Extract menu items from this image. Return JSON only:
+    const structuredPrompt = `Extract menu items from this photo of a printed menu. Copy the restaurant's wording. Do not rewrite, translate, or invent dishes. Return JSON only:
 {
   "items": [
-    {"title": "string", "description": "string | null", "price": number | null, "category": "string | null"}
+    {
+      "title": "string",
+      "description": "string | null",
+      "price": number | null,
+      "category": "string | null",
+      "variants": [{"name": "string", "price": number}],
+      "addons": [{"name": "string", "price": number}]
+    }
   ]
 }
-Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories from section headers. If an item has multiple price options (e.g., small/large, lunch/dinner), set price to the lowest option and append all pricing options to the description (e.g., "Small: $8 | Medium: $10 | Large: $12"). No markdown, no extra text.`
+Rules:
+- Use null or [] for missing fields. Prices as decimals (12.00). Infer categories from section headers.
+- variants: mutually exclusive prices for the same dish (size, lunch/dinner, glass/bottle). Each price is the full price for that choice.
+- addons: optional extras with an additional charge (Add crab 12). price is the extra amount, not a new total.
+- If only one price is printed, set price and leave variants and addons empty.
+- If variants exist, set price to the lowest variant. Do not repeat those prices in description.
+- Do not put add-on prices in description.
+- If a price is unreadable, use null rather than guessing.
+- No markdown, no extra text.`
 
-    const imageData = {
-      inlineData: {
-        data: base64,
-        mimeType: mimeType as string,
-      },
-    }
-
-    // Race the Gemini call against a hard timeout so a hung request can't
-    // hold the connection open until the platform kills it
     const parseResponse = await Promise.race([
-      model.generateContent([structuredPrompt, imageData]),
+      model.generateContent([
+        structuredPrompt,
+        {
+          inlineData: {
+            data: base64,
+            mimeType: file.type,
+          },
+        },
+      ]),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('GEMINI_TIMEOUT')), GEMINI_TIMEOUT_MS)
       ),
@@ -205,9 +235,8 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       )
     }
 
-    // Validate the AI output shape before touching the database
-    const menuData = normalizeParsedMenu(rawMenuData)
-    if (!menuData) {
+    const items = normalizeParsedMenu(rawMenuData)
+    if (!items) {
       console.error('AI response did not match expected schema:', parsed.substring(0, 200))
       return NextResponse.json(
         { error: 'Received unexpected data from the scanner. Please try again.' },
@@ -215,108 +244,17 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
       )
     }
 
-    if (!menuData.items.length) {
+    if (!items.length) {
       return NextResponse.json(
         { error: 'No menu items found. Ensure the text is readable.' },
         { status: 400, headers: getSecurityHeaders() }
       )
     }
 
-    // Cap number of items to prevent very large inserts slowing down response
-    if (menuData.items.length > 50) {
-      menuData.items = menuData.items.slice(0, 50)
-    }
-
-    let itemsInserted = 0
-    let categoriesCreated = 0
-    const categoryMap = new Map<string, string>()
-
-    // Extract unique category names, sanitized identically to how they are
-    // looked up later (a mismatch here previously left items uncategorized)
-    const categoryNames = Array.from(
-      new Set(
-        menuData.items
-          .map((item) => (item.category ? sanitizeTextInput(item.category) : ''))
-          .filter((category): category is string => category.length > 0)
-      )
-    )
-
-    if (categoryNames.length > 0) {
-      // Fetch ALL user categories upfront so existing ones are reused
-      const { data: allUserCategories, error: categoriesFetchError } = await supabase
-        .from('menu_categories')
-        .select('id,name')
-        .eq('user_id', user.id)
-
-      if (categoriesFetchError) {
-        console.error('Error fetching categories:', categoriesFetchError)
-        return NextResponse.json(
-          { error: 'Failed to load your menu categories. Please try again.' },
-          { status: 500, headers: getSecurityHeaders() }
-        )
-      }
-
-      allUserCategories?.forEach((category) => {
-        categoryMap.set(category.name, category.id)
-      })
-
-      // Only create categories that don't exist
-      const missing = categoryNames.filter((n) => !categoryMap.has(n))
-      if (missing.length > 0) {
-        const { data: inserted, error: categoriesInsertError } = await supabase
-          .from('menu_categories')
-          .insert(missing.map((name) => ({ user_id: user.id, name })))
-          .select('id,name')
-
-        if (categoriesInsertError) {
-          console.error('Error creating categories:', categoriesInsertError)
-          return NextResponse.json(
-            { error: 'Failed to save menu categories. Please try again.' },
-            { status: 500, headers: getSecurityHeaders() }
-          )
-        }
-
-        const insertedCategories = inserted as CategoryRecord[] | null
-        insertedCategories?.forEach((category) => categoryMap.set(category.name, category.id))
-        categoriesCreated += insertedCategories?.length || 0
-      }
-    }
-
-    // Process items: no placeholder image needed (allows NULL per database schema)
-    const itemsToInsert = menuData.items
-      .map((item) => {
-        const title = sanitizeTextInput(item.title)
-        const description = item.description ? sanitizeTextInput(item.description) : null
-        const categoryName = item.category ? sanitizeTextInput(item.category) : null
-        const category_id = categoryName ? categoryMap.get(categoryName) || null : null
-        return {
-          user_id: user.id,
-          title,
-          description,
-          price: item.price,
-          category_id,
-          image_url: null, // No placeholder needed - allows users to add images later
-        }
-      })
-      .filter((menuItem) => menuItem.title.length > 0)
-
-    if (itemsToInsert.length > 0) {
-      const { error: itemsInsertError } = await supabase.from('menu_items').insert(itemsToInsert)
-      if (itemsInsertError) {
-        console.error('Error inserting menu items:', itemsInsertError)
-        return NextResponse.json(
-          { error: 'The menu was scanned but items could not be saved. Please try again.' },
-          { status: 500, headers: getSecurityHeaders() }
-        )
-      }
-      itemsInserted = itemsToInsert.length
-    }
-
     return NextResponse.json(
       {
-        itemsInserted,
-        categoriesCreated,
-        message: `Imported ${itemsInserted} item${itemsInserted !== 1 ? 's' : ''} successfully.`,
+        items: items.slice(0, MAX_SCAN_ITEMS),
+        message: `Found ${Math.min(items.length, MAX_SCAN_ITEMS)} item${Math.min(items.length, MAX_SCAN_ITEMS) !== 1 ? 's' : ''}. Review them before adding to your menu.`,
       },
       {
         headers: {
@@ -347,7 +285,6 @@ Rules: Use null for missing fields. Prices as decimals (12.00). Infer categories
     if (errorCode === 'insufficient_quota' || errorCode === 'RESOURCE_EXHAUSTED') {
       return NextResponse.json({ error: 'Scanning service temporarily unavailable. Please try again later.' }, { status: 503, headers: getSecurityHeaders() })
     }
-    // Generic message - never leak internal error details to the client
     return NextResponse.json({ error: 'An error occurred while scanning the menu' }, { status: 500, headers: getSecurityHeaders() })
   }
 }

@@ -6,7 +6,9 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, MenuCategory, MenuItemWithRelations, Tag as TagType } from '@/lib/supabase'
-import { formatPrice } from '@/lib/currency'
+import { extraDraftsToPayload, extrasToDrafts, formatStartingPrice, type ExtraDraft } from '@/lib/menu-extras'
+import { DishExtrasList } from '@/components/menu/DishExtrasList'
+import { ExtrasEditor } from '@/components/menu/ExtrasEditor'
 import { useImageUpload } from '@/hooks/useImageUpload'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -112,6 +114,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItemWithRelations | null>(null)
   const [itemForm, setItemForm] = useState<ItemFormState>(EMPTY_ITEM_FORM)
+  const [itemExtras, setItemExtras] = useState<ExtraDraft[]>([])
   const [itemCategory, setItemCategory] = useState<string>('none')
   const [itemTags, setItemTags] = useState<number[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -443,6 +446,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     const handleOpenCreateItem = () => {
       setEditingItem(null)
       setItemForm(EMPTY_ITEM_FORM)
+      setItemExtras([])
       setItemCategory('none')
       setItemTags([])
       setImageFile(null)
@@ -813,6 +817,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
   const startCreateItem = () => {
     setEditingItem(null)
     setItemForm(EMPTY_ITEM_FORM)
+    setItemExtras([])
     setItemCategory('none')
     setItemTags([])
     setImageFile(null)
@@ -832,6 +837,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     const tagIds =
       item.menu_item_tags?.filter((entry) => entry?.tags?.id).map((entry) => entry.tags.id) || []
     setItemTags(tagIds)
+    setItemExtras(extrasToDrafts(item.menu_item_extras))
     setImageFile(null)
     resetProgress()
     setIsItemSheetOpen(true)
@@ -842,6 +848,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       setIsItemSheetOpen(false)
       setEditingItem(null)
       setItemForm(EMPTY_ITEM_FORM)
+      setItemExtras([])
       setItemCategory('none')
       setItemTags([])
       setImageFile(null)
@@ -938,6 +945,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
           image_url: imageUrl, // Will be null if no image, or a valid URL string
           category_id: itemCategory === 'none' ? null : itemCategory,
           tag_ids: itemTags,
+          extras: extraDraftsToPayload(itemExtras),
         }
 
         const response = await fetch('/api/menu-items', {
@@ -1160,6 +1168,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                               onAddItem={() => {
                                 setEditingItem(null)
                                 setItemForm(EMPTY_ITEM_FORM)
+                                setItemExtras([])
                                 setItemCategory(category.id)
                                 setItemTags([])
                                 setImageFile(null)
@@ -1483,6 +1492,14 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                           />
                         </div>
 
+                        <ExtrasEditor
+                          extras={itemExtras}
+                          onChange={setItemExtras}
+                          textClass={primaryTextClass}
+                          mutedClass={mutedTextClass}
+                          borderClass={`border ${getBorderColor()}`}
+                        />
+
                         <div className="space-y-2">
                           <Label className={primaryTextClass}>Dietary Tags</Label>
                           <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-dashed" style={{ borderColor: getBorderColor() }}>
@@ -1559,9 +1576,9 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       >
                         {selectedItem.title}
                       </h2>
-                      {typeof selectedItem.price === 'number' && (
+                      {formatStartingPrice(selectedItem.price, selectedItem.menu_item_extras, profile?.currency) && (
                         <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
-                          {formatPrice(selectedItem.price, profile?.currency)}
+                          {formatStartingPrice(selectedItem.price, selectedItem.menu_item_extras, profile?.currency)}
                         </div>
                       )}
                     </div>
@@ -1592,6 +1609,12 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       {selectedItem.description}
                     </p>
                   )}
+
+                  <DishExtrasList
+                    extras={selectedItem.menu_item_extras}
+                    currency={profile?.currency}
+                    textClass={primaryTextClass}
+                  />
 
                   {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 pt-1">

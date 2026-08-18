@@ -3,6 +3,7 @@ import { sanitizeTextInput, sanitizeUrl, sanitizePrice, sanitizeUUID, sanitizeIn
 import { getSecurityHeaders } from '@/lib/security'
 import { createAuthenticatedClient, getAuthToken } from '@/lib/supabase-server'
 import { checkRateLimit, getRateLimitHeaders, PHOTO_UPLOAD_RATE_LIMIT, STRICT_RATE_LIMIT } from '@/lib/rate-limiting'
+import { MENU_ITEM_RELATIONS_SELECT, replaceMenuItemExtras } from '@/lib/menu-extras'
 
 // Maximum request body size (1MB)
 const MAX_REQUEST_SIZE = 1024 * 1024
@@ -43,13 +44,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('menu_items')
-      .select(`
-        *,
-        menu_categories(name),
-        menu_item_tags(
-          tags(id, name)
-        )
-      `)
+      .select(MENU_ITEM_RELATIONS_SELECT)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -131,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, price, category_id, image_url, tag_ids, is_available } = body
+    const { title, description, price, category_id, image_url, tag_ids, is_available, extras } = body
 
     // Sanitize inputs
     const sanitizedTitle = title ? sanitizeTextInput(title) : ''
@@ -174,7 +169,7 @@ export async function POST(request: NextRequest) {
         image_url: sanitizedImageUrl,
         is_available: is_available === undefined ? true : !!is_available
       })
-      .select()
+      .select(MENU_ITEM_RELATIONS_SELECT)
       .single()
 
     if (error) {
@@ -199,8 +194,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (extras !== undefined) {
+      const extrasError = await replaceMenuItemExtras(supabase, item.id, extras)
+      if (extrasError) {
+        console.error('Error adding extras:', extrasError)
+      }
+    }
+
+    const { data: itemWithRelations } = await supabase
+      .from('menu_items')
+      .select(MENU_ITEM_RELATIONS_SELECT)
+      .eq('id', item.id)
+      .single()
+
     return NextResponse.json(
-      { item },
+      { item: itemWithRelations || item },
       {
         headers: {
           ...getSecurityHeaders(),
@@ -261,7 +269,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, title, description, price, category_id, image_url, tag_ids, is_available } = body
+    const { id, title, description, price, category_id, image_url, tag_ids, is_available, extras } = body
 
     // Validate and sanitize ID (required)
     const sanitizedId = sanitizeUUID(id)
@@ -365,7 +373,7 @@ export async function PATCH(request: NextRequest) {
       .update(updateData)
       .eq('id', sanitizedId)
       .eq('user_id', user.id)
-      .select()
+      .select(MENU_ITEM_RELATIONS_SELECT)
       .single()
 
     if (error) {
@@ -398,8 +406,22 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (extras !== undefined) {
+      const extrasError = await replaceMenuItemExtras(supabase, sanitizedId, extras)
+      if (extrasError) {
+        console.error('Error updating extras:', extrasError)
+      }
+    }
+
+    const { data: itemWithRelations } = await supabase
+      .from('menu_items')
+      .select(MENU_ITEM_RELATIONS_SELECT)
+      .eq('id', sanitizedId)
+      .eq('user_id', user.id)
+      .single()
+
     return NextResponse.json(
-      { item },
+      { item: itemWithRelations || item },
       {
         headers: {
           ...getSecurityHeaders(),

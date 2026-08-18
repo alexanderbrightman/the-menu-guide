@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import type { MenuItemExtra } from '@/lib/menu-extras'
+
+export type { ExtraKind, MenuItemExtra } from '@/lib/menu-extras'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
@@ -133,6 +136,7 @@ export interface MenuItem {
   sort_order?: number
   is_available?: boolean
   created_at: string
+  menu_item_extras?: MenuItemExtra[]
 }
 
 export interface Tag {
@@ -154,4 +158,5 @@ export interface UserFavorite {
 export interface MenuItemWithRelations extends MenuItem {
   menu_categories?: { name: string }
   menu_item_tags?: { tags: { id: number; name: string } }[]
+  menu_item_extras?: MenuItemExtra[]
 }

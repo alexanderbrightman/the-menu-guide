@@ -81,7 +81,8 @@ export default async function PublicProfilePage({ params, searchParams }: Public
       menu_categories(name),
       menu_item_tags(
         tags(id, name)
-      )
+      ),
+      menu_item_extras(id, kind, name, price, sort_order)
     `)
     .eq('user_id', profile.id)
     .eq('is_available', true)

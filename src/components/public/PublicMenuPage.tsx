@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Filter, Instagram, Globe, Home } from 'lucide-react'
 import { Profile, MenuCategory, MenuItem, Tag as TagType } from '@/lib/supabase'
-import { formatPrice } from '@/lib/currency'
 import { getContrastColor, getAllergenTagStyle, ALLERGEN_TAGS } from '@/lib/utils'
 import { DEFAULT_MENU_FONT, FONT_FAMILY_MAP } from '@/lib/fonts'
 import { SmartImage } from '@/components/ui/smart-image'
@@ -28,6 +27,8 @@ import { PlaceActions } from '@/components/public/PlaceActions'
 import { ShareButton } from '@/components/public/ShareButton'
 import { dishShareDescription, dishShareTitle } from '@/lib/menu-json-ld'
 import { menuShareUrl, replaceMenuItemQuery } from '@/lib/site-url'
+import { formatStartingPrice } from '@/lib/menu-extras'
+import { DishExtrasList } from '@/components/menu/DishExtrasList'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -77,6 +78,7 @@ const MenuItemCard = memo(({
   onImageError: (url: string) => void
   priority?: boolean
 }) => {
+  const priceLabel = formatStartingPrice(item.price, item.menu_item_extras, currency)
   // Determine if we should show placeholder
   const hasValidImage = item.image_url && !failedImages.has(item.image_url)
 
@@ -126,9 +128,9 @@ const MenuItemCard = memo(({
             >
               {item.title}
             </h3>
-            {showPrices && item.price != null && (
+            {showPrices && priceLabel && (
               <p className={`mt-1 text-[12px] sm:text-[13px] font-medium notranslate ${priceClass}`}>
-                {formatPrice(item.price, currency)}
+                {priceLabel}
               </p>
             )}
             {item.description && (
@@ -159,9 +161,9 @@ const MenuItemCard = memo(({
           >
             {item.title}
           </h3>
-          {showPrices && item.price && (
+          {showPrices && priceLabel && (
             <div className={`font-semibold text-xs mt-1 ${priceClass} notranslate`}>
-              {formatPrice(item.price, currency)}
+              {priceLabel}
             </div>
           )}
         </div>
@@ -902,9 +904,9 @@ export function PublicMenuPage({
                       >
                         {selectedItem.title}
                       </h2>
-                      {showPrices && typeof selectedItem.price === 'number' && (
+                      {showPrices && formatStartingPrice(selectedItem.price, selectedItem.menu_item_extras, profile.currency) && (
                         <div className={`text-xl font-semibold whitespace-nowrap ${primaryTextClass} notranslate`}>
-                          {formatPrice(selectedItem.price, profile.currency)}
+                          {formatStartingPrice(selectedItem.price, selectedItem.menu_item_extras, profile.currency)}
                         </div>
                       )}
                     </div>
@@ -934,6 +936,14 @@ export function PublicMenuPage({
                     <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${primaryTextClass}`}>
                       {selectedItem.description}
                     </p>
+                  )}
+
+                  {showPrices && (
+                    <DishExtrasList
+                      extras={selectedItem.menu_item_extras}
+                      currency={profile.currency}
+                      textClass={primaryTextClass}
+                    />
                   )}
 
                   {selectedItem.menu_item_tags && selectedItem.menu_item_tags.length > 0 && (
