@@ -2,7 +2,7 @@
 
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getModalChromeGlassStyle } from '@/lib/glass-styles'
+import { getModalChromeGlassStyle, modalChromeRight, modalChromeTop } from '@/lib/glass-styles'
 
 interface ModalCloseButtonProps {
   onClose: () => void
@@ -38,8 +38,8 @@ export function ModalCloseButton({
         className
       )}
       style={{
-        top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-        right: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+        top: modalChromeTop,
+        right: modalChromeRight,
         ...getModalChromeGlassStyle(isDark),
       }}
     >

@@ -69,7 +69,7 @@ export function PreFixeModal({ entry, onClose }: Props) {
       <ModalCloseButton onClose={onClose} />
 
       <div
-        className={`w-full max-w-md md:max-w-2xl lg:max-w-3xl flex flex-col gap-4 my-auto px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
+        className={`w-full max-w-md md:max-w-2xl lg:max-w-3xl flex flex-col gap-4 px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Info island — mirrors specials layout */}

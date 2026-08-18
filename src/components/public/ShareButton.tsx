@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Share } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getModalChromeGlassStyle, glassTokens } from '@/lib/glass-styles'
+import { getModalChromeGlassStyle, glassTokens, modalChromeLeft, modalChromeTop } from '@/lib/glass-styles'
 
 interface ShareButtonProps {
   url: string
@@ -122,8 +122,8 @@ export function ShareButton({
             className
           )}
           style={{
-            top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-            left: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+            top: modalChromeTop,
+            left: modalChromeLeft,
             ...getModalChromeGlassStyle(isDark),
           }}
         >

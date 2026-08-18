@@ -16,6 +16,7 @@ import { SmartImage } from '@/components/ui/smart-image'
 import {
   getThemedModalDescriptionGlassStyle,
   modalContentTopPadClass,
+  modalContentBottomPadClass,
   floatingImageShadow,
   glassTokens,
 } from '@/lib/glass-styles'
@@ -885,7 +886,7 @@ export function PublicMenuPage({
             />
             <ModalCloseButton onClose={closeSelectedItem} isDark={isDarkBackground} />
             <div
-              className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
+              className={`w-full max-w-md flex flex-col gap-4 px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}
             >
               <div

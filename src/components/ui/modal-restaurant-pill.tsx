@@ -9,7 +9,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { getModalChromeGlassStyle } from '@/lib/glass-styles'
+import {
+  getModalChromeGlassStyle,
+  modalChromeLeft,
+  modalChromeRight,
+  modalChromeTop,
+} from '@/lib/glass-styles'
 import { formatHoursStatus } from '@/lib/opening-hours'
 import {
   mapsSearchUrl,
@@ -66,9 +71,9 @@ export function ModalRestaurantPill({
     <div
       className="fixed z-[110] flex items-center gap-2"
       style={{
-        top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-        left: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-        right: 'max(4rem, calc(env(safe-area-inset-right, 0px) + 3.25rem))',
+        top: modalChromeTop,
+        left: modalChromeLeft,
+        right: `calc(${modalChromeRight} + 3.25rem)`,
         fontFamily: APPLE_FONT,
       }}
       onClick={(e) => e.stopPropagation()}

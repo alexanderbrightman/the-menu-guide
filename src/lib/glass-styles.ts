@@ -86,12 +86,21 @@ export const glassClasses = {
 }
 
 /**
+ * Overlay chrome offset from the expanded fullscreen scrim (which is
+ * pulled outward by the safe-area insets). Matches landing header spacing
+ * (pt-2) so pills sit in the top corners instead of repeating the inset.
+ */
+export const modalChromeTop = 'calc(env(safe-area-inset-top, 0px) + 0.5rem)'
+export const modalChromeLeft = 'calc(env(safe-area-inset-left, 0px) + 0.75rem)'
+export const modalChromeRight = 'calc(env(safe-area-inset-right, 0px) + 0.75rem)'
+
+/**
  * Top padding for fullscreen modal content columns so islands clear the
  * fixed close / restaurant chrome with the same 1rem gap used between islands.
- * Chrome: 0.75rem offset + 2.75rem (h-11) + 1rem gap = 4.5rem (+ safe area).
+ * Chrome: 0.5rem offset + 2.75rem (h-11) + 1rem gap = 4.25rem (+ safe area).
  */
 export const modalContentTopPadClass =
-  'pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]'
+  'pt-[calc(env(safe-area-inset-top,0px)+4.25rem)]'
 
 /**
  * Bottom padding so modal content can scroll under iOS Safari’s translucent
