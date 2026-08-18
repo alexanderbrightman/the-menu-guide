@@ -12,13 +12,12 @@ import { CategoryDivider } from '@/components/public/CategoryDivider'
 import { getAllergenTagStyle } from '@/lib/utils'
 import { formatScheduleBadge } from '@/lib/geo'
 import {
-  glassCardStyle,
+  modalDescriptionGlassStyle,
   modalContentTopPadClass,
   modalContentBottomPadClass,
   floatingImageShadow,
 } from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
-import { PlaceActions } from '@/components/public/PlaceActions'
 
 interface Props {
   entry: PreFixeEntry
@@ -64,9 +63,7 @@ export function PreFixeModal({ entry, onClose }: Props) {
       onClick={onClose}
     >
       <ModalRestaurantPill
-        username={restaurant.username}
-        displayName={restaurant.display_name}
-        avatarUrl={restaurant.avatar_url}
+        restaurant={restaurant}
         subtitle={formatDistanceSubtitle(distance)}
       />
       <ModalCloseButton onClose={onClose} />
@@ -76,7 +73,7 @@ export function PreFixeModal({ entry, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Info island — mirrors specials layout */}
-        <div className="w-full rounded-[22px] p-6" style={glassCardStyle}>
+        <div className="w-full rounded-[22px] p-6" style={modalDescriptionGlassStyle}>
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
               <h2
@@ -132,8 +129,6 @@ export function PreFixeModal({ entry, onClose }: Props) {
                 {menu.description}
               </p>
             )}
-
-            <PlaceActions place={restaurant} compact surface="glass" />
           </div>
         </div>
 
@@ -194,7 +189,7 @@ export function PreFixeModal({ entry, onClose }: Props) {
                     </div>
 
                     {/* Text island keeps the liquid-glass highlight */}
-                    <div className="rounded-[18px] p-3 space-y-1.5" style={glassCardStyle}>
+                    <div className="rounded-[18px] p-3 space-y-1.5" style={modalDescriptionGlassStyle}>
                       <p
                         className="text-[13px] font-semibold text-gray-900 leading-snug line-clamp-2"
                         style={{ fontFamily: APPLE_FONT, letterSpacing: '-0.01em' }}

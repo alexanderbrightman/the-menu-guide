@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Share } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { glassTokens } from '@/lib/glass-styles'
+import { getModalChromeGlassStyle, glassTokens } from '@/lib/glass-styles'
 
 interface ShareButtonProps {
   url: string
@@ -114,19 +114,17 @@ export function ShareButton({
           title={aria}
           className={cn(
             'fixed z-[110] flex h-11 w-11 items-center justify-center rounded-full',
-            'text-white',
+            isDark ? 'text-white' : 'text-gray-900',
             'transition-transform active:scale-95',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
+            isDark
+              ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60'
+              : 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20',
             className
           )}
           style={{
             top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
             left: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-            background: 'rgba(0,0,0,0.32)',
-            backdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
-            WebkitBackdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
-            border: '0.5px solid rgba(255,255,255,0.2)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+            ...getModalChromeGlassStyle(isDark),
           }}
         >
           {copied ? (

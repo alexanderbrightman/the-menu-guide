@@ -28,7 +28,7 @@ import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
 import { getAllergenBorderColor, getAllergenTagStyle } from '@/lib/utils'
 import {
-  getThemedGlassCardStyle,
+  getThemedModalDescriptionGlassStyle,
   modalContentTopPadClass,
   floatingImageShadow,
   glassTokens,
@@ -1554,7 +1554,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
             onClick={() => setSelectedItem(null)}
           >
-            <ModalCloseButton onClose={() => setSelectedItem(null)} />
+            <ModalCloseButton onClose={() => setSelectedItem(null)} isDark={isDarkBackground} />
             <div
               className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}
@@ -1562,7 +1562,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
               <div
                 className="w-full rounded-[22px] p-6 overflow-hidden relative"
                 style={{
-                  ...getThemedGlassCardStyle(isDarkBackground),
+                  ...getThemedModalDescriptionGlassStyle(isDarkBackground),
                   color: contrastColor,
                 }}
               >

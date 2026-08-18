@@ -10,14 +10,13 @@ import {
 } from '@/components/ui/modal-restaurant-pill'
 import { getAllergenTagStyle } from '@/lib/utils'
 import {
-  glassCardStyle,
+  modalDescriptionGlassStyle,
   modalContentTopPadClass,
   modalContentBottomPadClass,
   floatingImageShadow,
 } from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import type { Special } from '@/components/landing/SpecialsCard'
-import { PlaceActions } from '@/components/public/PlaceActions'
 
 interface SpecialItemModalProps {
     special: Special
@@ -52,9 +51,7 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
             onClick={onClose}
         >
             <ModalRestaurantPill
-                username={restaurant.username}
-                displayName={restaurant.display_name}
-                avatarUrl={restaurant.avatar_url}
+                restaurant={restaurant}
                 subtitle={formatDistanceSubtitle(distance)}
             />
             <ModalCloseButton onClose={onClose} />
@@ -63,7 +60,7 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                 className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="w-full rounded-[22px] p-6" style={glassCardStyle}>
+                <div className="w-full rounded-[22px] p-6" style={modalDescriptionGlassStyle}>
                     <div className="flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-4">
                             <h2
@@ -123,8 +120,6 @@ export function SpecialItemModal({ special, onClose }: SpecialItemModalProps) {
                                 ))}
                             </div>
                         )}
-
-                        <PlaceActions place={restaurant} compact surface="glass" />
                     </div>
                 </div>
 

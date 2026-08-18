@@ -12,14 +12,13 @@ import {
 } from '@/components/ui/modal-restaurant-pill'
 import { formatScheduleBadge } from '@/lib/geo'
 import {
-  glassCardStyle,
+  modalDescriptionGlassStyle,
   glassTokens,
   modalContentTopPadClass,
   modalContentBottomPadClass,
   floatingImageShadow,
 } from '@/lib/glass-styles'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
-import { PlaceActions } from '@/components/public/PlaceActions'
 
 interface Props {
   entry: HappyHourEntry
@@ -70,9 +69,7 @@ export function HappyHourModal({ entry, onClose }: Props) {
       onClick={onClose}
     >
       <ModalRestaurantPill
-        username={restaurant.username}
-        displayName={restaurant.display_name}
-        avatarUrl={restaurant.avatar_url}
+        restaurant={restaurant}
         subtitle={formatDistanceSubtitle(distance)}
       />
       <ModalCloseButton onClose={onClose} />
@@ -82,7 +79,7 @@ export function HappyHourModal({ entry, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Info island */}
-        <div className="w-full rounded-[22px] p-6" style={glassCardStyle}>
+        <div className="w-full rounded-[22px] p-6" style={modalDescriptionGlassStyle}>
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
               <h2
@@ -126,8 +123,6 @@ export function HappyHourModal({ entry, onClose }: Props) {
                 {menu.description}
               </p>
             )}
-
-            <PlaceActions place={restaurant} compact surface="glass" />
           </div>
         </div>
 

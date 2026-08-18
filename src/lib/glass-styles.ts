@@ -35,6 +35,15 @@ export const glassCardStyle: CSSProperties = { ...glassStyle }
 
 export const glassPanelStyle: CSSProperties = { ...glassStyle }
 
+/**
+ * Description island on menu item popups. 80% opaque so body copy stays
+ * readable over the photo / blur without changing the rest of the glass UI.
+ */
+export const modalDescriptionGlassStyle: CSSProperties = {
+  ...glassStyle,
+  background: 'rgba(255, 255, 255, 0.8)',
+}
+
 /** Glass card that stays readable on light and dark menu backgrounds. */
 export function getThemedGlassCardStyle(isDarkBackground: boolean): CSSProperties {
   if (isDarkBackground) {
@@ -48,6 +57,20 @@ export function getThemedGlassCardStyle(isDarkBackground: boolean): CSSPropertie
   }
   return glassCardStyle
 }
+
+/** Themed variant of {@link modalDescriptionGlassStyle} for public/private menu overlays. */
+export function getThemedModalDescriptionGlassStyle(isDarkBackground: boolean): CSSProperties {
+  if (isDarkBackground) {
+    return {
+      ...getThemedGlassCardStyle(true),
+      background: 'rgba(26, 26, 26, 0.8)',
+    }
+  }
+  return modalDescriptionGlassStyle
+}
+
+/** Top-row pills (restaurant, hours, close, share) — same fill as the description island. */
+export const getModalChromeGlassStyle = getThemedModalDescriptionGlassStyle
 
 export const glassFabStyle: CSSProperties = { ...glassStyle, boxShadow: glassTokens.shadowLg }
 

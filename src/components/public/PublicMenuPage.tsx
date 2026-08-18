@@ -14,7 +14,7 @@ import { getContrastColor, getAllergenTagStyle, ALLERGEN_TAGS } from '@/lib/util
 import { DEFAULT_MENU_FONT, FONT_FAMILY_MAP } from '@/lib/fonts'
 import { SmartImage } from '@/components/ui/smart-image'
 import {
-  getThemedGlassCardStyle,
+  getThemedModalDescriptionGlassStyle,
   modalContentTopPadClass,
   floatingImageShadow,
   glassTokens,
@@ -881,8 +881,9 @@ export function PublicMenuPage({
                 ) || undefined
               }
               label="Share dish"
+              isDark={isDarkBackground}
             />
-            <ModalCloseButton onClose={closeSelectedItem} />
+            <ModalCloseButton onClose={closeSelectedItem} isDark={isDarkBackground} />
             <div
               className={`w-full max-w-md flex flex-col gap-4 my-auto px-4 pb-8 ${modalContentTopPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
               onClick={(e) => e.stopPropagation()}
@@ -890,7 +891,7 @@ export function PublicMenuPage({
               <div
                 className="w-full rounded-[22px] p-6 overflow-hidden relative"
                 style={{
-                  ...getThemedGlassCardStyle(isDarkBackground),
+                  ...getThemedModalDescriptionGlassStyle(isDarkBackground),
                   color: contrastColor,
                 }}
               >
