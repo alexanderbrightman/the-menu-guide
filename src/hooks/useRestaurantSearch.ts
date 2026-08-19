@@ -54,5 +54,13 @@ export function useRestaurantSearch() {
     }
   }, [searchQuery, performSearch])
 
-  return { searchQuery, setSearchQuery, searchResults, isSearching }
+  const clearSearch = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    if (abortControllerRef.current) abortControllerRef.current.abort()
+    setSearchQuery('')
+    setSearchResults([])
+    setIsSearching(false)
+  }, [])
+
+  return { searchQuery, setSearchQuery, searchResults, isSearching, clearSearch }
 }

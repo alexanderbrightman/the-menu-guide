@@ -458,7 +458,7 @@ export function PublicMenuPage({
       <div id="google_translate_element" className="hidden"></div>
 
       <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-1">
-        <div className="mb-4 flex items-center gap-1">
+        <div className="mb-4 flex items-center">
           <div className="min-w-0 flex-1">
             <PlaceActions
               layout="bar"

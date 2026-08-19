@@ -6,12 +6,10 @@ import { formatScheduleBadge, formatDistanceMiles } from '@/lib/geo'
 import {
   DiscoverCardShell,
   DiscoverCardBody,
-  PaginationControls,
   DiscoverSkeleton,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
 import { SmartImage } from '@/components/ui/smart-image'
-import { useIsMobile } from '@/hooks/useIsMobile'
 import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
 import type { DiscoverRestaurant } from '@/lib/place-links'
 
@@ -60,12 +58,9 @@ function getHeroImage(entry: PreFixeEntry): string | null {
 }
 
 export function PreFixeCard({ onItemClick, location, locationDenied, className }: Props) {
-  const isMobile = useIsMobile()
   const [menus, setMenus] = useState<PreFixeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
-  const [currentPage, setCurrentPage] = useState(0)
-  const itemsPerPage = 6
   const { visibleCount, sentinelRef, hasMore } = useRevealOnScroll(menus.length)
 
   const lat = location?.latitude
@@ -95,10 +90,7 @@ export function PreFixeCard({ onItemClick, location, locationDenied, className }
     }
   }, [lat, lng])
 
-  const totalPages = Math.ceil(menus.length / itemsPerPage)
-  const displayedItems = isMobile
-    ? menus.slice(0, visibleCount)
-    : menus.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+  const displayedItems = menus.slice(0, visibleCount)
 
   if (loading && menus.length === 0) return <DiscoverSkeleton />
   if (menus.length === 0) return <EmptyPanel message="No pre fixe menus nearby yet. Check back soon!" />
@@ -150,15 +142,7 @@ export function PreFixeCard({ onItemClick, location, locationDenied, className }
           )
         })}
       </div>
-      {isMobile && hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
-      {!isMobile && (
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
-          onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-        />
-      )}
+      {hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
     </div>
   )
 }

@@ -168,44 +168,62 @@ export function PlaceActions({
     ? 'inline-flex items-center justify-center rounded-full p-2 text-white transition-colors hover:bg-white/10'
     : 'inline-flex items-center justify-center rounded-full p-2 text-gray-900 transition-colors hover:bg-gray-100'
 
-  const hoursControl = showHours && (
-    <>
-      <button
-        ref={hoursButtonRef}
-        type="button"
-        onClick={() => setHoursOpen((open) => !open)}
-        className={`inline-flex flex-shrink-0 items-center gap-0.5 whitespace-nowrap text-[13px] ${muted}`}
-        aria-expanded={hoursOpen}
-        aria-haspopup="menu"
-      >
-        Hours
-        <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform ${hoursOpen ? 'rotate-180' : ''}`}
-        />
-      </button>
-      <HoursMenu
-        open={hoursOpen}
-        onClose={() => setHoursOpen(false)}
-        anchorRef={hoursButtonRef}
-        hoursList={hoursList}
-        isDark={isDark}
-        muted={muted}
-        ink={ink}
-      />
-    </>
+  const statusClass = `inline-flex min-w-0 items-center gap-1.5 text-[13px] ${
+    isGlass ? 'text-gray-600' : muted
+  } ${isBar ? 'px-2' : ''}`
+  const statusDot = (
+    <span
+      className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${
+        isCurrentlyOpen ? 'bg-emerald-500' : 'bg-gray-400/80'
+      }`}
+      aria-hidden
+    />
   )
 
   const statusEl = status && (
-    <span
-      className={`inline-flex min-w-0 items-center gap-1.5 text-[13px] ${isGlass ? 'text-gray-600' : muted}`}
-      style={isGlass ? { fontFamily: APPLE_FONT } : undefined}
-    >
+    showHours ? (
+      <>
+        <button
+          ref={hoursButtonRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setHoursOpen((open) => !open)
+          }}
+          className={`${statusClass} max-w-full rounded-full text-left transition-opacity hover:opacity-80`}
+          style={isGlass ? { fontFamily: APPLE_FONT } : undefined}
+          aria-expanded={hoursOpen}
+          aria-haspopup="menu"
+          aria-label={`Opening hours, ${status}`}
+        >
+          {statusDot}
+          <span className="truncate">{status}</span>
+          <ChevronDown
+            className={`h-3.5 w-3.5 flex-shrink-0 opacity-70 transition-transform ${
+              hoursOpen ? 'rotate-180' : ''
+            }`}
+            aria-hidden
+          />
+        </button>
+        <HoursMenu
+          open={hoursOpen}
+          onClose={() => setHoursOpen(false)}
+          anchorRef={hoursButtonRef}
+          hoursList={hoursList}
+          isDark={isDark}
+          muted={muted}
+          ink={ink}
+        />
+      </>
+    ) : (
       <span
-        className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${isCurrentlyOpen ? 'bg-emerald-500' : 'bg-gray-400/80'}`}
-        aria-hidden
-      />
-      <span className="truncate">{status}</span>
-    </span>
+        className={statusClass}
+        style={isGlass ? { fontFamily: APPLE_FONT } : undefined}
+      >
+        {statusDot}
+        <span className="truncate">{status}</span>
+      </span>
+    )
   )
 
   const headerLinks = (
@@ -298,11 +316,8 @@ export function PlaceActions({
 
   if (isBar) {
     return (
-      <div className="flex min-w-0 w-full items-center gap-1">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-          {statusEl}
-          {hoursControl}
-        </div>
+      <div className="flex min-w-0 w-full items-center justify-end">
+        {statusEl}
         {headerLinks}
       </div>
     )
@@ -312,7 +327,6 @@ export function PlaceActions({
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-2">
         {statusEl}
-        {hoursControl}
       </div>
       <div className="flex flex-wrap gap-1.5">{stackLinks}</div>
     </div>

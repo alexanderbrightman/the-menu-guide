@@ -2,10 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+function getScrollParent(el: HTMLElement | null): Element | null {
+  let node = el?.parentElement ?? null
+  while (node) {
+    const { overflowY } = getComputedStyle(node)
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+      return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
 /**
  * Paint the first `initial` items immediately, then reveal more as the
- * sentinel approaches the viewport. Keeps the first screen from decoding
- * every photo on mobile.
+ * sentinel approaches the scrollport. Keeps the first screen from decoding
+ * every photo at once.
  */
 export function useRevealOnScroll(total: number, initial = 6, step = 6) {
   const [visible, setVisible] = useState(initial)
@@ -21,7 +33,7 @@ export function useRevealOnScroll(total: number, initial = 6, step = 6) {
           setVisible((count) => Math.min(total, count + step))
         }
       },
-      { rootMargin: '240px' }
+      { root: getScrollParent(el), rootMargin: '320px' }
     )
     observer.observe(el)
     return () => observer.disconnect()

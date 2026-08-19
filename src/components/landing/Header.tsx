@@ -1,19 +1,131 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { createPortal } from 'react-dom'
+import { motion, animate, useMotionValue, useTransform } from 'framer-motion'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { glassCardStyle, glassTokens } from '@/lib/glass-styles'
 import { useOverlayChromeColor } from '@/hooks/useChromeColor'
+import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { CHROME_COLORS } from '@/lib/chrome-color'
+import {
+  HomeTabSwitcher,
+  HOME_COMPACT_SIZE,
+  HOME_TABS,
+  type HomeTab,
+} from '@/components/landing/HomeTabSwitcher'
+import { Menu, Search, X } from 'lucide-react'
+import { SearchPanel } from '@/components/landing/SearchPanel'
+
+const CHROME_LINE = '#111111'
+const CHROME_STROKE = 2
+const LOOP_RADIUS = 17
+const FLIP_MS = 400
+const TAB_SPRING = { type: 'spring' as const, stiffness: 520, damping: 40, mass: 0.7 }
+const TRAVEL_EASE = [0.22, 1, 0.36, 1] as const
+
+function roundPx(n: number) {
+    return Math.round(n * 2) / 2
+}
+
+function relativeBox(el: HTMLElement, root: HTMLElement) {
+    const a = el.getBoundingClientRect()
+    const b = root.getBoundingClientRect()
+    return {
+        left: roundPx(a.left - b.left),
+        top: roundPx(a.top - b.top),
+        width: roundPx(a.width),
+        height: roundPx(a.height),
+    }
+}
+
+type TabStop = { start: number; length: number }
+
+type ChromeTrack = {
+    d: string
+    length: number
+    horizLen: number
+    circleLen: number
+    stops: Partial<Record<HomeTab, TabStop>>
+}
+
+type LineSeg = { start: number; length: number }
+
+function travelMs(from: LineSeg, to: LineSeg) {
+    const distance = Math.abs(to.start - from.start) + Math.abs(to.length - from.length)
+    return Math.min(720, Math.max(420, 280 + distance * 0.95))
+}
+
+/**
+ * Horizontal rail under the tabs, tangent to the bottom of a circle around search.
+ * Sweep 0 from the bottom goes out the right, over the top, and around.
+ */
+function buildTrack(
+    labels: { id: HomeTab; left: number; width: number }[],
+    search: { cx: number; cy: number },
+    radius: number,
+): ChromeTrack | null {
+    if (labels.length === 0) return null
+    const railY = roundPx(search.cy + radius)
+    const startX = roundPx(Math.min(...labels.map((l) => l.left)))
+    const tangentX = roundPx(search.cx)
+    if (tangentX <= startX + 8) return null
+
+    const r = roundPx(radius)
+    const topX = roundPx(search.cx)
+    const topY = roundPx(search.cy - radius)
+    const d = [
+        `M ${startX} ${railY}`,
+        `L ${tangentX} ${railY}`,
+        `A ${r} ${r} 0 0 0 ${topX} ${topY}`,
+        `A ${r} ${r} 0 0 0 ${tangentX} ${railY}`,
+    ].join(' ')
+
+    const horizLen = tangentX - startX
+    const circleLen = 2 * Math.PI * r
+    const stops: Partial<Record<HomeTab, TabStop>> = {}
+    for (const label of labels) {
+        stops[label.id] = {
+            start: roundPx(label.left - startX),
+            length: Math.max(2, label.width),
+        }
+    }
+
+    return {
+        d,
+        length: horizLen + circleLen,
+        horizLen,
+        circleLen,
+        stops,
+    }
+}
+
+function sameTrack(a: ChromeTrack | null, b: ChromeTrack) {
+    if (!a) return false
+    return a.d === b.d && a.length === b.length
+}
+
+function circleSeg(track: ChromeTrack): LineSeg {
+    return { start: track.horizLen, length: track.circleLen }
+}
+
+function tabSeg(track: ChromeTrack, tab: HomeTab): LineSeg | null {
+    const stop = track.stops[tab]
+    if (!stop) return null
+    return { start: stop.start, length: stop.length }
+}
 
 interface HeaderProps {
     onLoginClick?: () => void
     onContactClick?: () => void
     onResetPasswordClick?: () => void
+    activeTab: HomeTab
+    onTabChange: (tab: HomeTab) => void
 }
 
-export function Header({ onResetPasswordClick }: HeaderProps) {
+export function Header({ onResetPasswordClick, activeTab, onTabChange }: HeaderProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [expandedSection, setExpandedSection] = useState<'contact' | 'login' | null>(null)
     // Full-screen mobile menu shares app chrome; keep stack in sync for overscroll.
@@ -26,6 +138,181 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
     const frontRef = useRef<HTMLDivElement>(null)
     const backRef = useRef<HTMLDivElement>(null)
     const mobileMenuRef = useRef<HTMLDivElement>(null)
+    const searchSlotRef = useRef<HTMLDivElement>(null)
+    const chromeRef = useRef<HTMLDivElement>(null)
+    const searchBtnRef = useRef<HTMLButtonElement>(null)
+    const labelElsRef = useRef<(HTMLSpanElement | null)[]>([null, null, null])
+    const labelCacheRef = useRef<{ id: HomeTab; left: number; width: number }[] | null>(null)
+    const chromeTimersRef = useRef<number[]>([])
+    const chromeBusyRef = useRef(false)
+    const travelingRef = useRef(false)
+    const hasSegRef = useRef(false)
+    const activeTabRef = useRef(activeTab)
+    const lineAtRef = useRef<'tab' | 'search'>('tab')
+    const trackRef = useRef<ChromeTrack | null>(null)
+    const segRef = useRef<LineSeg>({ start: 0, length: 0 })
+    const startMv = useMotionValue(0)
+    const lenMv = useMotionValue(0)
+    const totalMv = useMotionValue(1)
+    const dashOffset = useTransform(startMv, (value) => -value)
+    const dashArray = useTransform([lenMv, totalMv], ([len, total]) => `${len} ${total}`)
+    const [searchOpen, setSearchOpen] = useState(false)
+    const [track, setTrack] = useState<ChromeTrack | null>(null)
+    const [menuPortalReady, setMenuPortalReady] = useState(false)
+
+    useEffect(() => {
+        setMenuPortalReady(true)
+    }, [])
+
+    const clearChromeTimers = () => {
+        chromeTimersRef.current.forEach((id) => window.clearTimeout(id))
+        chromeTimersRef.current = []
+    }
+
+    const updateSeg = (next: LineSeg, transition: object | { duration: number }) => {
+        segRef.current = next
+        const snap = 'duration' in transition && transition.duration === 0
+        if (snap) {
+            startMv.set(next.start)
+            lenMv.set(next.length)
+            return
+        }
+        void animate(startMv, next.start, transition)
+        void animate(lenMv, next.length, transition)
+    }
+
+    useLayoutEffect(() => {
+        const chrome = chromeRef.current
+        if (!chrome) return
+
+        const apply = () => {
+            activeTabRef.current = activeTab
+            const button = searchBtnRef.current
+            if (!button) return
+            const btn = relativeBox(button, chrome)
+            const searchPt = {
+                cx: roundPx(btn.left + btn.width / 2),
+                cy: roundPx(btn.top + btn.height / 2),
+            }
+
+            const labels: { id: HomeTab; left: number; width: number }[] = []
+            HOME_TABS.forEach((tab, index) => {
+                const el = labelElsRef.current[index]
+                if (!el) return
+                const box = relativeBox(el, chrome)
+                if (box.width < 2 || box.height < 8) return
+                labels.push({ id: tab.id, left: box.left, width: box.width })
+            })
+            if (labels.length === HOME_TABS.length) {
+                labelCacheRef.current = labels
+            }
+
+            const source = labels.length === HOME_TABS.length ? labels : labelCacheRef.current
+            if (!source) return
+            const resolved = buildTrack(source, searchPt, LOOP_RADIUS)
+            if (!resolved) return
+
+            if (!sameTrack(trackRef.current, resolved)) {
+                trackRef.current = resolved
+                totalMv.set(resolved.length)
+                setTrack(resolved)
+            }
+            if (travelingRef.current) return
+            const parked =
+                lineAtRef.current === 'search' ? circleSeg(resolved) : tabSeg(resolved, activeTab)
+            if (!parked) return
+            if (parked.start === segRef.current.start && parked.length === segRef.current.length) return
+            if (!hasSegRef.current) {
+                hasSegRef.current = true
+                updateSeg(parked, { duration: 0 })
+                return
+            }
+            updateSeg(parked, lineAtRef.current === 'tab' ? TAB_SPRING : { duration: 0 })
+        }
+
+        apply()
+        const observer = new ResizeObserver(apply)
+        observer.observe(chrome)
+        if (searchSlotRef.current) observer.observe(searchSlotRef.current)
+        if (searchBtnRef.current) observer.observe(searchBtnRef.current)
+        labelElsRef.current.forEach((el) => {
+            if (el) observer.observe(el)
+        })
+        window.addEventListener('resize', apply)
+        return () => {
+            observer.disconnect()
+            window.removeEventListener('resize', apply)
+        }
+    }, [activeTab, searchOpen])
+
+    useEffect(() => {
+        return () => clearChromeTimers()
+    }, [])
+
+    const openSearch = () => {
+        if (chromeBusyRef.current || searchOpen || lineAtRef.current === 'search') return
+        const currentTrack = trackRef.current
+        if (!currentTrack) return
+        const to = circleSeg(currentTrack)
+        const ms = travelMs(segRef.current, to)
+
+        chromeBusyRef.current = true
+        travelingRef.current = true
+        lineAtRef.current = 'search'
+        clearChromeTimers()
+        updateSeg(to, { duration: ms / 1000, ease: TRAVEL_EASE })
+
+        chromeTimersRef.current.push(
+            window.setTimeout(() => {
+                travelingRef.current = false
+                setSearchOpen(true)
+                chromeBusyRef.current = false
+            }, ms)
+        )
+    }
+
+    const closeSearch = () => {
+        if (!searchOpen && lineAtRef.current === 'tab') return
+        if (travelingRef.current && !searchOpen) return
+
+        chromeBusyRef.current = true
+        clearChromeTimers()
+        setSearchOpen(false)
+
+        chromeTimersRef.current.push(
+            window.setTimeout(() => {
+                const latest = trackRef.current
+                const to = latest ? tabSeg(latest, activeTabRef.current) : null
+                if (!latest || !to) {
+                    lineAtRef.current = 'tab'
+                    travelingRef.current = false
+                    chromeBusyRef.current = false
+                    return
+                }
+                travelingRef.current = true
+                lineAtRef.current = 'tab'
+                const ms = travelMs(segRef.current, to)
+                updateSeg(to, { duration: ms / 1000, ease: TRAVEL_EASE })
+                chromeTimersRef.current.push(
+                    window.setTimeout(() => {
+                        travelingRef.current = false
+                        chromeBusyRef.current = false
+                    }, ms)
+                )
+            }, FLIP_MS)
+        )
+    }
+
+    const toggleSearch = () => {
+        if (searchOpen || lineAtRef.current === 'search') {
+            closeSearch()
+            return
+        }
+        openSearch()
+    }
+
+    // Full-screen menu matches landing/modals: lock scroll and paint into iOS chrome.
+    useFullscreenOverlay(isMobileMenuOpen)
 
     // Update container height when flipped state changes or content loads
     useEffect(() => {
@@ -40,17 +327,6 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
             }
         }
     }, [isFlipped, expandedSection])
-    // Lock body scroll when mobile menu is open
-    useEffect(() => {
-        if (isMobileMenuOpen) {
-            document.body.style.overflow = 'hidden'
-        } else {
-            document.body.style.overflow = 'unset'
-        }
-        return () => {
-            document.body.style.overflow = 'unset'
-        }
-    }, [isMobileMenuOpen])
 
     // Close expanded section when clicking outside
     useEffect(() => {
@@ -75,6 +351,15 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
             document.removeEventListener('mousedown', handleClickOutside)
         }
     }, [expandedSection])
+
+    useEffect(() => {
+        if (!searchOpen) return
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') closeSearch()
+        }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+    }, [searchOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const toggleSection = (section: 'contact' | 'login') => {
         if (expandedSection === section) {
@@ -104,25 +389,108 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
 
     return (
         <>
-            <header ref={headerRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-1.5 md:pt-3 md:pb-2" style={{ backgroundColor: 'transparent' }}>
-                <div className="flex justify-between items-center">
-                    <Link
-                        href="/"
-                        className="text-xl md:text-3xl font-normal tracking-wide hover:opacity-80 transition-opacity text-gray-900"
-                        style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
-                    >
-                        The Menu Guide
-                    </Link>
+            {searchOpen && (
+                <button
+                    type="button"
+                    className="fixed inset-0 z-[25]"
+                    aria-label="Close search"
+                    onClick={closeSearch}
+                />
+            )}
+            <header ref={headerRef} className="relative z-30 w-full max-w-7xl mx-auto overflow-visible px-4 sm:px-6 lg:px-8 pt-2 pb-3 md:pt-3 md:pb-2" style={{ backgroundColor: 'transparent' }}>
+                <div className="flex items-center gap-2 md:gap-3">
+                    <div className="hidden md:block md:flex-1" aria-hidden />
 
-                    {/* Desktop buttons with expanding forms */}
-                    <div className="hidden md:block relative">
+                    <div ref={chromeRef} className="relative flex min-w-0 flex-1 items-center gap-2 overflow-visible md:flex-none" style={{ minWidth: 0 }}>
+                        <div
+                            ref={searchSlotRef}
+                            className={`relative min-w-0 flex-1 overflow-visible md:transition-[width] md:duration-300 md:ease-out ${searchOpen ? 'md:w-80 lg:w-[28rem]' : 'md:w-auto'}`}
+                            style={{ height: HOME_COMPACT_SIZE, minWidth: 0, perspective: 920, transformStyle: 'preserve-3d' }}
+                        >
+                            <HomeTabSwitcher
+                                variant="compact"
+                                activeTab={activeTab}
+                                onTabChange={onTabChange}
+                                folded={searchOpen}
+                                labelRefs={labelElsRef}
+                            />
+                            <motion.div
+                                className="absolute inset-0"
+                                initial={false}
+                                animate={
+                                    searchOpen
+                                        ? { rotateX: 0, opacity: 1 }
+                                        : { rotateX: -88, opacity: 0 }
+                                }
+                                transition={{
+                                    duration: 0.4,
+                                    ease: [0.22, 1, 0.36, 1],
+                                    delay: searchOpen ? 0.08 : 0,
+                                }}
+                                style={{
+                                    transformOrigin: '50% 0%',
+                                    backfaceVisibility: 'hidden',
+                                    WebkitBackfaceVisibility: 'hidden',
+                                    pointerEvents: searchOpen ? 'auto' : 'none',
+                                }}
+                            >
+                                <SearchPanel
+                                    variant="header"
+                                    enabled={searchOpen}
+                                    anchorRef={searchSlotRef}
+                                    onResultClick={closeSearch}
+                                />
+                            </motion.div>
+                        </div>
+
+                        <button
+                            ref={searchBtnRef}
+                            type="button"
+                            onClick={toggleSearch}
+                            className="relative z-[3] flex flex-shrink-0 items-center justify-center bg-transparent text-[#111] active:scale-95 transition-transform"
+                            style={{
+                                height: HOME_COMPACT_SIZE,
+                                width: HOME_COMPACT_SIZE,
+                            }}
+                            aria-label={searchOpen ? 'Close search' : 'Search restaurants'}
+                            aria-expanded={searchOpen}
+                        >
+                            {searchOpen ? <X className="h-[18px] w-[18px]" strokeWidth={2.25} /> : <Search className="h-[18px] w-[18px]" strokeWidth={2.25} />}
+                        </button>
+
+                        {track && (
+                            <svg
+                                aria-hidden
+                                className="pointer-events-none absolute inset-0 z-[4] overflow-visible"
+                                width="100%"
+                                height="100%"
+                                style={{ overflow: 'visible' }}
+                            >
+                                <motion.path
+                                    d={track.d}
+                                    fill="none"
+                                    stroke={CHROME_LINE}
+                                    strokeWidth={CHROME_STROKE}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{
+                                        strokeDasharray: dashArray,
+                                        strokeDashoffset: dashOffset,
+                                    }}
+                                />
+                            </svg>
+                        )}
+                    </div>
+
+                    <div className="relative ml-auto hidden md:flex md:flex-1 md:justify-end md:ml-0">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => {
+                                    closeSearch()
                                     toggleSection('login')
                                     setIsFlipped(false)
                                 }}
-                                className="h-9 px-5 rounded-full text-sm font-medium transition-all duration-200"
+                                className="h-11 px-5 rounded-[12px] text-sm font-medium transition-all duration-200"
                                 style={{
                                     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
                                     letterSpacing: '-0.01em',
@@ -282,105 +650,76 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                         </div>
                     </div>
 
-                    {/* Mobile menu button — frosted glass pill */}
+                    {/* Mobile menu — plain icon, no chrome line */}
                     <button
-                        onClick={() => setIsMobileMenuOpen(true)}
-                        className="md:hidden flex items-center gap-1.5 h-9 px-3 rounded-full transition-all duration-200"
+                        type="button"
+                        onClick={() => {
+                            setIsFlipped(false)
+                            setIsMobileMenuOpen(true)
+                        }}
+                        className="md:hidden flex flex-shrink-0 items-center justify-center bg-transparent text-[#111] active:scale-95 transition-transform"
                         style={{
-                            background: glassTokens.bg,
-                            backdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
-                            WebkitBackdropFilter: `blur(${glassTokens.blur}) saturate(${glassTokens.saturate})`,
-                            border: `0.5px solid ${glassTokens.border}`,
-                            boxShadow: glassTokens.shadow,
-                            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                            height: HOME_COMPACT_SIZE,
+                            width: HOME_COMPACT_SIZE,
                         }}
                         aria-label="Open menu"
+                        aria-expanded={isMobileMenuOpen}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-700" style={{ letterSpacing: '-0.01em' }}>Menu</span>
+                        <Menu className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden="true" />
                     </button>
                 </div>
             </header>
 
-            {/* Mobile full-screen menu */}
-            <div
-                ref={mobileMenuRef}
-                className={`md:hidden fixed inset-0 z-50 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                style={{ backgroundColor: '#F5F5F5' }}
-            >
-                <div className="h-full flex flex-col">
-                    {/* Header with close button */}
-                    <div className="flex justify-between items-center px-4 pt-6 pb-4">
-                        <Link
-                            href="/"
-                            onClick={closeMobileMenu}
-                            className="text-2xl font-normal tracking-wide text-gray-900"
-                            style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
-                        >
-                            The Menu Guide
-                        </Link>
-                        <button
-                            onClick={closeMobileMenu}
-                            className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200"
-                            style={{
-                                background: 'rgba(0,0,0,0.06)',
-                                border: '0.5px solid rgba(0,0,0,0.08)',
-                            }}
-                            aria-label="Close menu"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* Menu content */}
-                    <div className="flex-1 overflow-y-auto px-4 py-6">
-                        <nav className="flex flex-col gap-2">
-                            {/* Home Link */}
-                            <a
-                                href="https://www.themenuguide.com"
-                                className="w-full py-4 px-5 text-left text-lg font-medium rounded-xl transition-all duration-300 text-gray-700 hover:bg-gray-900/10"
-                            >
-                                Home
-                            </a>
-
-                            {/* Login Button & Form */}
-
-                            <div className="overflow-hidden">
-                                <button
-                                    onClick={() => {
-                                        toggleSection('login')
-                                        setIsFlipped(false)
-                                    }}
-                                    className={`w-full py-4 px-5 text-left text-lg font-medium rounded-xl transition-all duration-300 flex justify-between items-center ${expandedSection === 'login'
-                                        ? 'bg-gray-900/10 text-gray-900 shadow-md'
-                                        : 'text-gray-700 hover:bg-gray-900/10'
-                                        }`}
-                                >
-                                    <span>Log In</span>
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className={`h-5 w-5 transition-transform duration-300 ${expandedSection === 'login' ? 'rotate-180' : ''}`}
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                </button>
-
+            {/* Mobile full-screen menu — portaled so overflow/safe-area match landing + item popups */}
+            {menuPortalReady &&
+                createPortal(
+                    <div
+                        ref={mobileMenuRef}
+                        className={`fullscreen-overlay md:hidden bg-[#F5F5F5] transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                            }`}
+                    >
+                        <div className="h-full overflow-y-auto overscroll-contain">
+                            <div className="flex min-h-full flex-col">
                                 <div
-                                    className={`transition-all duration-300 ease-in-out overflow-hidden ${expandedSection === 'login' ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                                        }`}
+                                    className="flex items-start justify-between gap-3 px-5 pb-3"
+                                    style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
                                 >
-                                    {/* Front Face: Login Form */}
-                                    <div className={`transition-all duration-300 ease-in-out ${isFlipped ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'}`}>
-                                        <div className="p-5 mt-2 bg-white/80 border border-gray-200 rounded-xl">
+                                    <h2
+                                        className="min-w-0 text-[26px] leading-[1.15] font-normal tracking-wide text-gray-900"
+                                        style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
+                                    >
+                                        Welcome to
+                                        <br />
+                                        The Menu Guide
+                                    </h2>
+                                    <button
+                                        onClick={closeMobileMenu}
+                                        className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-200"
+                                        style={{
+                                            background: 'rgba(0,0,0,0.06)',
+                                            border: '0.5px solid rgba(0,0,0,0.08)',
+                                        }}
+                                        aria-label="Close menu"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="px-4">
+                                    <div
+                                        className="rounded-2xl p-5"
+                                        style={glassCardStyle}
+                                    >
+                                        <div className={`transition-all duration-300 ease-in-out ${isFlipped ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'}`}>
                                             <div className="flex justify-between items-center mb-4">
-                                                <h3 className="text-lg font-semibold text-gray-900">Restaurant Login</h3>
+                                                <h3
+                                                    className="text-lg font-semibold text-gray-900"
+                                                    style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}
+                                                >
+                                                    Restaurant Login
+                                                </h3>
                                                 <button
                                                     onClick={() => setIsFlipped(true)}
                                                     className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
@@ -400,13 +739,15 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                 }}
                                             />
                                         </div>
-                                    </div>
 
-                                    {/* Back Face: Contact Form */}
-                                    <div className={`transition-all duration-300 ease-in-out ${isFlipped ? 'opacity-100 h-auto' : 'opacity-0 h-0 overflow-hidden'}`}>
-                                        <div className="p-5 mt-2 bg-white/80 border border-gray-200 rounded-xl">
+                                        <div className={`transition-all duration-300 ease-in-out ${isFlipped ? 'opacity-100 h-auto' : 'opacity-0 h-0 overflow-hidden'}`}>
                                             <div className="flex justify-between items-center mb-4">
-                                                <h3 className="text-lg font-semibold text-gray-900">Contact the Builder</h3>
+                                                <h3
+                                                    className="text-lg font-semibold text-gray-900"
+                                                    style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }}
+                                                >
+                                                    Contact the Builder
+                                                </h3>
                                                 <button
                                                     onClick={() => setIsFlipped(false)}
                                                     className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
@@ -470,33 +811,55 @@ export function Header({ onResetPasswordClick }: HeaderProps) {
                                                     type="submit"
                                                     disabled={isSubmitting}
                                                     className="w-full h-9 rounded-full text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                            style={{
-                                                background: 'linear-gradient(135deg, #FF6259, #E8453C)',
-                                                boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
-                                                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-                                                letterSpacing: '-0.01em',
-                                            }}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #FF6259, #E8453C)',
+                                                        boxShadow: '0 2px 8px rgba(232,69,60,0.3)',
+                                                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                                        letterSpacing: '-0.01em',
+                                                    }}
                                                 >
                                                     {isSubmitting ? 'Sending...' : 'Send Message'}
                                                 </button>
                                             </form>
                                         </div>
                                     </div>
+
+                                    <Link
+                                        href="/getting-started"
+                                        onClick={closeMobileMenu}
+                                        className="mt-3 flex items-center justify-between rounded-2xl px-5 py-4 text-[16px] font-medium text-gray-900"
+                                        style={{
+                                            ...glassCardStyle,
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                                        }}
+                                    >
+                                        Getting Started
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    </Link>
+
+                                    <div className="w-full">
+                                        <Image
+                                            src="/CarolLogo.png"
+                                            alt="The Menu Guide chef illustration"
+                                            width={390}
+                                            height={390}
+                                            className="w-full h-auto block"
+                                        />
+                                        <p
+                                            className="text-xs text-center pt-3 text-gray-500"
+                                            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
+                                        >
+                                            Thanks for using The Menu Guide :)
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Getting Started Link */}
-                            <Link
-                                href="/getting-started"
-                                onClick={closeMobileMenu}
-                                className="w-full py-4 px-5 text-left text-lg font-medium rounded-xl transition-all duration-300 text-gray-700 hover:bg-gray-900/10"
-                            >
-                                Getting Started
-                            </Link>
-                        </nav>
-                    </div>
-                </div>
-            </div >
+                        </div>
+                    </div>,
+                    document.body
+                )}
         </>
     )
 }

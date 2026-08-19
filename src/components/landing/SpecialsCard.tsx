@@ -5,13 +5,11 @@ import type { UserLocation } from '@/hooks/useUserLocation'
 import {
   DiscoverCardShell,
   DiscoverCardBody,
-  PaginationControls,
   DiscoverSkeleton,
   EmptyPanel,
 } from '@/components/landing/DiscoverLayout'
 import { SmartImage } from '@/components/ui/smart-image'
 import { formatDistanceMiles } from '@/lib/geo'
-import { useIsMobile } from '@/hooks/useIsMobile'
 import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
 import type { DiscoverRestaurant } from '@/lib/place-links'
 
@@ -44,12 +42,9 @@ export function SpecialsCard({
   location,
   locationDenied,
 }: SpecialsCardProps) {
-  const isMobile = useIsMobile()
   const [specials, setSpecials] = useState<Special[]>([])
   const [loading, setLoading] = useState(true)
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
-  const [currentPage, setCurrentPage] = useState(0)
-  const itemsPerPage = 6
   const { visibleCount, sentinelRef, hasMore } = useRevealOnScroll(specials.length)
 
   const lat = location?.latitude
@@ -83,10 +78,7 @@ export function SpecialsCard({
     }
   }, [lat, lng])
 
-  const totalPages = Math.ceil(specials.length / itemsPerPage)
-  const displayedSpecials = isMobile
-    ? specials.slice(0, visibleCount)
-    : specials.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+  const displayedSpecials = specials.slice(0, visibleCount)
 
   if (loading && specials.length === 0) {
     return <DiscoverSkeleton />
@@ -128,15 +120,7 @@ export function SpecialsCard({
           </DiscoverCardShell>
         ))}
       </div>
-      {isMobile && hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
-      {!isMobile && (
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPrev={() => setCurrentPage((p) => Math.max(0, p - 1))}
-          onNext={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-        />
-      )}
+      {hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
     </div>
   )
 }
