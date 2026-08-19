@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
-  // Happy hour menus are a premium feature - enforce server-side
-  const premiumGate = await requirePremium(supabase, user.id, 'happy hour menus')
+  // Promotions are a premium feature - enforce server-side
+  const premiumGate = await requirePremium(supabase, user.id, 'promotion menus')
   if (!premiumGate.ok) return secureJsonResponse(premiumGate.body, premiumGate.status)
 
   const body = await request.json()
@@ -161,8 +161,8 @@ export async function PATCH(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return secureJsonResponse({ error: 'Unauthorized' }, 401)
 
-  // Happy hour menus are a premium feature - enforce server-side
-  const premiumGate = await requirePremium(supabase, user.id, 'happy hour menus')
+  // Promotions are a premium feature - enforce server-side
+  const premiumGate = await requirePremium(supabase, user.id, 'promotion menus')
   if (!premiumGate.ok) return secureJsonResponse(premiumGate.body, premiumGate.status)
 
   const body = await request.json()

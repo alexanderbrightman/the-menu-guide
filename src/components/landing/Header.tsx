@@ -18,6 +18,7 @@ import {
 } from '@/components/landing/HomeTabSwitcher'
 import { Menu, Search, X } from 'lucide-react'
 import { SearchPanel } from '@/components/landing/SearchPanel'
+import { CategoryDivider } from '@/components/public/CategoryDivider'
 
 const CHROME_LINE = '#111111'
 const CHROME_STROKE = 2
@@ -203,11 +204,16 @@ export function Header({ onResetPasswordClick, activeTab, onTabChange }: HeaderP
                 if (box.width < 2 || box.height < 8) return
                 labels.push({ id: tab.id, left: box.left, width: box.width })
             })
-            if (labels.length === HOME_TABS.length) {
+            // Folded labels (rotateX) shrink getBoundingClientRect. Caching
+            // those, or mixing them with a moved search icon, makes the
+            // returning underline stop short of the selected tab.
+            const labelsReady = labels.length === HOME_TABS.length
+            const freezeLabels = searchOpen || chromeBusyRef.current || travelingRef.current
+            if (labelsReady && !freezeLabels) {
                 labelCacheRef.current = labels
             }
 
-            const source = labels.length === HOME_TABS.length ? labels : labelCacheRef.current
+            const source = labelsReady && !freezeLabels ? labels : labelCacheRef.current
             if (!source) return
             const resolved = buildTrack(source, searchPt, LOOP_RADIUS)
             if (!resolved) return
@@ -397,14 +403,21 @@ export function Header({ onResetPasswordClick, activeTab, onTabChange }: HeaderP
                     onClick={closeSearch}
                 />
             )}
-            <header ref={headerRef} className="relative z-30 w-full max-w-7xl mx-auto overflow-visible px-4 sm:px-6 lg:px-8 pt-2 pb-3 md:pt-3 md:pb-2" style={{ backgroundColor: 'transparent' }}>
+            <header ref={headerRef} className="relative z-30 w-full max-w-7xl mx-auto overflow-visible px-4 sm:px-6 lg:px-8 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] pb-3 md:pb-2" style={{ backgroundColor: 'transparent' }}>
+                <CategoryDivider
+                    title="The Menu Guide"
+                    isDarkBackground={false}
+                    fontFamily="var(--font-raleway), sans-serif"
+                    as="h1"
+                    className="my-0 mb-2 md:mb-2.5"
+                />
                 <div className="flex items-center gap-2 md:gap-3">
                     <div className="hidden md:block md:flex-1" aria-hidden />
 
                     <div ref={chromeRef} className="relative flex min-w-0 flex-1 items-center gap-2 overflow-visible md:flex-none" style={{ minWidth: 0 }}>
                         <div
                             ref={searchSlotRef}
-                            className={`relative min-w-0 flex-1 overflow-visible md:transition-[width] md:duration-300 md:ease-out ${searchOpen ? 'md:w-80 lg:w-[28rem]' : 'md:w-auto'}`}
+                            className="relative min-w-0 flex-1 overflow-visible md:w-max md:flex-none"
                             style={{ height: HOME_COMPACT_SIZE, minWidth: 0, perspective: 920, transformStyle: 'preserve-3d' }}
                         >
                             <HomeTabSwitcher

@@ -86,9 +86,11 @@ export const glassClasses = {
 }
 
 /**
- * Overlay chrome offset from the expanded fullscreen scrim (which is
- * pulled outward by the safe-area insets). Matches landing header spacing
- * (pt-2) so pills sit in the top corners instead of repeating the inset.
+ * Overlay chrome offset. The fullscreen shell is expanded by the safe-area
+ * insets and is the containing block for these fixed controls (`contain:
+ * layout`), so adding the inset again lands share/close/pills on the safe
+ * side of the status bar — never in it, never flush to the screen.
+ * 0.5rem / 0.75rem matches landing header spacing (pt-2 / px-3).
  */
 export const modalChromeTop = 'calc(env(safe-area-inset-top, 0px) + 0.5rem)'
 export const modalChromeLeft = 'calc(env(safe-area-inset-left, 0px) + 0.75rem)'

@@ -24,6 +24,7 @@ import { CategoryDivider } from './CategoryDivider'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { useChromeColor } from '@/hooks/useChromeColor'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
+import { FullscreenOverlay } from '@/components/ui/fullscreen-overlay'
 import { PlaceActions } from '@/components/public/PlaceActions'
 import { ShareButton } from '@/components/public/ShareButton'
 import { dishShareDescription, dishShareTitle } from '@/lib/menu-json-ld'
@@ -453,11 +454,11 @@ export function PublicMenuPage({
   }, [selectedItem, closeSelectedItem])
 
   return (
-    <div className="min-h-screen transition-colors" style={themeStyle}>
+    <div className="min-h-screen transition-colors pb-[env(safe-area-inset-bottom,0px)]" style={themeStyle}>
       {/* Hidden Google Translate Element */}
       <div id="google_translate_element" className="hidden"></div>
 
-      <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-1">
+      <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-1">
         <div className="mb-4 flex items-center">
           <div className="min-w-0 flex-1">
             <PlaceActions
@@ -866,10 +867,7 @@ export function PublicMenuPage({
       {portalReady &&
         selectedItem &&
         createPortal(
-          <div
-            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
-            onClick={closeSelectedItem}
-          >
+          <FullscreenOverlay onClick={closeSelectedItem}>
             <ShareButton
               variant="overlay"
               url={menuShareUrl(profile.username, selectedItem.id)}
@@ -1004,7 +1002,7 @@ export function PublicMenuPage({
                 )}
               </div>
             </div>
-          </div>,
+          </FullscreenOverlay>,
           document.body
         )}
     </div>

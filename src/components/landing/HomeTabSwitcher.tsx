@@ -8,7 +8,7 @@ export type HomeTab = 'specials' | 'happy-hour' | 'prefxe'
 
 export const HOME_TABS: { id: HomeTab; label: string; shortLabel: string }[] = [
   { id: 'specials', label: 'Local Specials', shortLabel: 'Specials' },
-  { id: 'happy-hour', label: 'Happy Hour', shortLabel: 'Happy Hour' },
+  { id: 'happy-hour', label: 'Promotions', shortLabel: 'Promotions' },
   { id: 'prefxe', label: 'Pre Fixe', shortLabel: 'Pre Fixe' },
 ]
 
@@ -20,7 +20,7 @@ const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif
 const FLIP_EASE = [0.22, 1, 0.36, 1] as const
 const LETTER_SPACING = '-0.025em'
 const MD_BREAKPOINT = 768
-const LABEL_WEIGHT = 600
+const LABEL_WEIGHT = 400
 
 type PillFit = { font: number; pad: number; gap: number; mins: number[] }
 
@@ -36,7 +36,7 @@ function labelsFor(desktop: boolean) {
 
 /**
  * Largest font + padding whose three labels plus gaps still fit `available`.
- * Extra slot width is shared via flex-grow, not by shrinking "Happy Hour".
+ * Extra slot width is shared via flex-grow, not by shrinking "Promotions".
  */
 function fitPills(available: number, desktop: boolean, measure: (text: string, font: number) => number): PillFit {
   const labels = labelsFor(desktop)
@@ -83,7 +83,7 @@ interface HomeTabSwitcherProps {
    * `spread` — larger separate labels with space between them (desktop).
    */
   variant?: 'compact' | 'spread'
-  /** Flip the compact labels backward to make room for search. */
+  /** Flip the compact labels backward; search occupies this same slot. */
   folded?: boolean
   /** Label spans in tab order — Header measures them for the chrome track. */
   labelRefs?: MutableRefObject<(HTMLSpanElement | null)[]>
@@ -152,6 +152,10 @@ export function HomeTabSwitcher({
         return
       }
 
+      // Desktop search flips in this same slot — keep the tab metrics so
+      // the field cannot resize the row and shove the search icon.
+      if (isDesktop && folded) return
+
       const available = list.parentElement?.clientWidth || list.clientWidth
       if (available <= 0) return
       const next = fitPills(available, isDesktop, measure)
@@ -179,7 +183,7 @@ export function HomeTabSwitcher({
         role="tablist"
         aria-label="Browse menus"
         aria-hidden={folded}
-        className={cn('relative flex h-full min-w-0 w-full items-center', className)}
+        className={cn('relative flex h-full min-w-0 w-full items-center md:w-auto', className)}
         style={{
           transformStyle: 'preserve-3d',
           gap: fit.gap,
@@ -198,7 +202,7 @@ export function HomeTabSwitcher({
               aria-label={tab.label}
               tabIndex={folded ? -1 : 0}
               onClick={() => onTabChange(tab.id)}
-              className="flex items-center justify-center overflow-visible whitespace-nowrap bg-transparent font-semibold"
+              className="flex items-center justify-center overflow-visible whitespace-nowrap bg-transparent font-normal"
               initial={false}
               animate={folded ? { rotateX: 88, opacity: 0 } : { rotateX: 0, opacity: 1 }}
               transition={{
@@ -255,7 +259,7 @@ export function HomeTabSwitcher({
             role="tab"
             aria-selected={isActive}
             onClick={() => onTabChange(tab.id)}
-            className="relative h-11 shrink-0 whitespace-nowrap bg-transparent px-5 text-[16px] font-semibold tracking-tight"
+            className="relative h-11 shrink-0 whitespace-nowrap bg-transparent px-5 text-[16px] font-normal tracking-tight"
             style={{
               fontFamily: APPLE_FONT,
               color: isActive ? '#111111' : 'rgba(17,17,17,0.62)',

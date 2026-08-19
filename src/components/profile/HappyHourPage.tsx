@@ -143,7 +143,7 @@ export function HappyHourPage() {
       })
 
       if (!res.ok) {
-        alert('Could not save happy hour. Please try again.')
+        alert('Could not save promotion. Please try again.')
         return
       }
 
@@ -165,7 +165,7 @@ export function HappyHourPage() {
     })
     if (!res.ok) {
       setMenus(snapshot)
-      alert('Could not delete happy hour. Please try again.')
+      alert('Could not delete promotion. Please try again.')
     }
   }
 
@@ -179,7 +179,7 @@ export function HappyHourPage() {
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 min-w-0">
             <h2 className={`text-2xl font-semibold tracking-tight ${primaryTextClass}`}>
-              {editing.id ? 'Edit Happy Hour' : 'New Happy Hour'}
+              {editing.id ? 'Edit Promotion' : 'New Promotion'}
             </h2>
             <p className={`text-sm ${mutedTextClass}`}>
               Schedule, description, and photos for the homepage.
@@ -294,7 +294,7 @@ export function HappyHourPage() {
               disabled={saving || uploading}
               className={`w-full h-11 rounded-full ${accentButtonClass} border ${getBorderColor()}`}
             >
-              {saving ? 'Saving...' : 'Save Happy Hour'}
+              {saving ? 'Saving...' : 'Save Promotion'}
             </Button>
           </div>
         </div>
@@ -307,7 +307,7 @@ export function HappyHourPage() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <h2 className={`text-2xl font-semibold tracking-tight ${primaryTextClass}`}>
-            Happy Hour
+            Promotions
           </h2>
           <p className={`text-sm ${mutedTextClass}`}>
             Featured on the homepage discover tab.
@@ -317,7 +317,7 @@ export function HappyHourPage() {
           onClick={startNew}
           className={`h-11 rounded-full px-5 ${accentButtonClass} border ${getBorderColor()}`}
         >
-          <Plus className="h-4 w-4 mr-1.5" /> Add Happy Hour
+          <Plus className="h-4 w-4 mr-1.5" /> Add Promotion
         </Button>
       </header>
 
@@ -326,9 +326,9 @@ export function HappyHourPage() {
           className="rounded-[22px] px-6 py-14 text-center space-y-2"
           style={cardStyle}
         >
-          <p className={`text-base font-medium ${primaryTextClass}`}>No happy hours yet</p>
+          <p className={`text-base font-medium ${primaryTextClass}`}>No promotions yet</p>
           <p className={`text-sm ${mutedTextClass} max-w-sm mx-auto`}>
-            Add a menu with hours and photos to appear under Happy Hour on the homepage.
+            Add a menu with hours and photos to appear under Promotions on the homepage.
           </p>
         </div>
       ) : (

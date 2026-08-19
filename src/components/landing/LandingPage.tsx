@@ -94,8 +94,6 @@ export function LandingPage() {
       className="h-[100dvh] md:h-screen flex flex-col overflow-hidden bg-[#F5F5F5] min-h-[100dvh]"
       style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
     >
-      <h1 className="sr-only">The Menu Guide</h1>
-
       <div className="relative z-30 flex-shrink-0 bg-[#F5F5F5]">
         <Header
           activeTab={activeTab}

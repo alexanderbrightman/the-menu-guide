@@ -110,7 +110,7 @@ export function DashboardSidebar({
         },
         {
             id: 'happy-hour',
-            label: 'Happy Hour',
+            label: 'Promotions',
             icon: <Wine className={iconClass} />,
             onClick: onHappyHour,
         },

@@ -24,6 +24,7 @@ import { Upload, AlertCircle, Check } from 'lucide-react'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
+import { FullscreenOverlay } from '@/components/ui/fullscreen-overlay'
 import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
 import { getAllergenBorderColor, getAllergenTagStyle } from '@/lib/utils'
@@ -1551,10 +1552,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       {selectedItem &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div
-            className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
-            onClick={() => setSelectedItem(null)}
-          >
+          <FullscreenOverlay onClick={() => setSelectedItem(null)}>
             <ModalCloseButton onClose={() => setSelectedItem(null)} isDark={isDarkBackground} />
             <div
               className={`w-full max-w-md flex flex-col gap-4 px-4 ${modalContentTopPadClass} ${modalContentBottomPadClass} animate-in slide-in-from-bottom-8 fade-in duration-300`}
@@ -1664,7 +1662,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                 )}
               </div>
             </div>
-          </div>,
+          </FullscreenOverlay>,
           document.body
         )}
 

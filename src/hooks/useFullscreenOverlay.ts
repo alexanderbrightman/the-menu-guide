@@ -15,9 +15,9 @@ import {
  *
  * Light homepage overlays intentionally skip chrome painting: a solid
  * mid-grey theme-color shows up as letterbox bars in iOS Safari. The
- * frosted `.fullscreen-overlay` scrim (100lvh) should paint edge-to-edge
- * so content shows through the translucent browser chrome instead —
- * matching the public profile full-bleed behavior.
+ * frosted `.fullscreen-overlay` scrim paints into the safe areas so the
+ * menu shows through the translucent browser chrome instead of a hard
+ * letterbox — matching Apple materials that ignore the safe-area guide.
  */
 export function useFullscreenOverlay(
   active: boolean,

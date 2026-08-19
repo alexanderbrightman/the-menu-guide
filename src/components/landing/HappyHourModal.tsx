@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { HappyHourEntry } from '@/components/landing/HappyHourCard'
 import { Badge } from '@/components/ui/badge'
 import { ModalCloseButton } from '@/components/ui/modal-close-button'
+import { FullscreenOverlay } from '@/components/ui/fullscreen-overlay'
 import {
   ModalRestaurantPill,
   formatDistanceSubtitle,
@@ -64,10 +65,7 @@ export function HappyHourModal({ entry, onClose }: Props) {
   if (typeof document === 'undefined') return null
 
   return createPortal(
-    <div
-      className="fullscreen-overlay flex items-start justify-center overflow-y-auto overscroll-contain bg-black/20 backdrop-blur-2xl animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <FullscreenOverlay onClick={onClose}>
       <ModalRestaurantPill
         restaurant={restaurant}
         subtitle={formatDistanceSubtitle(distance)}
@@ -188,7 +186,7 @@ export function HappyHourModal({ entry, onClose }: Props) {
           )}
         </div>
       </div>
-    </div>,
+    </FullscreenOverlay>,
     document.body
   )
 }

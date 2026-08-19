@@ -235,24 +235,43 @@
     max-width: 100%;
   }
 
-  /* Full-screen modal scrim — paints into iOS safe areas and behind
-     Safari’s translucent chrome. backdrop-filter makes this the containing
-     block for position:fixed chrome, so we pull the box outward by the
-     insets; otherwise the frost stops at the layout viewport and the
-     status-bar / home-indicator bands show the page instead of the overlay.
-     z-index sits above dashboard nav / safe-area bars (z-40). */
+  /* Full-screen modal shell — Apple fullScreenCover:
+     background materials ignore the safe area; controls inset themselves.
+     The box is pulled outward by the insets so frost can paint behind the
+     status bar / home indicator. overflow stays visible and frost is a
+     sibling of the scroller: a scrolling overlay (or a scrolling child of
+     a frosted overlay) clips WebKit backdrop-filter at the visual viewport.
+     contain:layout keeps position:fixed chrome relative to this expanded
+     box without creating a compositor clip. z-index > dashboard chrome. */
   .fullscreen-overlay {
     position: fixed;
     top: calc(0px - env(safe-area-inset-top, 0px));
-    right: 0;
+    right: calc(0px - env(safe-area-inset-right, 0px));
     bottom: calc(0px - env(safe-area-inset-bottom, 0px));
-    left: 0;
+    left: calc(0px - env(safe-area-inset-left, 0px));
     z-index: 100;
-    width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
-    min-height: 100lvh;
-    min-height: -webkit-fill-available;
+    overflow: visible;
+    contain: layout;
+  }
+
+  .fullscreen-overlay-frost {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: blur(64px);
+    backdrop-filter: blur(64px);
+    pointer-events: none;
+  }
+
+  .fullscreen-overlay-scroll {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   /* Remove all borders and outlines from search input */

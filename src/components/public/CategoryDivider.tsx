@@ -1,4 +1,5 @@
 import React from 'react'
+import { cn } from '@/lib/utils'
 
 interface CategoryDividerProps {
     title: string
@@ -6,6 +7,9 @@ interface CategoryDividerProps {
     fontFamily?: string
     /** Profile menus use sm; discover modals use md for a slightly larger label. */
     size?: 'sm' | 'md'
+    /** Landmark heading when this mark is the page title. */
+    as?: 'h1' | 'h2' | 'h3' | 'p'
+    className?: string
 }
 
 export function CategoryDivider({
@@ -13,6 +17,8 @@ export function CategoryDivider({
     isDarkBackground,
     fontFamily,
     size = 'sm',
+    as: TitleTag = 'h3',
+    className,
 }: CategoryDividerProps) {
     const lineColor = isDarkBackground ? '#ffffff' : '#000000'
     const textColor = isDarkBackground ? 'text-white' : 'text-black'
@@ -23,9 +29,11 @@ export function CategoryDivider({
 
     return (
         <div
-            className={`flex items-center justify-center gap-3 sm:gap-4 w-full overflow-hidden ${
-                size === 'md' ? 'my-5' : 'my-4'
-            }`}
+            className={cn(
+                'flex items-center justify-center gap-3 sm:gap-4 w-full overflow-hidden',
+                size === 'md' ? 'my-5' : 'my-4',
+                className
+            )}
         >
             {/* Left Side: Scroll -> Line */}
             <div className="flex-1 flex items-center">
@@ -48,12 +56,12 @@ export function CategoryDivider({
                 <div className={`flex-1 h-[1px] ${lineBgClass} -ml-[1px]`}></div>
             </div>
 
-            <h3
+            <TitleTag
                 className={`${titleSizeClass} font-medium tracking-widest uppercase whitespace-nowrap px-2 ${textColor}`}
                 style={{ fontFamily: fontFamily }}
             >
                 {title}
-            </h3>
+            </TitleTag>
 
             {/* Right Side: Line -> Scroll (mirrored) */}
             <div className="flex-1 flex items-center transform rotate-180">

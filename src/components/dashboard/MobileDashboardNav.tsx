@@ -33,7 +33,7 @@ interface MobileDashboardNavProps {
  * Persistent mobile bottom navigation.
  *
  * Lives at the dashboard level (not inside any single page) so the restaurant
- * owner can always reach Menu, Happy Hour, and Pre Fixe — plus quick actions —
+ * owner can always reach Menu, Promotions, and Pre Fixe — plus quick actions —
  * regardless of which view is open. Hidden on lg+ where the sidebar takes over.
  */
 export function MobileDashboardNav({
@@ -54,7 +54,7 @@ export function MobileDashboardNav({
 
   const views: { id: ActiveView; label: string; icon: React.ReactNode; onClick: () => void }[] = [
     { id: 'menu', label: 'Menu', icon: <Utensils className="h-4 w-4" />, onClick: onMenuView },
-    { id: 'happy-hour', label: 'Happy Hour', icon: <Wine className="h-4 w-4" />, onClick: onHappyHour },
+    { id: 'happy-hour', label: 'Promotions', icon: <Wine className="h-4 w-4" />, onClick: onHappyHour },
     { id: 'pre-fixe', label: 'Pre Fixe', icon: <UtensilsCrossed className="h-4 w-4" />, onClick: onPreFixe },
   ]
 

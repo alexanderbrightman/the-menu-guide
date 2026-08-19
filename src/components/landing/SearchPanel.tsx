@@ -25,8 +25,6 @@ interface SearchPanelProps {
 }
 
 const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
-const DESKTOP_MQ = 768
-const DESKTOP_SEARCH_MIN = 320
 const DESKTOP_SEARCH_MAX = 512
 const SEARCH_INK = '#1a1a1a'
 const CHROME_LINE = '#111111'
@@ -110,11 +108,8 @@ export function SearchPanel({
       if (!el) return
       const rect = el.getBoundingClientRect()
       const pad = pagePad()
-      const desktop = window.innerWidth >= DESKTOP_MQ
       const maxWidth = Math.min(DESKTOP_SEARCH_MAX, window.innerWidth - pad * 2)
-      const width = desktop
-        ? Math.max(rect.width, Math.min(maxWidth, Math.max(DESKTOP_SEARCH_MIN, rect.width)))
-        : rect.width
+      const width = Math.min(maxWidth, rect.width)
       let left = rect.left
       if (left + width > window.innerWidth - pad) {
         left = Math.max(pad, window.innerWidth - pad - width)

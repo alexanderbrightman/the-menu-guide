@@ -73,12 +73,12 @@ export function HappyHourCard({ onItemClick, location, locationDenied, className
   const displayedItems = menus.slice(0, visibleCount)
 
   if (loading && menus.length === 0) return <DiscoverSkeleton />
-  if (menus.length === 0) return <EmptyPanel message="No happy hours nearby yet. Check back soon!" />
+  if (menus.length === 0) return <EmptyPanel message="No promotions nearby yet. Check back soon!" />
 
   return (
     <div className={`flex flex-col ${className || ''}`}>
       {locationDenied && (
-        <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all happy hours</p>
+        <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all promotions</p>
       )}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
         {displayedItems.map((entry, index) => {
