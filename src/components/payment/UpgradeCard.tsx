@@ -8,16 +8,19 @@ import { Badge } from '@/components/ui/badge'
 import { Crown, Check, Zap, Settings } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { validatePremiumAccess } from '@/lib/premium-validation'
-import { SubscriptionManagement } from '@/components/subscription/SubscriptionManagement'
+import { openCustomerPortal } from '@/lib/stripe-client'
 
 interface UpgradeCardProps {
   onUpgrade?: () => void
 }
 
+function formatBillingDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString()
+}
+
 export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [showSubscriptionManagement, setShowSubscriptionManagement] = useState(false)
 
   const handleUpgrade = async () => {
     if (!user || !supabase) return
@@ -74,12 +77,22 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
     }
   }
 
-  const handleManageSubscription = () => {
-    setShowSubscriptionManagement(true)
+  const handleManageBilling = async () => {
+    setLoading(true)
+    try {
+      await openCustomerPortal()
+    } catch (error) {
+      console.error('Error opening billing portal:', error)
+      alert(error instanceof Error ? error.message : 'Unable to open billing portal')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const premiumValidation = validatePremiumAccess(profile, 'premium features')
   const hasPremiumAccess = premiumValidation.isValid
+  const periodEnd = profile?.subscription_current_period_end
+  const isCanceling = Boolean(profile?.subscription_cancel_at_period_end && periodEnd)
 
   const premiumCard = hasPremiumAccess ? (
     <Card className="border-green-200 bg-green-50">
@@ -111,22 +124,29 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
           </div>
         ) : (
           <>
-            {profile?.subscription_current_period_end && (
+            {periodEnd && (
               <div className="text-sm text-green-600">
-                Next billing: {new Date(profile.subscription_current_period_end).toLocaleDateString()}
+                {isCanceling
+                  ? `Canceling on ${formatBillingDate(periodEnd)}`
+                  : `Next billing: ${formatBillingDate(periodEnd)}`}
               </div>
             )}
 
             {profile?.stripe_customer_id ? (
-              <Button
-                variant="outline"
-                onClick={handleManageSubscription}
-                disabled={loading}
-                className="border-green-300 text-green-700 hover:bg-green-100"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                {loading ? 'Opening...' : 'Manage Subscription'}
-              </Button>
+              <div className="space-y-1">
+                <Button
+                  variant="outline"
+                  onClick={handleManageBilling}
+                  disabled={loading}
+                  className="border-green-300 text-green-700 hover:bg-green-100"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  {loading ? 'Opening...' : 'Manage billing'}
+                </Button>
+                <p className="text-xs text-green-700">
+                  Update card, cancel, download invoices, and more
+                </p>
+              </div>
             ) : (
               <div className="text-sm text-green-600">
                 Premium account
@@ -182,16 +202,5 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
     </Card>
   )
 
-  return (
-    <>
-      {hasPremiumAccess ? premiumCard : upgradeCard}
-
-      {/* Subscription Management Modal */}
-      {showSubscriptionManagement && (
-        <SubscriptionManagement
-          onClose={() => setShowSubscriptionManagement(false)}
-        />
-      )}
-    </>
-  )
+  return hasPremiumAccess ? premiumCard : upgradeCard
 }

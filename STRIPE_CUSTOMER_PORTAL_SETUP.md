@@ -1,44 +1,36 @@
-# Stripe Customer Portal Setup Guide
+# Stripe Customer Portal Setup
 
-## The Issue
-The "Unable to access Stripe customer portal" error occurs because Stripe's customer portal needs to be configured in your Stripe dashboard before it can be used.
+Post-purchase billing (payment method, cancel, reactivate, invoices) goes through Stripe’s hosted Customer Portal. The app only shows status from `profiles` and a **Manage billing** button.
 
-## How to Fix It
+If you see “Customer portal is not configured”, the portal is not activated in the Stripe Dashboard for the mode (test vs live) you are using.
 
-### Step 1: Enable Customer Portal in Stripe Dashboard
-1. Go to your [Stripe Dashboard](https://dashboard.stripe.com)
-2. Navigate to **Settings** → **Billing** → **Customer portal**
-3. Click **"Activate test link"** (for test mode) or **"Activate live link"** (for production)
-4. Configure the portal settings:
-   - **Business information**: Add your business name and support email
-   - **Features**: Enable the features you want customers to access:
-     - ✅ Update payment methods
-     - ✅ View billing history
-     - ✅ Cancel subscriptions
-     - ✅ Update billing information
+## Enable the portal
 
-### Step 2: Configure Portal Features
-In the customer portal configuration:
-- **Subscription cancellation**: Choose "Cancel at period end" (recommended)
-- **Payment method updates**: Enable for customers
-- **Billing history**: Enable for customers
-- **Support information**: Add your support email
+1. Open the [Stripe Dashboard](https://dashboard.stripe.com)
+2. **Settings → Billing → Customer portal**
+3. Activate the test link (test mode) or live link (production)
+4. Configure:
 
-### Step 3: Test the Portal
-1. Save your configuration
-2. Test the portal with a test customer
-3. Verify that subscription cancellation works
+### Features
 
-## Alternative: Direct Cancellation API
-If you prefer not to use the customer portal, the app now includes a direct cancellation API that allows users to cancel their subscriptions without going through Stripe's portal.
+- **Update payment methods** — on
+- **Cancel subscriptions** — on, and choose **Cancel at end of billing period** (matches previous app behavior)
+- **Reactivate** canceled-at-period-end subscriptions — on
+- **Invoice history / download** — on
+- Plan switching — optional; leave off until yearly pricing exists
 
-## What This Enables
-Once configured, users will be able to:
-- ✅ Cancel their subscriptions
-- ✅ Update payment methods
-- ✅ View billing history
-- ✅ Update billing information
-- ✅ Download invoices
+### Branding and return
 
-## Security Note
-The customer portal is secure and only accessible to authenticated customers. Stripe handles all the security and authentication for you.
+- Logo and colors for The Menu Guide
+- Default return URL can stay empty; the API passes `return_url` from `NEXT_PUBLIC_APP_URL`
+
+## App behavior
+
+- `POST /api/stripe/customer-portal` creates a portal session for the signed-in user’s `stripe_customer_id`.
+- Complimentary accounts never hit Stripe.
+- Cancel and reactivate in the portal still fire `customer.subscription.updated` / `deleted`. Do not remove those webhook handlers.
+- Custom `/api/cancel-subscription` and `/api/reactivate-subscription` routes are unused by the UI and kept only as a short transition fallback.
+
+## Security
+
+Portal sessions are created only after app auth. Stripe then authenticates the customer for that session. `return_url` uses `NEXT_PUBLIC_APP_URL` when set so a spoofed `Host` header cannot redirect elsewhere.

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { validatePremiumAccess } from '@/lib/premium-validation'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
+import { openCustomerPortal } from '@/lib/stripe-client'
 
 interface SubscriptionDetails {
   id: string
@@ -57,6 +58,7 @@ export function SubscriptionDetailsCard() {
   } = useMenuTheme(profile)
   const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null)
   const [loading, setLoading] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
   const [error, setError] = useState('')
 
   const fetchSubscriptionDetails = useCallback(async () => {
@@ -463,101 +465,31 @@ export function SubscriptionDetailsCard() {
           </div>
         )}
 
-        {/* Management Actions */}
-        <div className="pt-4 border-t">
-          {/* Adaptive button based on subscription status */}
-          {subscriptionDetails.cancel_at_period_end && subscriptionDetails.is_active ? (
-            // Canceled but still active - show reactivate button
-            <Button
-              variant="default"
-              className="w-full"
-              onClick={async () => {
-                if (!supabase) return
-                if (!confirm('Are you sure you want to reactivate your subscription? This will resume monthly billing.')) {
-                  return
-                }
-
-                try {
-                  const token = await getSessionToken()
-                  if (token) {
-                    const response = await fetch('/api/reactivate-subscription', {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                      },
-                    })
-                    const data = await response.json()
-                    if (response.ok) {
-                      alert('Your subscription has been reactivated!')
-                      window.location.reload()
-                    } else {
-                      alert(`Unable to reactivate subscription: ${data.error}`)
-                    }
-                  }
-                } catch (error) {
-                  console.error('Error reactivating subscription:', error)
-                  handleAuthError(error, 'reactivateSubscription')
-                  alert('An error occurred while reactivating your subscription.')
-                }
-              }}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Reactivate Subscription
-            </Button>
-          ) : subscriptionDetails.is_active ? (
-            // Active subscription - show cancel button
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={async () => {
-                if (!supabase) return
-                if (!confirm('Are you sure you want to cancel your subscription? This will cancel at the end of your current billing period and make your menu private.')) {
-                  return
-                }
-
-                try {
-                  const token = await getSessionToken()
-                  if (token) {
-                    const response = await fetch('/api/cancel-subscription', {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                      },
-                    })
-                    const data = await response.json()
-                    if (response.ok) {
-                      alert('Your subscription has been canceled and will end at the end of your current billing period.')
-                      window.location.reload()
-                    } else {
-                      alert(`Unable to cancel subscription: ${data.error}`)
-                    }
-                  }
-                } catch (error) {
-                  console.error('Error canceling subscription:', error)
-                  handleAuthError(error, 'cancelSubscription')
-                  alert('An error occurred while canceling your subscription.')
-                }
-              }}
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              Cancel Subscription
-            </Button>
-          ) : (
-            // No active subscription - show renew/upgrade button
-            <Button
-              variant="default"
-              className={`w-full ${isDarkBackground ? "bg-white text-black hover:bg-gray-200" : ""}`}
-              onClick={() => {
-                // Redirect to upgrade page or open upgrade modal
-                window.location.href = '/dashboard'
-              }}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Renew Subscription
-            </Button>
-          )}
+        {/* Billing is managed in Stripe's Customer Portal; webhooks keep access in sync. */}
+        <div className="pt-4 border-t space-y-2">
+          <Button
+            variant="default"
+            className={`w-full ${isDarkBackground ? "bg-white text-black hover:bg-gray-200" : ""}`}
+            disabled={portalLoading}
+            onClick={async () => {
+              setPortalLoading(true)
+              try {
+                await openCustomerPortal()
+              } catch (error) {
+                console.error('Error opening billing portal:', error)
+                handleAuthError(error, 'openCustomerPortal')
+                alert(error instanceof Error ? error.message : 'Unable to open billing portal')
+              } finally {
+                setPortalLoading(false)
+              }
+            }}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            {portalLoading ? 'Opening...' : 'Manage billing'}
+          </Button>
+          <p className={`text-xs text-center ${mutedTextClass}`}>
+            Update card, cancel, download invoices, and more
+          </p>
         </div>
       </div>
     </div>

@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
       profileId: profile.id,
     }
 
-    // Use the dashboard-managed Price when configured (single source of
-    // truth for pricing); otherwise fall back to inline price_data.
+    // Prefer a Dashboard-managed Price (amount lives there). Inline
+    // price_data is only a fallback when STRIPE_PRICE_ID is unset.
     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = STRIPE_CONFIG.priceId
       ? { price: STRIPE_CONFIG.priceId, quantity: 1 }
       : {
@@ -102,13 +102,13 @@ export async function POST(request: NextRequest) {
       }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      // Omit payment_method_types so Checkout uses Dashboard methods (Card, Link, wallets).
       line_items: [lineItem],
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
       // Reuse the existing customer when we have one; otherwise let Stripe
-      // create a new customer with the user's email
+      // create a new customer with the user's email.
       ...(profile.stripe_customer_id
         ? { customer: profile.stripe_customer_id }
         : { customer_email: user.email }),
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       // Copy metadata onto the subscription itself so subscription webhook
       // events can identify the user without relying on email lookups
       subscription_data: { metadata },
-      allow_promotion_codes: false,
+      allow_promotion_codes: true,
       billing_address_collection: 'auto',
       payment_method_collection: 'always',
     })

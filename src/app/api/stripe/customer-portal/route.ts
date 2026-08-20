@@ -62,11 +62,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No Stripe customer found. Please contact support for assistance.' }, { status: 400, headers: getSecurityHeaders() })
     }
 
-    // Get base URL with proper protocol and port
-    const host = request.headers.get('host') || 'localhost:3000'
-    const forwardedProto = request.headers.get('x-forwarded-proto')
-    const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
-    const baseUrl = `${protocol}://${host}`
+    // Prefer a fixed app URL over request headers to prevent host-header
+    // injection into the return URL. Falls back to headers in development.
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    if (!baseUrl) {
+      const host = request.headers.get('host') || 'localhost:3000'
+      const protocol = host.includes('localhost') ? 'http' : 'https'
+      baseUrl = `${protocol}://${host}`
+    }
 
     // Create Stripe customer portal session
     try {

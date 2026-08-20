@@ -1,90 +1,83 @@
 # Stripe Payment Setup Guide
 
-## 🎯 **Stripe Setup Instructions**
+Stripe is the system of record for billing. This app is the system of record for access (`subscription_status`, `is_public`, `is_complimentary`, period end). Webhooks keep the two in sync.
 
-To complete the payment integration, you need to set up your Stripe account and configure the environment variables.
+- **Checkout** creates the subscription (UpgradeCard → `create-checkout-session`).
+- **Customer Portal** is where customers cancel, reactivate, update payment methods, and download invoices.
+- The app shows subscription status from `profiles`; it does not collect tax or change cards itself.
 
-### **Step 1: Create Stripe Account**
-1. Go to [stripe.com](https://stripe.com) and create an account
-2. Complete the account verification process
-3. Get your API keys from the Stripe Dashboard
+Complimentary accounts bypass Stripe entirely.
 
-### **Step 2: Get Your Stripe Keys**
-1. In your Stripe Dashboard, go to **Developers > API Keys**
-2. Copy your **Publishable Key** (starts with `pk_test_`)
-3. Copy your **Secret Key** (starts with `sk_test_`)
+Stripe Tax is deferred until a certificate of authority is in place (NYC). Do not enable `automatic_tax` in Checkout until then.
 
-### **Step 3: Set Up Webhook**
-1. In Stripe Dashboard, go to **Developers > Webhooks**
-2. Click **Add endpoint**
-3. Set endpoint URL to: `https://your-domain.com/api/stripe/webhook`
-   - For local development: `https://your-ngrok-url.ngrok.io/api/stripe/webhook`
-4. Select these events:
+## Step 1: Create a Stripe account
+
+1. Go to [stripe.com](https://stripe.com) and create an account.
+2. Complete verification.
+3. Copy API keys from **Developers → API keys**.
+
+## Step 2: Product and price ($30/month)
+
+Prefer a Dashboard-managed Price. Keep the amount in Stripe, not in app code.
+
+1. **Product catalog → Add product** — name it e.g. `The Menu Guide Premium`.
+2. Recurring price: **$30 / month**.
+3. Copy the Price ID (`price_...`) into `STRIPE_PRICE_ID`.
+
+## Step 3: Payment methods
+
+**Settings → Payment methods** — enable Card, Apple Pay, Google Pay, and Link. Checkout omits a hard-coded `payment_method_types` list so these surface automatically when the device/browser supports them.
+
+## Step 4: Customer Portal
+
+See [STRIPE_CUSTOMER_PORTAL_SETUP.md](./STRIPE_CUSTOMER_PORTAL_SETUP.md). Enable the portal and allow payment-method updates, cancel at period end, reactivation, and invoice history.
+
+## Step 5: Webhook
+
+1. **Developers → Webhooks → Add endpoint**
+2. URL: `https://your-domain.com/api/stripe/webhook`  
+   Local: Stripe CLI `stripe listen --forward-to localhost:3000/api/stripe/webhook` (see [WEBHOOK_TESTING.md](./WEBHOOK_TESTING.md))
+3. Select:
    - `checkout.session.completed`
    - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
    - `invoice.payment_succeeded`
    - `invoice.payment_failed`
-5. Copy the **Webhook Secret** (starts with `whsec_`)
+4. Copy the signing secret (`whsec_...`). Portal cancel/reactivate/card updates emit the same subscription and invoice events — no extra types are required.
 
-### **Step 4: Configure Environment Variables**
-Create a `.env.local` file in your project root with:
+## Step 6: Environment variables
 
 ```env
-# Supabase Configuration (you already have these)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
-
-# Stripe Configuration (add these)
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+STRIPE_PRICE_ID=price_your_dashboard_price_id_here
 
-# App Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### **Step 5: Test the Payment Flow**
-1. Restart your development server: `npm run dev`
-2. Go to your dashboard
-3. Click "Upgrade Now" button
-4. Complete the Stripe checkout process
-5. Your account should be upgraded to "pro" status
+`NEXT_PUBLIC_APP_URL` is used for Checkout success/cancel URLs and the portal return URL (avoids host-header injection). In production it must be the canonical site origin.
 
-### **Step 6: Verify Public Menu Access**
-Once upgraded to pro:
-1. Go to Settings and toggle "Make Menu Public" to ON
-2. Visit `/menu/your-username` to see your public menu
-3. The QR code should now work properly
+## Step 7: Test the payment flow
 
-## 🔧 **Troubleshooting**
+1. Restart the dev server.
+2. Sign in, click **Publish Your Menu**.
+3. Complete Checkout ($30/month; no tax line until Stripe Tax is enabled later).
+4. After success, premium access should unlock (webhook or payment-success path).
+5. Click **Manage billing** — you should land in the Customer Portal, then return to the app.
 
-### **Common Issues:**
-- **"Stripe not configured"**: Check your environment variables
-- **"Webhook signature verification failed"**: Verify your webhook secret
-- **"Profile not found"**: Make sure you're logged in
-- **Public menu still 404**: Ensure you're upgraded to pro AND have made menu public
+## Troubleshooting
 
-### **Testing Webhooks Locally:**
-Use ngrok to expose your local server:
-```bash
-npx ngrok http 3000
-```
-Then use the ngrok URL for your webhook endpoint.
+- **"Stripe not configured"**: Check env vars and restart.
+- **"Customer portal is not configured"**: Activate the portal in the Dashboard for the same mode as your API keys (test vs live).
+- **"Webhook signature verification failed"**: Wrong `STRIPE_WEBHOOK_SECRET` (CLI secret differs from Dashboard).
+- **Public menu still 404**: Need pro (or complimentary) **and** menu set public.
 
-## 🎉 **You're All Set!**
+## What users can do
 
-Once configured, your users can:
-- ✅ Upgrade to Pro plan ($25/month)
-- ✅ Make their menus public
-- ✅ Generate QR codes
-- ✅ Access all premium features
-
-The payment flow will automatically:
-- Create Stripe customers
-- Handle subscription management
-- Update user profiles to "pro" status
-- Process webhook events
-- Handle payment failures and cancellations
+- Upgrade to Premium ($30/month)
+- Apply promotion codes at Checkout
+- See subscription status in the app
+- Manage billing in Stripe (card, cancel at period end, invoices)
+- Keep access until period end after cancel; webhooks revoke access afterward

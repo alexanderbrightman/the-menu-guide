@@ -2,87 +2,31 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Settings, CreditCard, AlertTriangle, CheckCircle, XCircle, Calendar } from 'lucide-react'
+import { openCustomerPortal } from '@/lib/stripe-client'
 
 interface SubscriptionManagementProps {
   onClose?: () => void
 }
 
 export function SubscriptionManagement({ onClose }: SubscriptionManagementProps) {
-  const { user, profile, refreshProfile } = useAuth()
+  const { profile } = useAuth()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-  const [showReactivateConfirm, setShowReactivateConfirm] = useState(false)
 
-  const handleCancelSubscription = async () => {
-    if (!user || !supabase) return
-
+  const handleManageBilling = async () => {
     setLoading(true)
     setMessage('')
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        const response = await fetch('/api/cancel-subscription', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        const data = await response.json()
-
-        if (response.ok) {
-          setMessage('Your subscription has been canceled and will end at the end of your current billing period.')
-          setShowCancelConfirm(false)
-          await refreshProfile()
-        } else {
-          setMessage(`Error: ${data.error}`)
-        }
-      }
+      await openCustomerPortal()
     } catch (error) {
-      console.error('Error canceling subscription:', error)
-      setMessage('An error occurred while canceling your subscription.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleReactivateSubscription = async () => {
-    if (!user || !supabase) return
-
-    setLoading(true)
-    setMessage('')
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        const response = await fetch('/api/reactivate-subscription', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        const data = await response.json()
-
-        if (response.ok) {
-          setMessage('Your subscription has been reactivated!')
-          setShowReactivateConfirm(false)
-          await refreshProfile()
-        } else {
-          setMessage(`Error: ${data.error}`)
-        }
-      }
-    } catch (error) {
-      console.error('Error reactivating subscription:', error)
-      setMessage('An error occurred while reactivating your subscription.')
+      console.error('Error opening billing portal:', error)
+      setMessage(error instanceof Error ? error.message : 'Unable to open billing portal')
     } finally {
       setLoading(false)
     }
@@ -122,15 +66,14 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Manage Subscription
+            Manage billing
           </DialogTitle>
           <DialogDescription>
-            Manage your Premium subscription settings
+            Subscription status is shown here. Card updates, cancellation, and invoices are handled in Stripe.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Subscription Status */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -161,40 +104,31 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
             </CardContent>
           </Card>
 
-          {/* Management Actions */}
-          <div className="space-y-3">
-            {subscriptionStatus.status === 'canceling' ? (
+          {profile?.stripe_customer_id ? (
+            <div className="space-y-2">
               <Button
-                onClick={() => setShowReactivateConfirm(true)}
+                onClick={handleManageBilling}
                 disabled={loading}
                 className="w-full"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Reactivate Subscription
+                <CreditCard className="h-4 w-4 mr-2" />
+                {loading ? 'Opening...' : 'Manage billing'}
               </Button>
-            ) : subscriptionStatus.status === 'active' ? (
-              <Button
-                variant="destructive"
-                onClick={() => setShowCancelConfirm(true)}
-                disabled={loading}
-                className="w-full"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Cancel Subscription
-              </Button>
-            ) : (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  Your subscription has expired. Please renew to continue using premium features.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
+              <p className="text-xs text-gray-500 text-center">
+                Update card, cancel, download invoices, and more
+              </p>
+            </div>
+          ) : (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                No billing account is linked yet. Use Publish Your Menu to start a subscription.
+              </AlertDescription>
+            </Alert>
+          )}
 
-          {/* Message */}
           {message && (
-            <Alert className={message.includes('Error') ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
+            <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 {message}
@@ -202,54 +136,12 @@ export function SubscriptionManagement({ onClose }: SubscriptionManagementProps)
             </Alert>
           )}
 
-          {/* Close Button */}
           <div className="flex justify-end">
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
           </div>
         </div>
-
-        {/* Cancel Confirmation */}
-        <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Cancel Subscription?</DialogTitle>
-              <DialogDescription>
-                Your subscription will be canceled and will end at the end of your current billing period.
-                You'll keep access to premium features until then.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
-                Keep Subscription
-              </Button>
-              <Button variant="destructive" onClick={handleCancelSubscription} disabled={loading}>
-                {loading ? 'Canceling...' : 'Cancel Subscription'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Reactivate Confirmation */}
-        <Dialog open={showReactivateConfirm} onOpenChange={setShowReactivateConfirm}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Reactivate Subscription?</DialogTitle>
-              <DialogDescription>
-                Your subscription will be reactivated and will continue billing monthly.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowReactivateConfirm(false)}>
-                Keep Canceled
-              </Button>
-              <Button onClick={handleReactivateSubscription} disabled={loading}>
-                {loading ? 'Reactivating...' : 'Reactivate'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </DialogContent>
     </Dialog>
   )

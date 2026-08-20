@@ -1,3 +1,6 @@
+// Legacy: the app UI now cancels via Stripe Customer Portal. Webhooks still
+// apply cancel_at_period_end. This route is unused by the UI during the
+// portal transition and can be removed once that path is confirmed in live.
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
