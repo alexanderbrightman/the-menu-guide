@@ -166,7 +166,17 @@ export function SearchPanel({
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyDown={handleFieldKeyDown}
-        className="h-auto flex-1 border-0 bg-transparent p-0 text-[16px] text-gray-900 placeholder:text-gray-500 shadow-none focus-visible:ring-0"
+        className={cn(
+          'h-auto flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0',
+          isHeader
+            ? 'text-[13px] md:text-[16px] font-normal text-[#111111] placeholder:text-[rgba(17,17,17,0.62)]'
+            : 'text-[16px] md:text-[16px] text-gray-900 placeholder:text-gray-500'
+        )}
+        style={
+          isHeader
+            ? { fontFamily: APPLE_FONT, letterSpacing: '-0.025em' }
+            : undefined
+        }
       />
       <button
         type="button"

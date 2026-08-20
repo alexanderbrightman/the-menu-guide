@@ -1,14 +1,12 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import { Edit, Trash2, Star } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { MenuItemWithRelations } from '@/lib/supabase'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 
 interface MenuItemCardProps {
     item: MenuItemWithRelations
     theme: ReturnType<typeof useMenuTheme>
-    cardStyle?: 'classic' | 'minimal'
     onEdit: () => void
     onDelete: () => void
     onToggleFavorite: () => void
@@ -17,10 +15,37 @@ interface MenuItemCardProps {
     onClick: () => void
 }
 
+function IconHit({
+    label,
+    onClick,
+    fill,
+    children,
+}: {
+    label: string
+    onClick: () => void
+    fill: string
+    children: ReactNode
+}) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            onClick={(e) => {
+                e.stopPropagation()
+                onClick()
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="h-8 w-8 flex items-center justify-center rounded-full transition-colors active:scale-[0.94]"
+            style={{ backgroundColor: fill }}
+        >
+            {children}
+        </button>
+    )
+}
+
 export function MenuItemCard({
     item,
     theme,
-    cardStyle = 'classic',
     onEdit,
     onDelete,
     onToggleFavorite,
@@ -31,74 +56,57 @@ export function MenuItemCard({
     const {
         menuFontFamily,
         primaryTextClass,
-        outlineButtonClass,
-        getBorderColor,
+        fill,
         isDarkBackground,
     } = theme
 
     const isAvailable = item.is_available ?? true
     const [imageError, setImageError] = useState(false)
-
-    // Determine image source - use placeholder if no URL or if image failed to load
     const showPlaceholder = !item.image_url || imageError
     const imageSrc = showPlaceholder ? '/MenuImgPlaceholder.png' : item.image_url!
+    const iconColor = isDarkBackground ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.78)'
 
     const actionButtons = (
         <div className="flex items-center justify-between w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-1.5">
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onToggleFavorite()
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className={`h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center transition-colors border ${getBorderColor()} rounded-lg ${isFavorited
-                        ? isDarkBackground
-                            ? 'text-yellow-400 hover:text-yellow-300'
-                            : 'text-yellow-600 hover:text-yellow-700'
-                        : isDarkBackground
-                            ? 'text-white hover:text-gray-300'
-                            : 'text-black hover:text-gray-700'
-                        }`}
-                    aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            <div className="flex items-center gap-1">
+                <IconHit
+                    label={isFavorited ? 'Remove from specials' : 'Add to specials'}
+                    onClick={onToggleFavorite}
+                    fill={fill}
                 >
-                    <Star className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isFavorited ? 'fill-current' : ''}`} />
-                </button>
+                    <Star
+                        className="h-3.5 w-3.5"
+                        strokeWidth={1.75}
+                        style={{
+                            color: isFavorited ? '#FF9F0A' : iconColor,
+                            fill: isFavorited ? '#FF9F0A' : 'none',
+                        }}
+                    />
+                </IconHit>
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation()
                         onToggleAvailability()
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className={`h-7 sm:h-8 px-2 flex items-center justify-center text-[10px] sm:text-xs font-bold border rounded-lg transition-colors ${!isAvailable
-                        ? 'bg-red-500 text-white border-red-500 hover:bg-red-600'
-                        : isDarkBackground
-                            ? 'border-white text-white hover:bg-red-500 hover:text-white hover:border-red-500'
-                            : 'border-black text-black hover:bg-red-500 hover:text-white hover:border-red-500'
-                        }`}
+                    className="h-8 px-2.5 rounded-full text-[11px] font-semibold tracking-tight transition-colors active:scale-[0.96]"
+                    style={
+                        !isAvailable
+                            ? { backgroundColor: '#FF3B30', color: '#fff' }
+                            : { backgroundColor: fill, color: iconColor }
+                    }
                 >
-                    86&apos;D
+                    86&apos;d
                 </button>
             </div>
-            <div className="flex items-center gap-1.5">
-                <Button
-                    size="icon-sm"
-                    variant="outline"
-                    className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg h-7 w-7 sm:h-8 sm:w-8`}
-                    onClick={onEdit}
-                    onPointerDown={(e) => e.stopPropagation()}
-                >
-                    <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Button>
-                <Button
-                    size="icon-sm"
-                    variant="outline"
-                    className={`${outlineButtonClass} border ${getBorderColor()} rounded-lg h-7 w-7 sm:h-8 sm:w-8`}
-                    onClick={onDelete}
-                    onPointerDown={(e) => e.stopPropagation()}
-                >
-                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Button>
+            <div className="flex items-center gap-1">
+                <IconHit label="Edit item" onClick={onEdit} fill={fill}>
+                    <Edit className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: iconColor }} />
+                </IconHit>
+                <IconHit label="Delete item" onClick={onDelete} fill={fill}>
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} style={{ color: iconColor }} />
+                </IconHit>
             </div>
         </div>
     )
@@ -121,71 +129,45 @@ export function MenuItemCard({
         />
     )
 
-    const unavailableOverlay = !isAvailable && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <span className="font-bold text-white tracking-wider border-2 border-white px-2 py-1 rotate-[-15deg]">
-                86&apos;D
-            </span>
+    const unavailableBadge = !isAvailable && (
+        <div className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white bg-black/55 backdrop-blur-sm">
+            86&apos;d
         </div>
     )
 
-    if (cardStyle === 'minimal') {
-        return (
-            <div className={`group relative flex flex-col h-full ${!isAvailable ? 'opacity-60' : ''}`}>
-                <button
-                    type="button"
-                    className="cursor-pointer text-left w-full"
-                    onClick={onClick}
-                >
-                    <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
-                        <div
-                            className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${
-                                isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
-                            } shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]`}
-                        >
-                            {image}
-                            {unavailableOverlay}
-                        </div>
-                        <div className="pt-3 px-0.5">
-                            <h3
-                                className={`text-[13.5px] sm:text-[15px] font-semibold leading-tight truncate ${primaryTextClass} ${
-                                    !isAvailable ? 'line-through decoration-slate-500' : ''
-                                }`}
-                                style={{ fontFamily: menuFontFamily, letterSpacing: '-0.01em' }}
-                                title={item.title}
-                            >
-                                {item.title}
-                            </h3>
-                        </div>
-                    </div>
-                </button>
-                <div className="mt-3 pt-0.5">{actionButtons}</div>
-            </div>
-        )
-    }
-
     return (
-        <div
-            className={`group relative flex flex-col cursor-pointer border h-full overflow-hidden ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${showPlaceholder ? '' : (isDarkBackground ? 'bg-white/5' : 'bg-white')
-                } ${!isAvailable ? 'opacity-60' : ''}`}
-            onClick={onClick}
-        >
-            <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-                {image}
-                {unavailableOverlay}
-            </div>
-            <div className="flex-1 flex flex-col p-2 sm:p-3">
-                <div className="mb-2">
-                    <h3
-                        className={`font-semibold text-sm sm:text-base md:text-lg truncate ${primaryTextClass} ${!isAvailable ? 'line-through decoration-slate-500' : ''}`}
-                        style={{ fontFamily: menuFontFamily }}
-                        title={item.title}
+        <div className={`group relative flex flex-col h-full ${!isAvailable ? 'opacity-70' : ''}`}>
+            <button
+                type="button"
+                className="cursor-pointer text-left w-full"
+                onClick={onClick}
+            >
+                <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
+                    <div
+                        className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${
+                            isDarkBackground ? 'bg-white/10' : 'bg-black/[0.04]'
+                        }`}
+                        style={{
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.08)',
+                        }}
                     >
-                        {item.title}
-                    </h3>
+                        {image}
+                        {unavailableBadge}
+                    </div>
+                    <div className="pt-2.5 px-0.5">
+                        <h3
+                            className={`text-[13.5px] sm:text-[15px] font-semibold leading-tight truncate ${primaryTextClass} ${
+                                !isAvailable ? 'line-through decoration-black/30' : ''
+                            }`}
+                            style={{ fontFamily: menuFontFamily, letterSpacing: '-0.016em' }}
+                            title={item.title}
+                        >
+                            {item.title}
+                        </h3>
+                    </div>
                 </div>
-                <div className="mt-auto pt-2">{actionButtons}</div>
-            </div>
+            </button>
+            <div className="mt-2.5">{actionButtons}</div>
         </div>
     )
 }

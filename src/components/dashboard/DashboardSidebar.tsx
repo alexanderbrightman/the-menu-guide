@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { SettingsDialog } from '@/components/profile/SettingsDialog'
 import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
-import { Utensils, Plus, FolderPlus, Scan, Edit, Settings, LogOut, QrCode, Wine, UtensilsCrossed } from 'lucide-react'
+import { Utensils, Plus, FolderPlus, Scan, Edit, Settings, LogOut, QrCode, Wine, UtensilsCrossed, BarChart3 } from 'lucide-react'
 import { Profile } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 import { getThemedGlassSidebarStyle } from '@/lib/glass-styles'
@@ -21,6 +21,7 @@ interface DashboardSidebarProps {
     onScanMenu: () => void
     onHappyHour: () => void
     onPreFixe: () => void
+    onAnalytics: () => void
     onEditProfile: () => void
     onSignOut: () => Promise<void>
     signingOut: boolean
@@ -53,6 +54,7 @@ export function DashboardSidebar({
     onScanMenu,
     onHappyHour,
     onPreFixe,
+    onAnalytics,
     onEditProfile,
     onSignOut,
     signingOut,
@@ -78,6 +80,7 @@ export function DashboardSidebar({
         'scan-menu': '#8338EC',    // Purple
         'happy-hour': '#FF006E',   // Pink
         'pre-fixe': '#FB5607',     // Orange
+        'analytics': '#38B000',    // Green
         'edit-profile': '#3A86FF', // Blue
         'settings': '#38B000',     // Green
         'qr-code': '#00BBF9',      // Cyan
@@ -122,6 +125,12 @@ export function DashboardSidebar({
             onClick: onPreFixe,
         },
         {
+            id: 'analytics',
+            label: 'Analytics',
+            icon: <BarChart3 className={iconClass} />,
+            onClick: onAnalytics,
+        },
+        {
             id: 'edit-profile',
             label: 'Edit Profile',
             icon: <Edit className={iconClass} />,
@@ -156,6 +165,7 @@ export function DashboardSidebar({
         if (activeView === 'menu') setActiveItem('view-menu')
         else if (activeView === 'happy-hour') setActiveItem('happy-hour')
         else if (activeView === 'pre-fixe') setActiveItem('pre-fixe')
+        else if (activeView === 'analytics') setActiveItem('analytics')
     }, [activeView])
 
     const rowClass = `
@@ -318,66 +328,76 @@ export function DashboardSidebar({
                 </button>
             </div>
 
-            {/* Navigation Section */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-5">
-                <p className={`px-3.5 mb-1.5 ${sectionLabelClass}`}>
-                    Menu
-                </p>
-                <nav className="space-y-0.5">
-                    {navItems.slice(0, 4).map(renderNavButton)}
-                </nav>
+            {/* Navigation + illustration share one scroll. The art sits
+                below the fold; scrolling the menu reveals the full drawing. */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                <div className="min-h-[calc(100%-3.25rem)] px-2.5 py-5">
+                    <p className={`px-3.5 mb-1.5 ${sectionLabelClass}`}>
+                        Menu
+                    </p>
+                    <nav className="space-y-0.5">
+                        {navItems.slice(0, 4).map(renderNavButton)}
+                    </nav>
 
-                <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
-                    Promotions
-                </p>
-                <nav className="space-y-0.5">
-                    {navItems.slice(4, 6).map(renderNavButton)}
-                </nav>
+                    <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
+                        Promotions
+                    </p>
+                    <nav className="space-y-0.5">
+                        {navItems.slice(4, 6).map(renderNavButton)}
+                    </nav>
 
-                <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
-                    Account
-                </p>
-                <nav className="space-y-0.5">
-                    {navItems.slice(6).map(renderNavButton)}
-                    <QrCodeDialog
-                        qrCodeUrl={qrCodeUrl}
-                        menuLink={menuLink}
-                        profileUsername={profile?.username || ''}
-                        isDarkBackground={isDarkBackground}
-                        contrastColor={contrastColor}
-                        onDownload={onDownloadQr}
-                    >
+                    <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
+                        Insights
+                    </p>
+                    <nav className="space-y-0.5">
+                        {navItems.slice(6, 7).map(renderNavButton)}
+                    </nav>
+
+                    <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
+                        Account
+                    </p>
+                    <nav className="space-y-0.5">
+                        {navItems.slice(7).map(renderNavButton)}
+                        <QrCodeDialog
+                            qrCodeUrl={qrCodeUrl}
+                            menuLink={menuLink}
+                            profileUsername={profile?.username || ''}
+                            isDarkBackground={isDarkBackground}
+                            contrastColor={contrastColor}
+                            onDownload={onDownloadQr}
+                        >
+                            {renderCustomButton(
+                                'qr-code',
+                                <QrCode className="h-5 w-5 flex-shrink-0" />,
+                                'QR Code',
+                                () => setActiveItem('qr-code')
+                            )}
+                        </QrCodeDialog>
                         {renderCustomButton(
-                            'qr-code',
-                            <QrCode className="h-5 w-5 flex-shrink-0" />,
-                            'QR Code',
-                            () => setActiveItem('qr-code')
+                            'sign-out',
+                            <LogOut className="h-5 w-5 flex-shrink-0" />,
+                            signingOut ? 'Signing Out...' : 'Sign Out',
+                            onSignOut,
+                            signingOut
                         )}
-                    </QrCodeDialog>
-                    {renderCustomButton(
-                        'sign-out',
-                        <LogOut className="h-5 w-5 flex-shrink-0" />,
-                        signingOut ? 'Signing Out...' : 'Sign Out',
-                        onSignOut,
-                        signingOut
-                    )}
-                </nav>
-            </div>
+                    </nav>
+                </div>
 
-            <div className="w-full">
-                <Image
-                    src="/CarolLogo.png"
-                    alt="Carol Logo"
-                    width={260}
-                    height={260}
-                    className={`w-full h-auto block ${isDarkBackground ? 'invert' : ''}`}
-                />
-                <p
-                    className="text-[11px] text-center pt-2 pb-5"
-                    style={{ color: contrastColor, opacity: 0.45, fontFamily: appleFont }}
-                >
-                    Thanks for using The Menu Guide :)
-                </p>
+                <div className="w-full">
+                    <Image
+                        src="/CarolLogo.png"
+                        alt="Carol Logo"
+                        width={260}
+                        height={260}
+                        className={`w-full h-auto block ${isDarkBackground ? 'invert' : ''}`}
+                    />
+                    <p
+                        className="text-[11px] text-center pt-2 pb-5"
+                        style={{ color: contrastColor, opacity: 0.45, fontFamily: appleFont }}
+                    >
+                        Thanks for using The Menu Guide :)
+                    </p>
+                </div>
             </div>
             </div>
         </aside>

@@ -14,8 +14,6 @@ interface SetupChecklistProps {
   profile: Profile
   isDark: boolean
   contrastColor: string
-  backgroundColor: string
-  borderClass: string
   onEditProfile: (section?: ProfileEditSection) => void
   onGoToMenu: () => void
 }
@@ -24,8 +22,6 @@ export function SetupChecklist({
   profile,
   isDark,
   contrastColor,
-  backgroundColor,
-  borderClass,
   onEditProfile,
   onGoToMenu,
 }: SetupChecklistProps) {
@@ -111,26 +107,32 @@ export function SetupChecklist({
       <button
         type="button"
         onClick={() => setDismissed(false)}
-        className={`mx-4 mt-4 flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left ${borderClass}`}
-        style={{ color: contrastColor }}
+        className="mx-4 mt-4 flex items-center justify-between gap-3 rounded-[14px] px-4 py-3 text-left"
+        style={{
+          color: contrastColor,
+          backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+        }}
       >
-        <span className="text-sm font-medium">
+        <span className="text-[15px] font-medium tracking-tight">
           Finish setup · {remaining} left
         </span>
-        <ChevronRight className="h-4 w-4 opacity-50" />
+        <ChevronRight className="h-4 w-4 opacity-35" strokeWidth={1.75} />
       </button>
     )
   }
 
   return (
     <div
-      className={`mx-4 mt-4 rounded-2xl border p-4 sm:p-5 ${borderClass}`}
-      style={{ backgroundColor, color: contrastColor }}
+      className="mx-4 mt-4 rounded-[16px] p-4 sm:p-5"
+      style={{
+        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.035)',
+        color: contrastColor,
+      }}
     >
       <div className="mb-1 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight">Get on the map</h2>
-          <p className={`mt-0.5 text-sm ${muted}`}>
+          <h2 className="text-[17px] font-semibold tracking-tight">Get on the map</h2>
+          <p className={`mt-0.5 text-[13px] ${muted}`}>
             {remaining === 1 ? 'One thing left' : `${remaining} things left`} so locals can find you.
           </p>
         </div>
@@ -150,7 +152,7 @@ export function SetupChecklist({
         </button>
       </div>
 
-      <div className={`mt-3 mb-4 h-1.5 overflow-hidden rounded-full ${isDark ? 'bg-white/10' : 'bg-black/8'}`}>
+      <div className={`mt-3 mb-3 h-1 overflow-hidden rounded-full ${isDark ? 'bg-white/10' : 'bg-black/[0.06]'}`}>
         <div
           className="h-full rounded-full bg-current opacity-80 transition-[width] duration-300"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}

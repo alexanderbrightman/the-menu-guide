@@ -75,10 +75,10 @@ export function ExtrasEditor({
       <div className="flex gap-2 pt-1">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={disabled}
-          className={`h-8 text-xs ${borderClass} ${textClass}`}
+          className={`h-8 rounded-full text-xs ${borderClass} ${textClass}`}
           onClick={() => addRow('variant')}
         >
           <Plus className="h-3.5 w-3.5 mr-1" />
@@ -86,10 +86,10 @@ export function ExtrasEditor({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={disabled}
-          className={`h-8 text-xs ${borderClass} ${textClass}`}
+          className={`h-8 rounded-full text-xs ${borderClass} ${textClass}`}
           onClick={() => addRow('addon')}
         >
           <Plus className="h-3.5 w-3.5 mr-1" />

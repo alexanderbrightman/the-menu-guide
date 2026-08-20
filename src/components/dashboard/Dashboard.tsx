@@ -12,6 +12,7 @@ import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { PrivateMenuPage } from '@/components/profile/PrivateMenuPage'
 import { HappyHourPage } from '@/components/profile/HappyHourPage'
 import { PreFixePage } from '@/components/profile/PreFixePage'
+import { AnalyticsPage } from '@/components/dashboard/AnalyticsPage'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 import { MobileDashboardNav } from '@/components/dashboard/MobileDashboardNav'
 import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
@@ -39,7 +40,7 @@ const getContrastColor = (hexColor: string) => {
 
 export function Dashboard() {
   const { user, profile, signOut, signingOut } = useAuth()
-  const [activeView, setActiveView] = useState<'menu' | 'happy-hour' | 'pre-fixe'>('menu')
+  const [activeView, setActiveView] = useState<'menu' | 'happy-hour' | 'pre-fixe' | 'analytics'>('menu')
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [profileEditSection, setProfileEditSection] = useState<ProfileEditSection | undefined>()
   const [showQrDialog, setShowQrDialog] = useState(false)
@@ -103,6 +104,7 @@ export function Dashboard() {
   const handleHappyHour = useCallback(() => setActiveView('happy-hour'), [])
   const handlePreFixe = useCallback(() => setActiveView('pre-fixe'), [])
   const handleMenuView = useCallback(() => setActiveView('menu'), [])
+  const handleAnalytics = useCallback(() => setActiveView('analytics'), [])
 
   const handleSignOut = useCallback(async () => {
     await signOut()
@@ -232,6 +234,7 @@ export function Dashboard() {
         onScanMenu={handleScanMenu}
         onHappyHour={handleHappyHour}
         onPreFixe={handlePreFixe}
+        onAnalytics={handleAnalytics}
         onEditProfile={() => openProfileEdit()}
         onSignOut={handleSignOut}
         signingOut={signingOut}
@@ -318,8 +321,6 @@ export function Dashboard() {
               profile={profile}
               isDark={isDarkBackground}
               contrastColor={contrastColor}
-              backgroundColor={menuBackgroundColor}
-              borderClass={isDarkBackground ? 'border-white/10' : 'border-black/8'}
               onEditProfile={openProfileEdit}
               onGoToMenu={handleMenuView}
             />
@@ -327,6 +328,7 @@ export function Dashboard() {
           {activeView === 'menu' && <PrivateMenuPage />}
           {activeView === 'happy-hour' && <HappyHourPage />}
           {activeView === 'pre-fixe' && <PreFixePage />}
+          {activeView === 'analytics' && <AnalyticsPage />}
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mt-6 space-y-4">
@@ -345,6 +347,7 @@ export function Dashboard() {
         onMenuView={handleMenuView}
         onHappyHour={handleHappyHour}
         onPreFixe={handlePreFixe}
+        onAnalytics={handleAnalytics}
         onNewItem={handleNewItem}
         onNewCategory={handleNewCategory}
         onScanMenu={handleScanMenu}

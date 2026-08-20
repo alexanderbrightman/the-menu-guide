@@ -18,7 +18,7 @@ interface Props {
 
 export function AddressMapPreview({ latitude, longitude }: Props) {
   return (
-    <div className="h-[160px] rounded-xl overflow-hidden border border-white/40 shadow-sm">
+    <div className="h-[160px] rounded-[16px] overflow-hidden">
       <MapContainer
         center={[latitude, longitude]}
         zoom={15}

@@ -12,7 +12,6 @@ create table profiles (
   is_public boolean default false,
   subscription_status text check (subscription_status in ('free','pro','canceled')) default 'free',
   menu_font text default 'Plus Jakarta Sans',
-  menu_card_style text default 'minimal',
   menu_background_color text default '#F4F2EE',
   created_at timestamp with time zone default now()
 );

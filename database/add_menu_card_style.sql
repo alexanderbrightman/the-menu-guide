@@ -1,3 +1,4 @@
+-- Historical. menu_card_style was later dropped in 20260820_drop_menu_card_style.sql.
 -- Add menu_card_style column to profiles table
 -- Allows restaurant owners to choose between classic bordered cards and minimal discover-style cards
 

@@ -15,6 +15,8 @@ interface ShareButtonProps {
   label: string
   className?: string
   isDark?: boolean
+  /** Called when the diner starts a share (copy and/or native share). */
+  onShare?: () => void
 }
 
 function CopiedLinkToast() {
@@ -56,6 +58,7 @@ export function ShareButton({
   label,
   className,
   isDark = false,
+  onShare: onShareTracked,
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
 
@@ -68,6 +71,7 @@ export function ShareButton({
   const onShare = async (event: MouseEvent) => {
     event.stopPropagation()
     event.preventDefault()
+    onShareTracked?.()
 
     setCopied(true)
 

@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     const host = request.headers.get('host') || 'localhost:3000'
     const forwardedProto = request.headers.get('x-forwarded-proto')
     const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https')
-    const publicProfileUrl = `${protocol}://${host}/menu/${profile.username}`
+    const publicProfileUrl = `${protocol}://${host}/menu/${profile.username}?utm_source=qr`
 
 
     // Generate QR code as PNG buffer

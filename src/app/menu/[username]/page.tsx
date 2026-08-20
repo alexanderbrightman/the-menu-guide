@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { PublicMenuPage } from '@/components/public/PublicMenuPage'
 import { JsonLd } from '@/components/public/JsonLd'
@@ -13,12 +12,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-function isShareCrawler(userAgent: string) {
-  return /bot|crawler|spider|facebookexternalhit|WhatsApp|Slackbot|Twitterbot|LinkedInBot|Discordbot|TelegramBot|Applebot/i.test(
-    userAgent
-  )
-}
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>
@@ -106,14 +99,6 @@ export default async function PublicProfilePage({ params, searchParams }: Public
   const sharedItem = initialItemId
     ? (menuItems || []).find((item) => item.id === initialItemId)
     : null
-
-  const userAgent = (await headers()).get('user-agent') || ''
-  if (!isShareCrawler(userAgent)) {
-    await supabase
-      .from('profiles')
-      .update({ view_count: (profile.view_count || 0) + 1 })
-      .eq('id', profile.id)
-  }
 
   return (
     <>

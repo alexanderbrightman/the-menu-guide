@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, type RefObject } from 'react'
+import { useState, useEffect, useRef, type RefObject } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -59,7 +59,6 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
     reservation_url: profile?.reservation_url || '',
     menu_font: profile?.menu_font || DEFAULT_MENU_FONT,
     is_dark_mode: isDarkModeFromColor(profile?.menu_background_color),
-    menu_card_style: (profile?.menu_card_style === 'classic' ? 'classic' : 'minimal') as 'classic' | 'minimal',
     show_display_name: true
   })
   const [openingHours, setOpeningHours] = useState<OpeningHours>(
@@ -89,15 +88,6 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
     setCoordsFromSelection(!!coords)
   }
 
-  const handleResetTheme = useCallback(() => {
-    setFormData(prev => ({
-      ...prev,
-      menu_font: DEFAULT_MENU_FONT,
-      is_dark_mode: false,
-      menu_card_style: 'minimal',
-    }))
-  }, [])
-
   // Update form data when profile changes
   useEffect(() => {
     if (profile) {
@@ -111,7 +101,6 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
         reservation_url: profile.reservation_url || '',
         menu_font: profile.menu_font || DEFAULT_MENU_FONT,
         is_dark_mode: isDarkModeFromColor(profile.menu_background_color),
-        menu_card_style: profile.menu_card_style === 'classic' ? 'classic' : 'minimal',
         show_display_name: true
       })
       const parsedHours = parseOpeningHours(profile.opening_hours)
@@ -312,7 +301,6 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
         reservation_url: sanitizedReservation,
         menu_font: formData.menu_font,
         menu_background_color: formData.is_dark_mode ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND,
-        menu_card_style: formData.menu_card_style,
         show_display_name: true
       }
       if (hadHours || hoursTouched) {
@@ -442,16 +430,17 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
     contrastColor,
     primaryTextClass,
     secondaryTextClass,
-    outlineButtonClass,
-    accentButtonClass,
-    getBorderColor,
+    labelClass,
+    fieldClass,
+    groupedClass,
+    hairline,
     isDarkBackground
   } = useMenuTheme(profile)
 
   return (
     <Dialog open={true} onOpenChange={handleDialogOpenChange}>
       <DialogContent
-        className={`w-full max-w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
+        className="w-full max-w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 p-0 gap-0 sm:rounded-[18px] overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.20)] transition-all duration-300 [&>button]:hidden flex flex-col"
         style={{
           backgroundColor: menuBackgroundColor,
           color: contrastColor,
@@ -459,7 +448,10 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
       >
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 w-full">
             {/* Header */}
-            <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+            <div
+              className="flex items-center justify-between p-4"
+              style={{ borderBottom: `0.5px solid ${hairline}` }}
+            >
               <Button
                 type="button"
                 variant="ghost"
@@ -491,7 +483,7 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               {/* Header Photo */}
               <div ref={photoSectionRef} className="space-y-2 scroll-mt-4">
-                <Label className={primaryTextClass}>Profile Image</Label>
+                <Label className={labelClass}>Profile Image</Label>
                 <div className="flex justify-center">
                   <div className={`relative h-36 w-36 overflow-hidden rounded-full bg-secondary/20 group`}>
                     {profile?.avatar_url && !avatarError ? (
@@ -535,13 +527,13 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
               {/* Name + Username */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="display_name" className={primaryTextClass}>Restaurant Name</Label>
+                  <Label htmlFor="display_name" className={labelClass}>Restaurant Name</Label>
                   <Input
                     id="display_name"
                     value={formData.display_name}
                     onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                     required
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                    className={`${fieldClass} text-base`}
                   />
                 </div>
 
@@ -560,7 +552,8 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                   onChange={handleAddressChange}
                   primaryTextClass={primaryTextClass}
                   secondaryTextClass={secondaryTextClass}
-                  borderClass={getBorderColor()}
+                  borderClass={fieldClass}
+                  groupedClass={groupedClass}
                 />
                 <p className={`text-xs ${secondaryTextClass}`}>
                   Start typing and pick a suggestion so locals can find you on the homepage.
@@ -580,7 +573,8 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                   onChange={handleHoursChange}
                   primaryTextClass={primaryTextClass}
                   secondaryTextClass={secondaryTextClass}
-                  borderClass={getBorderColor()}
+                  borderClass={groupedClass}
+                  hairline={hairline}
                 />
               </div>
 
@@ -590,7 +584,7 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                   Call &amp; reserve
                 </Label>
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className={secondaryTextClass}>Phone</Label>
+                  <Label htmlFor="phone" className={labelClass}>Phone</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -599,18 +593,18 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="(555) 123-4567"
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                    className={`${fieldClass} text-base`}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reservation_url" className={secondaryTextClass}>Reservation link</Label>
+                  <Label htmlFor="reservation_url" className={labelClass}>Reservation link</Label>
                   <Input
                     id="reservation_url"
                     type="url"
                     value={formData.reservation_url}
                     onChange={(e) => setFormData({ ...formData, reservation_url: e.target.value })}
                     placeholder="https://resy.com/... or OpenTable"
-                    className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                    className={`${fieldClass} text-base`}
                   />
                   <p className={`text-xs ${secondaryTextClass}`}>
                     Guests get a Reserve button on your menu and on homepage specials.
@@ -622,7 +616,7 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
               <div className="space-y-4 pt-2">
                 <Label className={`${primaryTextClass} text-base font-semibold`}>Appearance</Label>
 
-                <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
+                <div className={`flex h-11 items-center justify-between px-3 ${groupedClass}`}>
                   <Label className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>Font Style</Label>
                   <Select
                     value={formData.menu_font}
@@ -643,7 +637,7 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                   </Select>
                 </div>
 
-                <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
+                <div className={`flex h-11 items-center justify-between px-3 ${groupedClass}`}>
                   <Label htmlFor="dark_mode" className={`${primaryTextClass} text-sm cursor-pointer flex-1`}>
                     Menu Dark Mode
                   </Label>
@@ -653,44 +647,17 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                     onCheckedChange={(checked) => setTimeout(() => setFormData(prev => ({ ...prev, is_dark_mode: checked })), 0)}
                   />
                 </div>
-
-                <div className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border ${getBorderColor()}`}>
-                  <div className="flex-1 min-w-0">
-                    <Label htmlFor="menu_card_shape" className={`${primaryTextClass} text-sm cursor-pointer`}>
-                      {formData.menu_card_style === 'minimal' ? 'Rounded (default)' : 'Square'} Menu Items
-                    </Label>
-                    <p className={`text-xs mt-0.5 ${secondaryTextClass}`}>
-                      {formData.menu_card_style === 'minimal'
-                        ? 'Soft rounded cards like homepage specials'
-                        : 'Square bordered cards'}
-                    </p>
-                  </div>
-                  <Switch
-                    id="menu_card_shape"
-                    checked={formData.menu_card_style === 'minimal'}
-                    onCheckedChange={(checked) =>
-                      setTimeout(
-                        () =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            menu_card_style: checked ? 'minimal' : 'classic',
-                          })),
-                        0
-                      )
-                    }
-                  />
-                </div>
               </div>
 
               <div className="space-y-2 pt-2">
-                <Label htmlFor="bio" className={primaryTextClass}>Bio</Label>
+                <Label htmlFor="bio" className={labelClass}>Bio</Label>
                 <Textarea
                   id="bio"
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   placeholder="Tell customers about your restaurant..."
                   rows={3}
-                  className={`resize-none border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                  className={`${fieldClass} min-h-[5.5rem] h-auto resize-none py-2.5 text-base`}
                 />
               </div>
 
@@ -699,25 +666,25 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
                 <Label className={`${primaryTextClass} text-base font-semibold`}>Social Media</Label>
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label htmlFor="instagram_url" className={secondaryTextClass}>Instagram URL</Label>
+                    <Label htmlFor="instagram_url" className={labelClass}>Instagram URL</Label>
                     <Input
                       id="instagram_url"
                       type="url"
                       value={formData.instagram_url}
                       onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
                       placeholder="https://instagram.com/..."
-                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                      className={`${fieldClass} text-base`}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="website_url" className={secondaryTextClass}>Website URL</Label>
+                    <Label htmlFor="website_url" className={labelClass}>Website URL</Label>
                     <Input
                       id="website_url"
                       type="url"
                       value={formData.website_url}
                       onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
                       placeholder="https://..."
-                      className={`h-11 border rounded-lg ${getBorderColor()} bg-transparent text-base`}
+                      className={`${fieldClass} text-base`}
                     />
                   </div>
                 </div>
@@ -725,10 +692,15 @@ export function ProfileEditForm({ onClose, focusSection }: ProfileEditFormProps)
 
               {message && (
                 <div
-                  className={`rounded-md p-3 text-sm ${message.includes('Error') || message.includes('error')
-                    ? 'bg-red-500/10 text-red-600 border border-red-500/20'
-                    : 'bg-green-500/10 text-green-600 border border-green-500/20'
-                    }`}
+                  className="rounded-[12px] p-3 text-[13px] font-medium"
+                  style={{
+                    backgroundColor: message.includes('Error') || message.includes('error')
+                      ? isDarkBackground ? 'rgba(255,59,48,0.18)' : 'rgba(255,59,48,0.10)'
+                      : isDarkBackground ? 'rgba(52,199,89,0.18)' : 'rgba(52,199,89,0.12)',
+                    color: message.includes('Error') || message.includes('error')
+                      ? isDarkBackground ? '#FF8A80' : '#C41E12'
+                      : isDarkBackground ? '#7DFFA6' : '#1B7A3A',
+                  }}
                 >
                   {message}
                 </div>

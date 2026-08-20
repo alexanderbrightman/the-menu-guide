@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { DISCOVER_TAB_GRID_CLASS } from '@/components/landing/DiscoverLayout'
 
 export type HomeTab = 'specials' | 'happy-hour' | 'prefxe'
 
@@ -19,6 +20,7 @@ export const HOME_DOCK_RADIUS = 999
 const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
 const LETTER_SPACING = '-0.025em'
 const MD_BREAKPOINT = 768
+const LG_BREAKPOINT = 1024
 const LABEL_WEIGHT = 400
 
 type PillFit = { font: number; pad: number; gap: number; mins: number[] }
@@ -99,6 +101,7 @@ export function HomeTabSwitcher({
 }: HomeTabSwitcherProps) {
   const listRef = useRef<HTMLDivElement>(null)
   const [desktop, setDesktop] = useState(false)
+  const [columnLayout, setColumnLayout] = useState(false)
   const [fit, setFit] = useState<PillFit>(comfortableFit(false))
 
   useLayoutEffect(() => {
@@ -136,11 +139,18 @@ export function HomeTabSwitcher({
 
     const apply = () => {
       const isDesktop = window.innerWidth >= MD_BREAKPOINT
+      const isColumns = window.innerWidth >= LG_BREAKPOINT
       setDesktop((prev) => (prev === isDesktop ? prev : isDesktop))
+      setColumnLayout((prev) => (prev === isColumns ? prev : isColumns))
 
       // Keep previous metrics while search is flipped in so the row width
       // cannot shove the search icon.
       if (folded) return
+      // Desktop columns are sized by the specials grid, not by leftover chrome.
+      if (isColumns) {
+        setFit((prev) => (sameFit(prev, comfortableFit(true)) ? prev : comfortableFit(true)))
+        return
+      }
 
       const available = list.parentElement?.clientWidth || list.clientWidth
       if (available <= 0) return
@@ -169,9 +179,13 @@ export function HomeTabSwitcher({
         role="tablist"
         aria-label="Browse menus"
         aria-hidden={folded}
-        className={cn('relative flex h-full min-w-0 w-full items-center', className)}
+        className={cn(
+          'relative flex h-full min-w-0 w-full items-center',
+          DISCOVER_TAB_GRID_CLASS,
+          className
+        )}
         style={{
-          gap: fit.gap,
+          gap: columnLayout ? undefined : fit.gap,
           minWidth: 0,
         }}
       >
@@ -187,19 +201,19 @@ export function HomeTabSwitcher({
               aria-label={tab.label}
               tabIndex={folded ? -1 : 0}
               onClick={() => onTabChange(tab.id)}
-              className="flex items-center justify-center overflow-visible whitespace-nowrap bg-transparent font-normal"
+              className="flex items-center justify-center overflow-visible whitespace-nowrap bg-transparent font-normal lg:w-full"
               style={{
                 fontFamily: APPLE_FONT,
-                fontSize: fit.font,
+                fontSize: columnLayout ? 16 : fit.font,
                 fontWeight: LABEL_WEIGHT,
                 letterSpacing: LETTER_SPACING,
                 height: HOME_COMPACT_SIZE,
-                flexGrow: 1,
+                flexGrow: columnLayout ? 0 : 1,
                 flexShrink: 0,
-                flexBasis: 0,
-                minWidth: fit.mins[index] || undefined,
-                paddingLeft: fit.pad,
-                paddingRight: fit.pad,
+                flexBasis: columnLayout ? 'auto' : 0,
+                minWidth: columnLayout ? 0 : fit.mins[index] || undefined,
+                paddingLeft: columnLayout ? 0 : fit.pad,
+                paddingRight: columnLayout ? 0 : fit.pad,
                 color: isActive ? '#111111' : 'rgba(17,17,17,0.62)',
                 pointerEvents: folded ? 'none' : 'auto',
               }}

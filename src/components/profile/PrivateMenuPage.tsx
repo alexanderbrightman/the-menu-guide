@@ -16,10 +16,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
-import { Tag } from 'lucide-react'
-import { Upload, AlertCircle, Check } from 'lucide-react'
+import { Upload, Check } from 'lucide-react'
 
 import { useMenuTheme } from '@/hooks/useMenuTheme'
 import { useFullscreenOverlay } from '@/hooks/useFullscreenOverlay'
@@ -27,13 +26,12 @@ import { ModalCloseButton } from '@/components/ui/modal-close-button'
 import { FullscreenOverlay } from '@/components/ui/fullscreen-overlay'
 import { MenuHeader } from './menu-blocks/MenuHeader'
 import { MenuCategorySection } from './menu-blocks/MenuCategorySection'
-import { getAllergenBorderColor, getAllergenTagStyle } from '@/lib/utils'
+import { getAllergenTagStyle } from '@/lib/utils'
 import {
   getThemedModalDescriptionGlassStyle,
   modalContentTopPadClass,
   modalContentBottomPadClass,
   floatingImageShadow,
-  glassTokens,
 } from '@/lib/glass-styles'
 import { verifyUploadedImage } from '@/lib/image-utils'
 import { getSessionToken } from '@/lib/auth-utils'
@@ -158,7 +156,6 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
 
   // Use the new theme hook
   const theme = useMenuTheme(profile)
-  const cardStyle = profile?.menu_card_style === 'classic' ? 'classic' : 'minimal'
   const {
     menuBackgroundColor,
     contrastColor,
@@ -167,8 +164,11 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
     secondaryTextClass,
     mutedTextClass,
     accentButtonClass,
-    outlineButtonClass,
-    getBorderColor,
+    groupedClass,
+    labelClass,
+    fieldClass,
+    hairline,
+    fill,
     isDarkBackground,
   } = theme
 
@@ -1120,14 +1120,13 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
               theme={theme}
             />
 
-            <div className="mt-1 sm:mt-4 md:mt-0 space-y-4 sm:space-y-6 md:space-y-8">
+            <div className="mt-1 sm:mt-4 md:mt-0 space-y-8 sm:space-y-10">
               {loading ? (
-                <div
-                  className={`flex flex - col items - center justify - center border border - dashed ${getBorderColor()} py - 12 sm: py - 16 md: py - 20 ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
-                    } `}
-                >
-                  <div className={`h - 8 w - 8 sm: h - 12 sm: w - 12 animate - spin border ${getBorderColor()} border - t - transparent`}></div>
-                  <p className={`mt - 3 sm: mt - 4 text - xs sm: text - sm ${secondaryTextClass} `}>Loading your menu...</p>
+                <div className="flex flex-col items-center justify-center py-16 sm:py-20">
+                  <div
+                    className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent opacity-35"
+                  />
+                  <p className={`mt-4 text-[13px] ${mutedTextClass}`}>Loading your menu…</p>
                 </div>
               ) : (
                 <>
@@ -1146,7 +1145,6 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
-                      cardStyle={cardStyle}
                       emptyMessage="No favorited items."
                       isSortable={false} // Favorites are auto-generated, maybe not sortable manually? Or sortable within favorites? User didn't specify. Let's disable for now to be safe.
                     />
@@ -1158,7 +1156,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       items={categorySections.map(c => c.category.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="space-y-4 sm:space-y-6 md:space-y-8">
+                      <div className="space-y-8 sm:space-y-10">
                         {categorySections.map(({ category, items }) => (
                           <SortableItem key={category.id} id={category.id}>
                             <MenuCategorySection
@@ -1186,7 +1184,6 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                               onItemClick={(item) => setSelectedItem(item)}
                               favoritedIds={favoritedIds}
                               theme={theme}
-                              cardStyle={cardStyle}
                               emptyMessage="No menu items yet. Use the New Item button to add your first dish."
                               isSortable={true}
                             />
@@ -1212,7 +1209,6 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
-                      cardStyle={cardStyle}
                       subtitle="Organize with categories whenever you are ready."
                       isSortable={true}
                     />
@@ -1220,21 +1216,21 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
 
                   {/* Empty State */}
                   {categorySections.length === 0 && uncategorizedItems.length === 0 && (
-                    <div
-                      className={`border border - dashed ${getBorderColor()} py - 12 sm: py - 14 md: py - 16 text - center ${isDarkBackground ? 'bg-white/5' : 'bg-white/60'
-                        } `}
-                    >
-                      <h2 className={`text - lg sm: text - xl md: text - 2xl font - semibold ${primaryTextClass} `}>
-                        Organize your menu with categories
+                    <div className="py-16 sm:py-20 text-center">
+                      <h2
+                        className={`text-[22px] font-semibold tracking-tight ${primaryTextClass}`}
+                        style={{ letterSpacing: '-0.022em' }}
+                      >
+                        Organize your menu
                       </h2>
-                      <p className={`mt - 2 text - xs sm: text - sm ${mutedTextClass} `}>
-                        Create a menu category to get started. Menu items appear here once created.
+                      <p className={`mt-2 text-[15px] ${mutedTextClass}`}>
+                        Create a category, then add dishes. Guests will see them on your public page.
                       </p>
                       <Button
-                        className={`mt - 4 sm: mt - 6 ${accentButtonClass} border ${getBorderColor()} `}
+                        className={`mt-6 ${accentButtonClass} h-10 px-5`}
                         onClick={openCreateCategory}
                       >
-                        Add your first category
+                        Add a category
                       </Button>
                     </div>
                   )}
@@ -1254,7 +1250,6 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       onItemClick={setSelectedItem}
                       favoritedIds={favoritedIds}
                       theme={theme}
-                      cardStyle={cardStyle}
                       emptyMessage="No uncategorized items."
                       isSortable={true}
                     />
@@ -1271,7 +1266,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             }
           }}>
             <DialogContent
-              className={`sm:max-w-md border ${getBorderColor()} p-0 gap-0 overflow-hidden sm:rounded-2xl`}
+              className="sm:max-w-md border-0 p-0 gap-0 overflow-hidden sm:rounded-[18px] shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
               showCloseButton={false}
               style={{
                 backgroundColor: menuBackgroundColor,
@@ -1280,7 +1275,10 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             >
               <form onSubmit={handleCategorySubmit} className="flex flex-col w-full">
                 {/* Header - Matches Item Sheet Design */}
-                <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+                <div
+                  className="flex items-center justify-between p-4"
+                  style={{ borderBottom: `0.5px solid ${hairline}` }}
+                >
                   <Button
                     type="button"
                     variant="ghost"
@@ -1316,14 +1314,14 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                   </DialogDescription>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category-name" className={primaryTextClass}>Category Name</Label>
+                    <Label htmlFor="category-name" className={labelClass}>Category Name</Label>
                     <Input
                       id="category-name"
                       value={categoryName}
                       onChange={(event) => setCategoryName(event.target.value)}
                       placeholder="e.g. Starters"
                       required
-                      className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                      className={`${fieldClass} text-base`}
                     />
                   </div>
                 </div>
@@ -1334,7 +1332,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
           <Sheet open={isItemSheetOpen} onOpenChange={closeItemSheet}>
             <SheetContent
               side="bottom"
-              className={`w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-4xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 ease-in-out data-[state=open]:slide-in-from-bottom-full sm:data-[state=open]:slide-in-from-bottom-10 sm:data-[state=open]:zoom-in-95 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 [&>button]:hidden flex flex-col`}
+              className="w-full h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-4xl border-0 p-0 gap-0 sm:rounded-[18px] overflow-hidden transition-all duration-300 ease-out data-[state=open]:slide-in-from-bottom-full sm:data-[state=open]:slide-in-from-bottom-10 sm:data-[state=open]:zoom-in-95 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 [&>button]:hidden flex flex-col shadow-[0_16px_48px_rgba(0,0,0,0.20)]"
               style={{
                 backgroundColor: menuBackgroundColor,
                 color: contrastColor,
@@ -1342,7 +1340,10 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
             >
               <form onSubmit={upsertMenuItem} className="flex flex-col flex-1 min-h-0 w-full">
                 {/* Header - Mobile & Desktop Unified (Responsive) */}
-                <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
+                <div
+                  className="flex items-center justify-between p-4"
+                  style={{ borderBottom: `0.5px solid ${hairline}` }}
+                >
                   <Button
                     type="button"
                     variant="ghost"
@@ -1378,8 +1379,11 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
 
                       {/* Left Column (Desktop) / Top (Mobile) - Image */}
                       <div className="space-y-4">
-                        <Label className={`${primaryTextClass} text-base font-medium`}>Image</Label>
-                        <div className={`h-48 sm:h-auto sm:aspect-video md:aspect-[4/3] relative rounded-lg overflow-hidden border-2 border-dashed ${getBorderColor()} bg-secondary/20 hover:bg-secondary/30 transition-colors group cursor-pointer`}>
+                        <Label className={labelClass}>Image</Label>
+                        <div
+                          className="h-48 sm:h-auto sm:aspect-video md:aspect-[4/3] relative rounded-[16px] overflow-hidden group cursor-pointer"
+                          style={{ backgroundColor: fill }}
+                        >
                           <input
                             type="file"
                             accept="image/*"
@@ -1397,20 +1401,20 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                                 fill
                                 className="object-cover"
                               />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                 <Button
                                   type="button"
-                                  variant="secondary"
+                                  variant="ghost"
                                   size="sm"
-                                  className="z-20 pointer-events-none" // Events handled by parent div input
+                                  className="z-20 pointer-events-none h-8 rounded-full border-0 bg-white text-black px-3.5 text-xs font-semibold hover:bg-white"
                                 >
                                   Change
                                 </Button>
                                 <Button
                                   type="button"
-                                  variant="destructive"
+                                  variant="ghost"
                                   size="sm"
-                                  className="z-20"
+                                  className="z-20 h-8 rounded-full border-0 bg-[#FF3B30] text-white px-3.5 text-xs font-semibold hover:bg-[#FF3B30]/90"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     e.preventDefault()
@@ -1436,20 +1440,20 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                       {/* Right Column (Desktop) / Bottom (Mobile) - Inputs */}
                       <div className="space-y-5 sm:space-y-6 mt-6 md:mt-0">
                         <div className="space-y-2">
-                          <Label htmlFor="title" className={primaryTextClass}>Item Name *</Label>
+                          <Label htmlFor="title" className={labelClass}>Item Name</Label>
                           <Input
                             id="title"
                             value={itemForm.title}
                             onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
                             placeholder="e.g., Grilled Salmon"
                             required
-                            className={`h-11 border ${getBorderColor()} bg-transparent text-base`}
+                            className={`${fieldClass} text-base`}
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="price" className={primaryTextClass}>Price</Label>
+                            <Label htmlFor="price" className={labelClass}>Price</Label>
                             <div className="relative">
                               <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${mutedTextClass}`}>$</span>
                               <Input
@@ -1459,18 +1463,24 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                                 value={itemForm.price}
                                 onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
                                 placeholder="0.00"
-                                className={`h-11 pl-7 border ${getBorderColor()} bg-transparent text-base`}
+                                className={`${fieldClass} pl-7 text-base`}
                               />
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label className={primaryTextClass}>Category</Label>
+                            <Label className={labelClass}>Category</Label>
                             <Select value={itemCategory} onValueChange={setItemCategory}>
-                              <SelectTrigger className={`h-11 border ${getBorderColor()} bg-transparent`}>
+                              <SelectTrigger className={`${fieldClass} w-full !border-0 shadow-none backdrop-blur-none`}>
                                 <SelectValue placeholder="Select..." />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent
+                                className={
+                                  isDarkBackground
+                                    ? 'border-0 bg-[#2c2c2e] text-white shadow-[0_12px_40px_rgba(0,0,0,0.45)]'
+                                    : 'border-0 bg-white text-black shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
+                                }
+                              >
                                 <SelectItem value="none">No Category</SelectItem>
                                 {categories.map((category) => (
                                   <SelectItem key={category.id} value={category.id}>
@@ -1483,14 +1493,14 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="description" className={primaryTextClass}>Description</Label>
+                          <Label htmlFor="description" className={labelClass}>Description</Label>
                           <Textarea
                             id="description"
                             value={itemForm.description}
                             onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
                             placeholder="Describe your menu item..."
                             rows={4}
-                            className={`resize-none border ${getBorderColor()} bg-transparent text-base`}
+                            className={`${fieldClass} min-h-[6.5rem] h-auto resize-none py-2.5 text-base`}
                           />
                         </div>
 
@@ -1499,15 +1509,14 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                           onChange={setItemExtras}
                           textClass={primaryTextClass}
                           mutedClass={mutedTextClass}
-                          borderClass={`border ${getBorderColor()}`}
+                          borderClass={`${fieldClass} h-9`}
                         />
 
                         <div className="space-y-2">
-                          <Label className={primaryTextClass}>Dietary Tags</Label>
-                          <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-dashed" style={{ borderColor: getBorderColor() }}>
+                          <Label className={labelClass}>Dietary Tags</Label>
+                          <div className={`flex flex-wrap gap-2 p-3 ${groupedClass}`}>
                             {tags.map((tag) => {
                               const isSelected = itemTags.includes(tag.id)
-                              const borderColor = getAllergenBorderColor(tag.name)
                               const tagStyle = getAllergenTagStyle(tag.name, {
                                 isDarkBackground,
                                 isSelected,
@@ -1518,16 +1527,11 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                                 <Badge
                                   key={tag.id}
                                   variant="outline"
-                                  className={`cursor-pointer transition-all px-3 py-1.5 text-sm select-none ${
-                                    isSelected ? 'font-semibold shadow-sm' : 'hover:opacity-80'
+                                  className={`cursor-pointer rounded-full border-0 px-3 py-1.5 text-sm select-none transition-opacity ${
+                                    isSelected ? 'font-semibold' : 'opacity-70 hover:opacity-100'
                                   }`}
                                   onClick={() => toggleFormTag(tag.id)}
-                                  style={{
-                                    ...tagStyle,
-                                    boxShadow: isSelected
-                                      ? `0 0 0 2px ${menuBackgroundColor}, 0 0 0 4px ${borderColor || contrastColor}`
-                                      : undefined,
-                                  }}
+                                  style={tagStyle}
                                 >
                                   {isSelected && <Check className="h-3.5 w-3.5 mr-1" strokeWidth={2.5} />}
                                   {tag.name}
@@ -1585,17 +1589,10 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                     {selectedItem.menu_categories && (
                       <Badge
                         variant="secondary"
-                        className="self-start text-xs py-1 px-2.5 rounded-full border"
+                        className="self-start text-xs py-1 px-2.5 rounded-full border-0"
                         style={{
-                          background: isDarkBackground
-                            ? 'rgba(255,255,255,0.12)'
-                            : 'rgba(255,255,255,0.45)',
-                          backdropFilter: `blur(12px) saturate(${glassTokens.saturate})`,
-                          WebkitBackdropFilter: `blur(12px) saturate(${glassTokens.saturate})`,
+                          backgroundColor: fill,
                           color: contrastColor,
-                          borderColor: isDarkBackground
-                            ? 'rgba(255,255,255,0.22)'
-                            : glassTokens.border,
                         }}
                       >
                         {selectedItem.menu_categories.name}
@@ -1604,7 +1601,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                   </div>
 
                   {selectedItem.description && (
-                    <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${primaryTextClass}`}>
+                    <p className={`text-sm md:text-base leading-relaxed whitespace-pre-wrap ${secondaryTextClass}`}>
                       {selectedItem.description}
                     </p>
                   )}
@@ -1629,7 +1626,7 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
                     </div>
                   )}
 
-                  <div className={`mt-1 text-[10px] leading-tight opacity-70 ${primaryTextClass}`}>
+                  <div className={`mt-1 text-[11px] leading-snug ${mutedTextClass}`}>
                     Allergen info provided by restaurant, always notify your waiter
                   </div>
                 </div>
@@ -1669,37 +1666,43 @@ export function PrivateMenuPage({ }: PrivateMenuPageProps) {
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmation.isOpen} onOpenChange={(open) => setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))}>
         <DialogContent
-          className={`sm:max-w-md border ${getBorderColor()}`}
+          className="sm:max-w-[280px] border-0 rounded-[14px] p-0 gap-0 overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.22)]"
+          showCloseButton={false}
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
           }}
         >
-          <DialogHeader>
-            <DialogTitle className={`flex items-center gap-2 ${primaryTextClass}`}>
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              Confirm Deletion
+          <DialogHeader className="px-5 pt-5 pb-3 text-center sm:text-center">
+            <DialogTitle
+              className={`text-[17px] font-semibold tracking-tight ${primaryTextClass}`}
+              style={{ letterSpacing: '-0.022em' }}
+            >
+              Delete {deleteConfirmation.type === 'category' ? 'Category' : 'Item'}?
             </DialogTitle>
-            <DialogDescription className={secondaryTextClass}>
-              Are you sure you want to delete <span className="font-semibold">{deleteConfirmation.title}</span>?
-              {deleteConfirmation.type === 'category' && ' All menu items in this category will become uncategorized.'}
-              <br />
-              This action cannot be undone.
+            <DialogDescription className={`text-[13px] leading-snug ${secondaryTextClass}`}>
+              “{deleteConfirmation.title}” will be removed.
+              {deleteConfirmation.type === 'category' && ' Items in this category become uncategorized.'}
+              {' '}This cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
+          <div
+            className="grid grid-cols-2"
+            style={{ borderTop: `0.5px solid ${hairline}` }}
+          >
             <Button
               type="button"
-              variant="outline"
-              className={`${outlineButtonClass} border ${getBorderColor()} rounded-full`}
+              variant="ghost"
+              className={`h-11 rounded-none border-0 font-normal ${primaryTextClass} hover:bg-transparent`}
               onClick={() => setDeleteConfirmation(prev => ({ ...prev, isOpen: false }))}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              variant="destructive"
-              className="bg-red-600 hover:bg-red-700 text-white border-none rounded-full"
+              variant="ghost"
+              className="h-11 rounded-none border-0 font-semibold text-[#FF3B30] hover:bg-transparent hover:text-[#FF3B30]"
+              style={{ borderLeft: `0.5px solid ${hairline}` }}
               onClick={handleConfirmDelete}
             >
               Delete

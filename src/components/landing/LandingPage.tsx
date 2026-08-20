@@ -13,6 +13,7 @@ import { type HomeTab } from '@/components/landing/HomeTabSwitcher'
 import { useUserLocation } from '@/hooks/useUserLocation'
 import { useChromeColor } from '@/hooks/useChromeColor'
 import { CHROME_COLORS } from '@/lib/chrome-color'
+import { trackAnalytics } from '@/lib/analytics-client'
 
 const TAB_ORDER: HomeTab[] = ['specials', 'happy-hour', 'prefxe']
 const SWIPE_THRESHOLD_PX = 56
@@ -44,6 +45,39 @@ export function LandingPage() {
 
   const handleTabChange = (tab: HomeTab) => {
     setActiveTab(tab)
+  }
+
+  const handleSelectSpecial = (special: Special) => {
+    trackAnalytics({
+      restaurant_id: special.restaurant.id,
+      menu_item_id: special.item.id,
+      event_type: 'item_click',
+      entity_kind: 'menu_item',
+      surface: 'discover',
+    })
+    setSelectedSpecial(special)
+  }
+
+  const handleSelectHappyHour = (entry: HappyHourEntry) => {
+    trackAnalytics({
+      restaurant_id: entry.restaurant.id,
+      menu_item_id: entry.menu.id,
+      event_type: 'item_click',
+      entity_kind: 'happy_hour',
+      surface: 'discover',
+    })
+    setSelectedHappyHour(entry)
+  }
+
+  const handleSelectPreFixe = (entry: PreFixeEntry) => {
+    trackAnalytics({
+      restaurant_id: entry.restaurant.id,
+      menu_item_id: entry.menu.id,
+      event_type: 'item_click',
+      entity_kind: 'pre_fixe',
+      surface: 'discover',
+    })
+    setSelectedPreFixe(entry)
   }
 
   // Lightweight horizontal swipe: no Framer drag on the image-heavy panels.
@@ -81,11 +115,11 @@ export function LandingPage() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'specials':
-        return <SpecialsCard {...tabPanelProps} onItemClick={setSelectedSpecial} />
+        return <SpecialsCard {...tabPanelProps} onItemClick={handleSelectSpecial} />
       case 'happy-hour':
-        return <HappyHourCard {...tabPanelProps} onItemClick={setSelectedHappyHour} />
+        return <HappyHourCard {...tabPanelProps} onItemClick={handleSelectHappyHour} />
       case 'prefxe':
-        return <PreFixeCard {...tabPanelProps} onItemClick={setSelectedPreFixe} />
+        return <PreFixeCard {...tabPanelProps} onItemClick={handleSelectPreFixe} />
     }
   }
 
@@ -94,7 +128,7 @@ export function LandingPage() {
       className="h-[100dvh] md:h-screen flex flex-col overflow-hidden bg-[#F5F5F5] min-h-[100dvh]"
       style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
     >
-      <div className="relative z-30 flex-shrink-0 bg-[#F5F5F5] px-4">
+      <div className="relative z-30 flex-shrink-0 overflow-visible bg-[#F5F5F5] px-4">
         <div className="mx-auto w-full max-w-3xl">
           <Header
             activeTab={activeTab}

@@ -4,12 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Settings, Eye, EyeOff, Trash2, AlertTriangle, DollarSign, User, Coins, X } from 'lucide-react'
+import { Settings, Eye, EyeOff, Trash2, AlertTriangle, DollarSign, User, Coins } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { SubscriptionDetailsCard } from './SubscriptionDetailsCard'
 import { SubscriptionExpiryWarning } from '@/components/subscription/SubscriptionExpiryWarning'
 import { validatePremiumAccess } from '@/lib/premium-validation'
@@ -405,7 +403,10 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
     primaryTextClass,
     secondaryTextClass,
     mutedTextClass,
-    getBorderColor,
+    fieldClass,
+    groupedClass,
+    accentButtonClass,
+    hairline,
     isDarkBackground
   } = useMenuTheme(profile)
 
@@ -421,28 +422,29 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
         )}
       </DialogTrigger>
       <DialogContent
-        className={`w-full max-w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 sm:border ${getBorderColor()} p-0 gap-0 sm:rounded-xl overflow-hidden transition-all duration-300 [&>button]:hidden flex flex-col`}
+        className="w-full max-w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-xl border-0 p-0 gap-0 sm:rounded-[18px] overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.20)] transition-all duration-300 [&>button]:hidden flex flex-col"
         style={{
           backgroundColor: menuBackgroundColor,
           color: contrastColor,
         }}
       >
-        <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()}`}>
-          <div /> {/* Spacer for centering if needed, using 3-column flex with center title */}
+        <div
+          className="flex items-center justify-between p-4"
+          style={{ borderBottom: `0.5px solid ${hairline}` }}
+        >
+          <span className="w-[72px]" />
 
-          <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass}`}>
-            Account Settings
+          <DialogTitle className={`text-[17px] font-semibold tracking-tight ${primaryTextClass}`}>
+            Settings
           </DialogTitle>
 
           <Button
             type="button"
             variant="ghost"
-            size="icon"
             onClick={() => setShowSettings(false)}
-            className="h-8 w-8 hover:bg-transparent"
-            style={{ color: contrastColor }}
+            className="text-base font-semibold hover:bg-transparent px-2 -mr-2 text-blue-500 hover:text-blue-600"
           >
-            <X className="h-5 w-5" />
+            Done
           </Button>
         </div>
 
@@ -453,7 +455,7 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
               <User className={`h-4 w-4 ${mutedTextClass}`} />
               <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Restaurant Username</h3>
             </div>
-            <div className={`p-4 rounded-lg border bg-transparent ${getBorderColor()}`}>
+            <div className={`p-4 ${groupedClass}`}>
               <div className="pl-0 space-y-3">
                 <div className={`text-sm ${secondaryTextClass}`}>
                   Your public menu URL:{' '}
@@ -471,12 +473,7 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className={`pr-10 h-11 border ${getBorderColor()} bg-transparent text-base ${usernameStatus === 'taken' || usernameStatus === 'invalid'
-                      ? 'border-red-500/50 focus:border-red-500'
-                      : usernameStatus === 'available'
-                        ? 'border-green-500/50 focus:border-green-500'
-                        : ''
-                      }`}
+                    className={`pr-10 ${fieldClass} text-base`}
                   />
                   {usernameStatus === 'checking' && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -507,9 +504,9 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
                   <Button
                     onClick={handleUpdateUsername}
                     disabled={usernameLoading}
-                    className="w-full sm:w-auto"
+                    className={`${accentButtonClass} h-10 px-5`}
                   >
-                    {usernameLoading ? 'Updating...' : 'Save New Username'}
+                    {usernameLoading ? 'Updating…' : 'Save Username'}
                   </Button>
                 )}
               </div>
@@ -523,7 +520,7 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
             <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Menu Configuration</h3>
             <div className="space-y-3">
               {/* Currency Selector */}
-              <div className={`flex h-11 items-center justify-between px-3 rounded-lg border ${getBorderColor()}`}>
+              <div className={`flex h-11 items-center justify-between px-3 ${groupedClass}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <Coins className={`h-4 w-4 ${mutedTextClass}`} />
@@ -549,7 +546,7 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
               </div>
 
               {/* Show Prices Toggle */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border ${getBorderColor()}`}>
+              <div className={`flex items-center justify-between p-3 ${groupedClass}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <DollarSign className={`h-4 w-4 ${mutedTextClass}`} />
@@ -570,7 +567,7 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
               </div>
 
               {/* Menu is Public Toggle */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border ${getBorderColor()}`}>
+              <div className={`flex items-center justify-between p-3 ${groupedClass}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     {isPublic && hasPremiumAccess ? (
@@ -595,10 +592,15 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
               </div>
 
               {!hasPremiumAccess && (
-                <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-md flex gap-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-500 flex-none" />
-                  <span className="text-xs text-orange-600">
-                    Premium required for public visibility.
+                <div
+                  className="p-3 rounded-[12px] flex gap-2"
+                  style={{
+                    backgroundColor: isDarkBackground ? 'rgba(255,159,10,0.16)' : 'rgba(255,159,10,0.12)',
+                  }}
+                >
+                  <AlertTriangle className="h-4 w-4 text-[#FF9F0A] flex-none mt-0.5" />
+                  <span className={`text-[13px] ${secondaryTextClass}`}>
+                    Premium is required for a public menu.
                   </span>
                 </div>
               )}
@@ -611,7 +613,7 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
           <div className="space-y-4">
             <h3 className={`text-sm font-semibold ${primaryTextClass}`}>Subscription</h3>
             {hasPremiumAccess ? (
-              <div className={`p-4 rounded-lg border ${getBorderColor()}`}>
+              <div className={`p-4 ${groupedClass}`}>
                 <SubscriptionExpiryWarning />
                 <SubscriptionDetailsCard />
               </div>
@@ -623,8 +625,8 @@ export function SettingsDialog({ triggerClassName, children, listenForGlobalOpen
           {/* Delete Account Section */}
           <div className="space-y-4 pt-4">
             <Button
-              variant="outline"
-              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-colors"
+              variant="ghost"
+              className="w-full h-11 rounded-full border-0 text-[#FF3B30] hover:bg-[#FF3B30]/10 hover:text-[#FF3B30]"
               onClick={handleDeleteAllMenuItems}
               disabled={deleteItemsLoading}
             >

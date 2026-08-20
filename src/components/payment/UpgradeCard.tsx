@@ -166,7 +166,7 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
           Upgrade to Premium
         </CardTitle>
         <CardDescription className="text-orange-700">
-          Unlock public menus, QR codes, and advanced features
+          Unlock public menus, QR codes, analytics, and advanced features
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -174,6 +174,10 @@ export function UpgradeCard({ onUpgrade: _onUpgrade }: UpgradeCardProps) {
           <div className="flex items-center gap-2 text-sm text-orange-700">
             <Check className="h-4 w-4 text-green-600" />
             Public menu pages
+          </div>
+          <div className="flex items-center gap-2 text-sm text-orange-700">
+            <Check className="h-4 w-4 text-green-600" />
+            Menu analytics for restaurant owners
           </div>
           <div className="flex items-center gap-2 text-sm text-orange-700">
             <Check className="h-4 w-4 text-green-600" />

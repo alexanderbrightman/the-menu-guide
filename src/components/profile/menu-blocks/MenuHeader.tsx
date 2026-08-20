@@ -15,35 +15,26 @@ export function MenuHeader({
     message,
     theme,
 }: MenuHeaderProps) {
-    const {
-        getBorderColor,
-        isDarkBackground,
-    } = theme
+    const { isDarkBackground } = theme
+    if (!message) return null
+
+    const isError = message.toLowerCase().includes('error')
 
     return (
-        <header className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-                    {/* Header content moved to Dashboard frame */}
-                </div>
-
-                {message && (
-                    <div
-                        className={`max-w-2xl border px-4 py-3 text-sm sm:text-base font-medium rounded-lg shadow-sm ${getBorderColor()} ${message.toLowerCase().includes('error')
-                            ? isDarkBackground
-                                ? 'bg-red-900/30 text-red-100'
-                                : 'bg-red-50 text-red-800'
-                            : isDarkBackground
-                                ? 'bg-emerald-900/30 text-emerald-100'
-                                : 'bg-emerald-50 text-emerald-800'
-                            }`}
-                        role="status"
-                        aria-live="polite"
-                    >
-                        {message}
-                    </div>
-                )}
-            </div>
-        </header>
+        <div
+            className="mb-4 rounded-[12px] px-4 py-3 text-[13px] font-medium tracking-tight"
+            style={{
+                backgroundColor: isError
+                    ? isDarkBackground ? 'rgba(255,59,48,0.18)' : 'rgba(255,59,48,0.10)'
+                    : isDarkBackground ? 'rgba(52,199,89,0.18)' : 'rgba(52,199,89,0.12)',
+                color: isError
+                    ? isDarkBackground ? '#FF8A80' : '#C41E12'
+                    : isDarkBackground ? '#7DFFA6' : '#1B7A3A',
+            }}
+            role="status"
+            aria-live="polite"
+        >
+            {message}
+        </div>
     )
 }

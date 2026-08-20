@@ -17,6 +17,7 @@ interface OpeningHoursEditorProps {
   primaryTextClass: string
   secondaryTextClass: string
   borderClass: string
+  hairline?: string
 }
 
 export function OpeningHoursEditor({
@@ -25,6 +26,7 @@ export function OpeningHoursEditor({
   primaryTextClass,
   secondaryTextClass,
   borderClass,
+  hairline = 'rgba(0,0,0,0.08)',
 }: OpeningHoursEditorProps) {
   const hours = parseOpeningHours(value) ?? emptyOpeningHours()
   const colorScheme = primaryTextClass.includes('text-white') ? 'dark' : 'light'
@@ -55,13 +57,14 @@ export function OpeningHoursEditor({
         </button>
       </div>
 
-      <div className={`overflow-hidden rounded-xl border ${borderClass}`}>
+      <div className={`overflow-hidden ${borderClass}`}>
         {WEEKDAY_ORDER.map((day, index) => {
           const entry = hours[day]
           return (
             <div
               key={day}
-              className={`flex items-center gap-3 px-3 py-2.5 ${index > 0 ? `border-t ${borderClass}` : ''}`}
+              className="flex items-center gap-3 px-3 py-2.5"
+              style={index > 0 ? { borderTop: `0.5px solid ${hairline}` } : undefined}
             >
               <span className={`w-10 flex-shrink-0 text-[13px] font-medium ${primaryTextClass}`}>
                 {WEEKDAY_FULL[day].slice(0, 3)}

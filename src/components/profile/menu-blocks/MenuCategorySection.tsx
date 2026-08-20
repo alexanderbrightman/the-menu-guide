@@ -25,7 +25,6 @@ interface MenuCategorySectionProps {
     onItemClick: (item: MenuItemWithRelations) => void
     favoritedIds: Set<string>
     theme: ReturnType<typeof useMenuTheme>
-    cardStyle?: 'classic' | 'minimal'
     emptyMessage?: string
     subtitle?: string
     isSortable?: boolean
@@ -48,7 +47,6 @@ export function MenuCategorySection({
     onItemClick,
     favoritedIds,
     theme,
-    cardStyle = 'classic',
     emptyMessage = 'No items in this category.',
     subtitle,
     isSortable = false,
@@ -57,10 +55,10 @@ export function MenuCategorySection({
         menuFontFamily,
         primaryTextClass,
         mutedTextClass,
-        outlineButtonClass,
+        groupedClass,
+        fieldClass,
+        chipClass,
         focusRingClass,
-        getBorderColor,
-        isDarkBackground,
     } = theme
 
     const itemCount = items.length
@@ -95,11 +93,8 @@ export function MenuCategorySection({
     }
 
     return (
-        <section
-            className={`border ${getBorderColor()} ${isDarkBackground ? 'bg-white/5' : 'bg-white/40 backdrop-blur-xl backdrop-saturate-[1.8]'
-                } rounded-xl overflow-hidden`}
-        >
-            <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+        <section>
+            <div className="py-1">
                 <div className="flex items-start justify-between">
                     {isEditing ? (
                         <div className="flex-1 flex items-center gap-2 mr-4">
@@ -108,8 +103,8 @@ export function MenuCategorySection({
                                 value={editedTitle}
                                 onChange={(e) => setEditedTitle(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                className={`text-lg sm:text-xl md:text-2xl font-semibold h-auto py-1 px-2 ${primaryTextClass}`}
-                                style={{ fontFamily: menuFontFamily }}
+                                className={`${fieldClass} text-[17px] sm:text-[22px] font-semibold h-11`}
+                                style={{ fontFamily: menuFontFamily, letterSpacing: '-0.022em' }}
                                 onClick={(e) => e.stopPropagation()}
                             />
                             <Button
@@ -119,7 +114,7 @@ export function MenuCategorySection({
                                     e.stopPropagation()
                                     handleSave()
                                 }}
-                                className="h-8 w-8 p-0 rounded-lg"
+                                className="h-8 w-8 p-0 rounded-full"
                             >
                                 <Check className="h-4 w-4 text-green-500" />
                             </Button>
@@ -130,7 +125,7 @@ export function MenuCategorySection({
                                     e.stopPropagation()
                                     handleCancel()
                                 }}
-                                className="h-8 w-8 p-0 rounded-lg"
+                                className="h-8 w-8 p-0 rounded-full"
                             >
                                 <X className="h-4 w-4 text-red-500" />
                             </Button>
@@ -150,20 +145,20 @@ export function MenuCategorySection({
                         >
                             <div>
                                 <h2
-                                    className={`text-lg sm:text-xl md:text-2xl font-semibold ${primaryTextClass}`}
-                                    style={{ fontFamily: menuFontFamily }}
+                                    className={`text-[22px] sm:text-[26px] font-semibold tracking-tight ${primaryTextClass}`}
+                                    style={{ fontFamily: menuFontFamily, letterSpacing: '-0.022em' }}
                                 >
                                     {title}
                                 </h2>
-                                <p className={`text-xs sm:text-sm mt-1 ${mutedTextClass}`}>
+                                <p className={`text-[13px] mt-0.5 ${mutedTextClass}`}>
                                     {subtitle || `${itemCount} item${itemCount === 1 ? '' : 's'}`}
                                 </p>
                             </div>
-                            <span className="mt-1">
+                            <span className={`mt-1.5 opacity-35 ${mutedTextClass}`}>
                                 {isOpen ? (
-                                    <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    <ChevronUp className="h-4 w-4" strokeWidth={2} />
                                 ) : (
-                                    <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    <ChevronDown className="h-4 w-4" strokeWidth={2} />
                                 )}
                             </span>
                         </button>
@@ -175,8 +170,8 @@ export function MenuCategorySection({
                         {onAddItem && (
                             <Button
                                 size="sm"
-                                variant="outline"
-                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()} rounded-lg`}
+                                variant="ghost"
+                                className={`${chipClass} flex items-center gap-1`}
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     onAddItem()
@@ -190,8 +185,8 @@ export function MenuCategorySection({
                         {(onEditCategory || onRenameCategory) && (
                             <Button
                                 size="sm"
-                                variant="outline"
-                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()} rounded-lg`}
+                                variant="ghost"
+                                className={`${chipClass} flex items-center gap-1`}
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     if (onRenameCategory) {
@@ -210,8 +205,8 @@ export function MenuCategorySection({
                         {onDeleteCategory && (
                             <Button
                                 size="sm"
-                                variant="outline"
-                                className={`${outlineButtonClass} flex items-center gap-1 border ${getBorderColor()} rounded-lg`}
+                                variant="ghost"
+                                className={`${chipClass} flex items-center gap-1`}
                                 onClick={(event) => {
                                     event.stopPropagation()
                                     onDeleteCategory()
@@ -227,9 +222,9 @@ export function MenuCategorySection({
             </div>
 
             {isOpen && (
-                <div className={`border-t ${getBorderColor()} px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6`}>
+                <div className="pt-3 pb-2">
                     {itemCount === 0 ? (
-                        <div className={`text-xs sm:text-sm ${mutedTextClass}`}>
+                        <div className={`px-4 py-8 text-center text-[13px] ${groupedClass} ${mutedTextClass}`}>
                             {emptyMessage}
                         </div>
                     ) : (
@@ -239,7 +234,7 @@ export function MenuCategorySection({
                             disabled={!isSortable}
                         >
                             <div
-                                className={cardStyle === 'minimal' ? 'grid gap-5 sm:gap-6' : 'grid gap-3'}
+                                className="grid gap-5 sm:gap-6"
                                 style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}
                             >
                                 {items.map((item) => (
@@ -247,7 +242,6 @@ export function MenuCategorySection({
                                         <MenuItemCard
                                             item={item}
                                             theme={theme}
-                                            cardStyle={cardStyle}
                                             onEdit={() => onEditItem(item)}
                                             onDelete={() => onDeleteItem(item.id)}
                                             onToggleFavorite={() => onToggleFavorite(item.id)}

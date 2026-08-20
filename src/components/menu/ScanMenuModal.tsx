@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { ScanLine, Upload, X, Crown } from 'lucide-react'
+import { ScanLine, Upload, Crown } from 'lucide-react'
 import { usePremiumFeature } from '@/hooks/usePremiumFeature'
 import { Profile } from '@/lib/supabase'
 import { useMenuTheme } from '@/hooks/useMenuTheme'
@@ -74,7 +74,14 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
     contrastColor,
     primaryTextClass,
     secondaryTextClass,
-    getBorderColor,
+    mutedTextClass,
+    fieldClass,
+    chipClass,
+    groupedClass,
+    accentButtonClass,
+    hairline,
+    fill,
+    isDarkBackground,
   } = useMenuTheme(profile || null)
 
   const reviewing = draftItems.length > 0
@@ -223,12 +230,12 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
   }
 
   const latestPhoto = photoUrls[photoUrls.length - 1]
-  const borderClass = `border ${getBorderColor()}`
+  const isErrorMessage = message ? /fail|error|not authenticated|select at least/i.test(message) : false
 
   return (
     <>
       {!hideTrigger && (
-        <Button onClick={() => setShowModal(true)} variant="outline">
+        <Button onClick={() => setShowModal(true)} className={accentButtonClass}>
           <ScanLine className="h-4 w-4 mr-2" />
           Scan Menu
         </Button>
@@ -236,43 +243,53 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
 
       <Dialog open={showModal} onOpenChange={handleClose}>
         <DialogContent
-          className={`w-[92vw] border ${getBorderColor()} p-0 gap-0 rounded-xl overflow-hidden shadow-xl [&>button]:hidden flex flex-col ${
+          className={`w-[92vw] border-0 p-0 gap-0 rounded-[18px] overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.22)] [&>button]:hidden flex flex-col ${
             reviewing ? 'max-w-lg max-h-[90dvh]' : 'max-w-sm'
           }`}
+          showCloseButton={false}
           style={{
             backgroundColor: menuBackgroundColor,
             color: contrastColor,
           }}
         >
-          <div className={`flex items-center justify-between p-4 border-b ${getBorderColor()} shrink-0`}>
-            <div />
-            <DialogTitle className={`text-base sm:text-lg font-semibold ${primaryTextClass} flex items-center gap-2`}>
-              <ScanLine className="h-5 w-5" />
-              {reviewing ? 'Review scan' : 'Scan Your Menu'}
-            </DialogTitle>
+          <div
+            className="flex items-center justify-between p-4 shrink-0"
+            style={{ borderBottom: `0.5px solid ${hairline}` }}
+          >
             <Button
               type="button"
               variant="ghost"
-              size="icon"
               onClick={() => handleClose(false)}
               disabled={loading || saving}
-              className="h-8 w-8 hover:bg-transparent"
-              style={{ color: contrastColor }}
+              className="text-base font-normal hover:bg-transparent px-2 -ml-2"
+              style={{ color: isDarkBackground ? '#ffffff' : '#000000' }}
             >
-              <X className="h-5 w-5" />
+              Cancel
             </Button>
+            <DialogTitle className={`text-[17px] font-semibold tracking-tight ${primaryTextClass}`}>
+              {reviewing ? 'Review Scan' : 'Scan Menu'}
+            </DialogTitle>
+            <span className="w-[72px]" />
           </div>
 
-          <div className={`flex-1 min-h-0 ${reviewing ? 'overflow-y-auto p-4 space-y-4' : 'p-6 flex flex-col justify-center space-y-8'}`}>
+          <div className={`flex-1 min-h-0 ${reviewing ? 'overflow-y-auto p-4 space-y-4' : 'p-6 flex flex-col justify-center space-y-6'}`}>
             {!premiumAccess.canAccess ? (
               <div className="flex flex-col items-center justify-center text-center space-y-4 py-4">
-                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Crown className="size-6 text-orange-600" />
+                <div
+                  className="h-12 w-12 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: fill }}
+                >
+                  <Crown className={`size-5 ${mutedTextClass}`} strokeWidth={1.75} />
                 </div>
-                <div className="space-y-2">
-                  <h3 className={`text-lg font-semibold ${primaryTextClass}`}>Premium Feature</h3>
-                  <p className={`text-sm ${secondaryTextClass} max-w-[250px] mx-auto`}>
-                    Upgrade to Premium to unlock AI Menu Scanning and more.
+                <div className="space-y-1.5">
+                  <h3
+                    className={`text-[17px] font-semibold tracking-tight ${primaryTextClass}`}
+                    style={{ letterSpacing: '-0.022em' }}
+                  >
+                    Premium Feature
+                  </h3>
+                  <p className={`text-[13px] leading-snug ${secondaryTextClass} max-w-[250px] mx-auto`}>
+                    Upgrade to scan a printed menu with the camera.
                   </p>
                 </div>
                 <div className="flex flex-col w-full gap-2 pt-2">
@@ -301,13 +318,13 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                         setLoading(false)
                       }
                     }}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    className={`w-full h-11 ${accentButtonClass}`}
                     disabled={loading}
                   >
-                    {loading ? 'Loading...' : 'Upgrade Now'}
+                    {loading ? 'Loading…' : 'Upgrade'}
                   </Button>
-                  <Button variant="ghost" onClick={() => setShowModal(false)} className={secondaryTextClass}>
-                    Maybe Later
+                  <Button variant="ghost" onClick={() => setShowModal(false)} className={chipClass}>
+                    Not Now
                   </Button>
                 </div>
               </div>
@@ -324,65 +341,52 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
 
                 {!reviewing && !loading && (
                   <>
-                    <div className={`text-sm ${secondaryTextClass} space-y-4 text-center`}>
-                      <p className="font-medium text-lg">Snap a clear photo of your menu.</p>
-                      <div className="flex justify-center">
-                        <ul className="space-y-2 text-sm text-left inline-block">
-                          <li className="flex items-start gap-2">
-                            <span className="mt-1">•</span>
-                            <span>Nothing is added until you review it.</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="mt-1">•</span>
-                            <span>Check names and prices against the photo.</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="mt-1">•</span>
-                            <span>Leave a price blank if it looks wrong.</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed ${getBorderColor()} rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
-                    >
-                      <Upload className={`h-8 w-8 ${secondaryTextClass}`} />
-                      <span className={`text-sm font-medium ${secondaryTextClass}`}>Tap to take or choose a photo</span>
-                    </div>
-
-                    <div className="flex justify-center gap-3 pt-2">
-                      <Button variant="ghost" onClick={() => handleClose(false)} className={secondaryTextClass}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="bg-green-600 hover:bg-green-700 text-white min-w-[140px]"
+                    <div className={`space-y-3 text-center ${secondaryTextClass}`}>
+                      <p
+                        className={`text-[22px] font-semibold tracking-tight ${primaryTextClass}`}
+                        style={{ letterSpacing: '-0.022em' }}
                       >
-                        Select Image
-                      </Button>
+                        Snap a clear photo
+                      </p>
+                      <p className="text-[13px] leading-relaxed">
+                        Nothing is added until you review it. Check names and prices against the photo, and leave a price blank if it looks wrong.
+                      </p>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="rounded-[16px] p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-opacity active:opacity-80"
+                      style={{ backgroundColor: fill }}
+                    >
+                      <Upload className={`h-7 w-7 ${mutedTextClass}`} strokeWidth={1.75} />
+                      <span className={`text-[13px] font-medium ${secondaryTextClass}`}>
+                        Tap to take or choose a photo
+                      </span>
+                    </button>
                   </>
                 )}
 
                 {loading && (
                   <div className="flex flex-col items-center justify-center py-8">
                     {latestPhoto && (
-                      <div className="relative w-full h-28 mb-6 rounded-xl overflow-hidden opacity-60">
+                      <div className="relative w-full h-28 mb-6 rounded-[16px] overflow-hidden opacity-60">
                         <Image src={latestPhoto} alt="Scanning" fill className="object-contain" unoptimized />
                       </div>
                     )}
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600 mb-6"></div>
-                    <p className={`font-medium text-lg ${primaryTextClass}`}>Reading your menu…</p>
-                    <p className={`text-sm mt-2 ${secondaryTextClass}`}>Nothing is saved until you review it</p>
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent opacity-35 mb-5" />
+                    <p className={`text-[17px] font-semibold tracking-tight ${primaryTextClass}`}>Reading your menu…</p>
+                    <p className={`text-[13px] mt-1.5 ${mutedTextClass}`}>Nothing is saved until you review it</p>
                   </div>
                 )}
 
                 {reviewing && !loading && (
                   <>
                     {latestPhoto && (
-                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/20 bg-black/10 shrink-0">
+                      <div
+                        className="relative w-full h-32 rounded-[16px] overflow-hidden shrink-0"
+                        style={{ backgroundColor: fill }}
+                      >
                         <Image
                           src={latestPhoto}
                           alt="Scanned menu"
@@ -398,7 +402,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                       </div>
                     )}
 
-                    <p className={`text-sm ${secondaryTextClass}`}>
+                    <p className={`text-[13px] ${mutedTextClass}`}>
                       Uncheck anything that does not belong. Fix a price if the photo disagrees.
                     </p>
 
@@ -406,16 +410,16 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                       {draftItems.map((item) => (
                         <div
                           key={item.id}
-                          className={`rounded-xl border p-3 space-y-3 ${getBorderColor()} ${
-                            item.included ? '' : 'opacity-50'
+                          className={`p-3 space-y-3 ${groupedClass} ${
+                            item.included ? '' : 'opacity-45'
                           }`}
                         >
-                          <label className={`flex items-center gap-2 text-sm font-medium ${primaryTextClass}`}>
+                          <label className={`flex items-center gap-2 text-[13px] font-medium ${primaryTextClass}`}>
                             <input
                               type="checkbox"
                               checked={item.included}
                               onChange={(event) => updateDraft(item.id, { included: event.target.checked })}
-                              className="h-4 w-4"
+                              className="h-4 w-4 rounded"
                             />
                             Include this item
                           </label>
@@ -423,14 +427,14 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                             value={item.title}
                             onChange={(event) => updateDraft(item.id, { title: event.target.value })}
                             placeholder="Item name"
-                            className={`h-10 bg-transparent ${borderClass}`}
+                            className={`${fieldClass} text-base`}
                           />
                           <div className="grid grid-cols-2 gap-2">
                             <Input
                               value={item.category}
                               onChange={(event) => updateDraft(item.id, { category: event.target.value })}
                               placeholder="Category"
-                              className={`h-10 bg-transparent ${borderClass}`}
+                              className={`${fieldClass} text-base`}
                             />
                             <Input
                               type="number"
@@ -439,7 +443,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                               value={item.price}
                               onChange={(event) => updateDraft(item.id, { price: event.target.value })}
                               placeholder="Price"
-                              className={`h-10 bg-transparent ${borderClass}`}
+                              className={`${fieldClass} text-base`}
                             />
                           </div>
                           <Textarea
@@ -447,14 +451,14 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
                             onChange={(event) => updateDraft(item.id, { description: event.target.value })}
                             placeholder="Description"
                             rows={2}
-                            className={`resize-none bg-transparent text-sm ${borderClass}`}
+                            className={`${fieldClass} min-h-[4.5rem] h-auto resize-none py-2.5 text-sm`}
                           />
                           <ExtrasEditor
                             extras={item.extras}
                             onChange={(extras) => updateDraft(item.id, { extras })}
                             textClass={primaryTextClass}
-                            mutedClass={secondaryTextClass}
-                            borderClass={borderClass}
+                            mutedClass={mutedTextClass}
+                            borderClass={`${fieldClass} h-9`}
                             disabled={!item.included}
                           />
                         </div>
@@ -465,11 +469,15 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
 
                 {message && (
                   <div
-                    className={`p-3 rounded-lg text-center text-sm font-medium ${
-                      /fail|error|not authenticated|select at least/i.test(message)
-                        ? 'bg-red-500/10 text-red-600 border border-red-500/20'
-                        : 'bg-green-500/10 text-green-700 border border-green-500/20'
-                    }`}
+                    className="rounded-[12px] px-4 py-3 text-center text-[13px] font-medium"
+                    style={{
+                      backgroundColor: isErrorMessage
+                        ? isDarkBackground ? 'rgba(255,59,48,0.18)' : 'rgba(255,59,48,0.10)'
+                        : isDarkBackground ? 'rgba(52,199,89,0.18)' : 'rgba(52,199,89,0.12)',
+                      color: isErrorMessage
+                        ? isDarkBackground ? '#FF8A80' : '#C41E12'
+                        : isDarkBackground ? '#7DFFA6' : '#1B7A3A',
+                    }}
                   >
                     {message}
                   </div>
@@ -479,12 +487,15 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
           </div>
 
           {premiumAccess.canAccess && reviewing && !loading && (
-            <div className={`shrink-0 border-t ${getBorderColor()} p-3 flex flex-wrap gap-2`}>
+            <div
+              className="shrink-0 p-3 flex flex-wrap gap-2"
+              style={{ borderTop: `0.5px solid ${hairline}` }}
+            >
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 disabled={saving || draftItems.length >= MAX_DRAFT_ITEMS}
-                className={`${borderClass} ${primaryTextClass} flex-1 min-w-[140px]`}
+                className={`${chipClass} flex-1 min-w-[140px] h-11`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 Scan another page
@@ -492,7 +503,7 @@ export function ScanMenuModal({ userId, onScanSuccess, hideTrigger = false, prof
               <Button
                 type="button"
                 disabled={saving || includedCount === 0}
-                className="bg-green-600 hover:bg-green-700 text-white flex-1 min-w-[140px]"
+                className={`${accentButtonClass} flex-1 min-w-[140px] h-11`}
                 onClick={() => void handleSave()}
               >
                 {saving ? 'Adding…' : `Add ${includedCount} item${includedCount !== 1 ? 's' : ''}`}

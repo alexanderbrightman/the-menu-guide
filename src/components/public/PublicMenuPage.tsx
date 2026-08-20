@@ -31,6 +31,8 @@ import { dishShareDescription, dishShareTitle } from '@/lib/menu-json-ld'
 import { menuShareUrl, replaceMenuItemQuery } from '@/lib/site-url'
 import { formatStartingPrice } from '@/lib/menu-extras'
 import { DishExtrasList } from '@/components/menu/DishExtrasList'
+import { useAuth } from '@/contexts/AuthContext'
+import { trackAnalytics } from '@/lib/analytics-client'
 
 interface MenuItemWithTags extends MenuItem {
   menu_categories?: { name: string }
@@ -59,8 +61,6 @@ const MenuItemCard = memo(({
   isDarkBackground,
   headingFontFamily,
   showPrices,
-  cardStyle,
-  getBorderColor,
   currency,
   failedImages,
   onImageError,
@@ -73,8 +73,6 @@ const MenuItemCard = memo(({
   isDarkBackground: boolean
   headingFontFamily: string
   showPrices: boolean
-  cardStyle: 'classic' | 'minimal'
-  getBorderColor: () => string
   currency?: string
   failedImages: Set<string>
   onImageError: (url: string) => void
@@ -108,74 +106,40 @@ const MenuItemCard = memo(({
     />
   )
 
-  if (cardStyle === 'minimal') {
-    return (
-      <button
-        type="button"
-        className="group cursor-pointer text-left w-full"
-        onClick={() => onSelect(item)}
-      >
-        <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
-          <div
-            className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${
-              isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
-            } shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]`}
-          >
-            {image}
-          </div>
-          <div className="pt-3 px-0.5">
-            <h3
-              className={`text-[13.5px] sm:text-[15px] font-semibold leading-tight truncate ${priceClass}`}
-              style={{ fontFamily: headingFontFamily, letterSpacing: '-0.01em' }}
-            >
-              {item.title}
-            </h3>
-            {showPrices && priceLabel && (
-              <p className={`mt-1 text-[12px] sm:text-[13px] font-medium notranslate ${priceClass}`}>
-                {priceLabel}
-              </p>
-            )}
-            {item.description && (
-              <p className={`mt-1 text-[11px] sm:text-[12px] line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
-                {item.description}
-              </p>
-            )}
-          </div>
-        </div>
-      </button>
-    )
-  }
-
   return (
-    <div
-      className={`group relative flex flex-col cursor-pointer border ${getBorderColor()} hover:opacity-80 transition-opacity duration-200 ${hasValidImage ? (isDarkBackground ? 'bg-white/5' : 'bg-white') : ''
-        }`}
+    <button
+      type="button"
+      className="group cursor-pointer text-left w-full"
       onClick={() => onSelect(item)}
     >
-      <div className={`relative aspect-[3/2] overflow-hidden border-b ${getBorderColor()}`}>
-        {image}
-      </div>
-      <div className="flex-1 flex flex-col p-2 sm:p-3">
-        <div className="mb-2">
+      <div className="transition-transform duration-200 ease-out group-hover:scale-[0.98] group-active:scale-[0.96]">
+        <div
+          className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${
+            isDarkBackground ? 'bg-white/10' : 'bg-gray-100'
+          } shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]`}
+        >
+          {image}
+        </div>
+        <div className="pt-3 px-0.5">
           <h3
-            className={`font-semibold text-xs sm:text-sm md:text-base ${priceClass}`}
-            style={{ fontFamily: headingFontFamily }}
+            className={`text-[13.5px] sm:text-[15px] font-semibold leading-tight truncate ${priceClass}`}
+            style={{ fontFamily: headingFontFamily, letterSpacing: '-0.01em' }}
           >
             {item.title}
           </h3>
           {showPrices && priceLabel && (
-            <div className={`font-semibold text-xs mt-1 ${priceClass} notranslate`}>
+            <p className={`mt-1 text-[12px] sm:text-[13px] font-medium notranslate ${priceClass}`}>
               {priceLabel}
-            </div>
+            </p>
+          )}
+          {item.description && (
+            <p className={`mt-1 text-[11px] sm:text-[12px] line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
+              {item.description}
+            </p>
           )}
         </div>
-        {item.description && (
-          <p className={`text-xs line-clamp-2 whitespace-pre-wrap ${descriptionClass}`}>
-            {item.description}
-          </p>
-        )}
       </div>
-    </div>
+    </button>
   )
 })
 
@@ -196,18 +160,39 @@ export function PublicMenuPage({
   const openedSharedItem = useRef(false)
   const [isPending, startTransition] = useTransition()
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+  const { user, loading: authLoading } = useAuth()
+  const isOwner = Boolean(user?.id && user.id === profile.id)
 
   useEffect(() => {
     setPortalReady(true)
   }, [])
 
   useEffect(() => {
+    if (authLoading || isOwner) return
+    trackAnalytics({
+      restaurant_id: profile.id,
+      event_type: 'profile_view',
+      surface: 'menu',
+    })
+  }, [authLoading, isOwner, profile.id])
+
+  useEffect(() => {
+    if (authLoading) return
     if (openedSharedItem.current || !initialItemId) return
     const item = menuItems.find((entry) => entry.id === initialItemId)
     if (!item) return
     openedSharedItem.current = true
     setSelectedItem(item)
-  }, [initialItemId, menuItems])
+    if (!isOwner) {
+      trackAnalytics({
+        restaurant_id: profile.id,
+        event_type: 'item_click',
+        menu_item_id: item.id,
+        entity_kind: 'menu_item',
+        surface: 'menu',
+      })
+    }
+  }, [authLoading, initialItemId, isOwner, menuItems, profile.id])
 
   // Handler for image load errors
   const handleImageError = useCallback((url: string) => {
@@ -228,7 +213,6 @@ export function PublicMenuPage({
   const menuFont = profile.menu_font || DEFAULT_MENU_FONT
   const menuBackgroundColor = profile.menu_background_color || DEFAULT_MENU_BACKGROUND_COLOR
   const showPrices = profile.show_prices !== false // default to true if undefined
-  const cardStyle = profile.menu_card_style === 'classic' ? 'classic' : 'minimal'
   const contrastColor = useMemo(() => getContrastColor(menuBackgroundColor), [menuBackgroundColor])
   const isDarkBackground = contrastColor === '#ffffff'
   const menuFontFamily = useMemo(
@@ -242,11 +226,6 @@ export function PublicMenuPage({
   const dividerBorderClass = isDarkBackground ? 'border-white' : 'border-black'
 
   const iconMutedClass = isDarkBackground ? 'text-gray-200/60' : 'text-gray-400'
-
-  // Helper to get border color based on background (matching private page)
-  const getBorderColor = () => {
-    return isDarkBackground ? 'border-white' : 'border-black'
-  }
 
   const themeStyle = useMemo(() => ({
     backgroundColor: menuBackgroundColor,
@@ -416,9 +395,18 @@ export function PublicMenuPage({
   }, [])
 
   const handleItemSelect = useCallback((item: MenuItemWithTags) => {
+    if (!isOwner) {
+      trackAnalytics({
+        restaurant_id: profile.id,
+        event_type: 'item_click',
+        menu_item_id: item.id,
+        entity_kind: 'menu_item',
+        surface: 'menu',
+      })
+    }
     setSelectedItem(item)
     replaceMenuItemQuery(item.id)
-  }, [])
+  }, [isOwner, profile.id])
 
   const closeSelectedItem = useCallback(() => {
     setSelectedItem(null)
@@ -566,6 +554,14 @@ export function PublicMenuPage({
                 text={profile.bio || `${profile.display_name} menu`}
                 label="Share menu"
                 isDark={isDarkBackground}
+                onShare={() => {
+                  if (isOwner) return
+                  trackAnalytics({
+                    restaurant_id: profile.id,
+                    event_type: 'share',
+                    surface: 'menu',
+                  })
+                }}
               />
             </div>
           </div>
@@ -750,13 +746,7 @@ export function PublicMenuPage({
                             isDarkBackground={isDarkBackground}
                             fontFamily={menuFontFamily}
                           />
-                          <div
-                            className={
-                              cardStyle === 'minimal'
-                                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6'
-                                : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
-                            }
-                          >
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
                             {items.map((item, index) => (
                               <MenuItemCard
                                 key={item.id}
@@ -767,8 +757,6 @@ export function PublicMenuPage({
                                 isDarkBackground={isDarkBackground}
                                 headingFontFamily={menuFontFamily}
                                 showPrices={showPrices}
-                                cardStyle={cardStyle}
-                                getBorderColor={getBorderColor}
                                 currency={profile.currency}
                                 failedImages={failedImages}
                                 onImageError={handleImageError}
@@ -791,13 +779,7 @@ export function PublicMenuPage({
                               fontFamily={menuFontFamily}
                             />
                           )}
-                          <div
-                            className={
-                              cardStyle === 'minimal'
-                                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6'
-                                : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
-                            }
-                          >
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
                             {uncategorizedItems.map((item, index) => (
                               <MenuItemCard
                                 key={item.id}
@@ -808,8 +790,6 @@ export function PublicMenuPage({
                                 isDarkBackground={isDarkBackground}
                                 headingFontFamily={menuFontFamily}
                                 showPrices={showPrices}
-                                cardStyle={cardStyle}
-                                getBorderColor={getBorderColor}
                                 currency={profile.currency}
                                 failedImages={failedImages}
                                 onImageError={handleImageError}
@@ -826,13 +806,7 @@ export function PublicMenuPage({
                 </div>
               ) : (
                 /* Standard grid for single category view */
-                <div
-                  className={
-                    cardStyle === 'minimal'
-                      ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6'
-                      : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6'
-                  }
-                >
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
                   {filteredItems.map((item, index) => (
                     <MenuItemCard
                       key={item.id}
@@ -843,8 +817,6 @@ export function PublicMenuPage({
                       isDarkBackground={isDarkBackground}
                       headingFontFamily={menuFontFamily}
                       showPrices={showPrices}
-                      cardStyle={cardStyle}
-                      getBorderColor={getBorderColor}
                       currency={profile.currency}
                       failedImages={failedImages}
                       onImageError={handleImageError}
@@ -881,6 +853,16 @@ export function PublicMenuPage({
               }
               label="Share dish"
               isDark={isDarkBackground}
+              onShare={() => {
+                if (isOwner) return
+                trackAnalytics({
+                  restaurant_id: profile.id,
+                  event_type: 'share',
+                  menu_item_id: selectedItem.id,
+                  entity_kind: 'menu_item',
+                  surface: 'menu',
+                })
+              }}
             />
             <ModalCloseButton onClose={closeSelectedItem} isDark={isDarkBackground} />
             <div

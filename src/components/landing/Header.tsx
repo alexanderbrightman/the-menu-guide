@@ -331,20 +331,20 @@ export function Header({ onResetPasswordClick, activeTab, onTabChange }: HeaderP
                 />
             )}
             <header ref={headerRef} className="relative z-30 w-full overflow-visible pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] pb-3 md:pb-2" style={{ backgroundColor: 'transparent' }}>
+                <div className="relative mx-auto w-full max-w-3xl">
                 <CategoryDivider
                     title="The Menu Guide"
                     isDarkBackground={false}
                     fontFamily="var(--font-raleway), sans-serif"
                     as="h1"
-                    className="my-0 mb-2 md:mb-2.5"
+                    className="my-0 mb-2 md:mb-2.5 lg:-mr-[5.75rem]"
                 />
-                <div className="flex items-center gap-2">
-                    <div ref={chromeRef} className="relative flex min-w-0 flex-1 items-center gap-2 overflow-visible" style={{ minWidth: 0 }}>
-                        <div
-                            ref={searchSlotRef}
-                            className="relative min-w-0 flex-1 overflow-hidden"
-                            style={{ height: HOME_COMPACT_SIZE, minWidth: 0 }}
-                        >
+                <div ref={chromeRef} className="relative flex items-center gap-2 overflow-visible lg:block">
+                    <div
+                        ref={searchSlotRef}
+                        className="relative min-w-0 flex-1 overflow-hidden lg:w-full"
+                        style={{ height: HOME_COMPACT_SIZE, minWidth: 0 }}
+                    >
                             <motion.div
                                 className="h-full w-full"
                                 initial={false}
@@ -382,8 +382,9 @@ export function Header({ onResetPasswordClick, activeTab, onTabChange }: HeaderP
                                     onResultClick={closeSearch}
                                 />
                             </motion.div>
-                        </div>
+                    </div>
 
+                    <div className="relative z-10 flex flex-shrink-0 items-center lg:absolute lg:right-0 lg:top-1/2 lg:-translate-y-1/2 lg:translate-x-full lg:pl-3">
                         <button
                             ref={searchBtnRef}
                             type="button"
@@ -399,43 +400,44 @@ export function Header({ onResetPasswordClick, activeTab, onTabChange }: HeaderP
                             {searchOpen ? <X className="h-[18px] w-[18px]" strokeWidth={2.25} /> : <Search className="h-[18px] w-[18px]" strokeWidth={2.25} />}
                         </button>
 
-                        {track && (
-                            <svg
-                                aria-hidden
-                                className="pointer-events-none absolute inset-0 z-[4] overflow-visible"
-                                width="100%"
-                                height="100%"
-                                style={{ overflow: 'visible' }}
-                            >
-                                <motion.path
-                                    d={track.d}
-                                    fill="none"
-                                    stroke={CHROME_LINE}
-                                    strokeWidth={CHROME_STROKE}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    style={{
-                                        strokeDasharray: dashArray,
-                                        strokeDashoffset: dashOffset,
-                                    }}
-                                />
-                            </svg>
-                        )}
+                        <button
+                            type="button"
+                            onClick={openMenu}
+                            className="relative z-10 flex flex-shrink-0 items-center justify-center bg-transparent text-[#111] active:scale-95 transition-transform"
+                            style={{
+                                height: HOME_COMPACT_SIZE,
+                                width: HOME_COMPACT_SIZE,
+                            }}
+                            aria-label="Open menu"
+                            aria-expanded={isMenuOpen}
+                        >
+                            <Menu className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden="true" />
+                        </button>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={openMenu}
-                        className="relative z-10 flex flex-shrink-0 items-center justify-center bg-transparent text-[#111] active:scale-95 transition-transform"
-                        style={{
-                            height: HOME_COMPACT_SIZE,
-                            width: HOME_COMPACT_SIZE,
-                        }}
-                        aria-label="Open menu"
-                        aria-expanded={isMenuOpen}
-                    >
-                        <Menu className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden="true" />
-                    </button>
+                    {track && (
+                        <svg
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 z-[4] overflow-visible"
+                            width="100%"
+                            height="100%"
+                            style={{ overflow: 'visible' }}
+                        >
+                            <motion.path
+                                d={track.d}
+                                fill="none"
+                                stroke={CHROME_LINE}
+                                strokeWidth={CHROME_STROKE}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{
+                                    strokeDasharray: dashArray,
+                                    strokeDashoffset: dashOffset,
+                                }}
+                            />
+                        </svg>
+                    )}
+                </div>
                 </div>
             </header>
 

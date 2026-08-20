@@ -124,6 +124,15 @@ export const AI_SCAN_RATE_LIMIT = {
 }
 
 /**
+ * Anonymous analytics ingest. Tight enough to blunt spam, loose enough
+ * for a diner tapping several dishes on one menu.
+ */
+export const ANALYTICS_INGEST_RATE_LIMIT = {
+  maxRequests: 40,
+  windowMs: 60 * 1000,
+}
+
+/**
  * Clean up expired rate limit entries (call periodically)
  */
 export function cleanupRateLimit() {

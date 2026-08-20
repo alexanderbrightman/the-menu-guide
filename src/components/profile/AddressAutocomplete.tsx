@@ -21,6 +21,7 @@ interface AddressAutocompleteProps {
   primaryTextClass?: string
   secondaryTextClass?: string
   borderClass?: string
+  groupedClass?: string
 }
 
 export function AddressAutocomplete({
@@ -30,7 +31,8 @@ export function AddressAutocomplete({
   onChange,
   primaryTextClass = 'text-gray-900',
   secondaryTextClass = 'text-gray-500',
-  borderClass = 'border-gray-200',
+  borderClass = 'h-11 rounded-[10px] border-0 bg-black/[0.05]',
+  groupedClass = 'rounded-[12px] border-0 bg-black/[0.05]',
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
@@ -115,8 +117,7 @@ export function AddressAutocomplete({
     <div ref={containerRef} className="space-y-3">
       {selected ? (
         <div
-          className="rounded-xl p-3 flex items-start gap-3"
-          style={glassCardStyle}
+          className={`${groupedClass} p-3 flex items-start gap-3`}
         >
           <MapPin className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
@@ -141,7 +142,7 @@ export function AddressAutocomplete({
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Search for your restaurant address..."
-            className={`h-11 border rounded-lg ${borderClass} bg-white/40 backdrop-blur-xl backdrop-saturate-[1.8] text-base pr-10`}
+            className={`${borderClass} text-base pr-10`}
             onFocus={() => query.length >= 3 && setOpen(true)}
           />
           {loading && (
@@ -184,9 +185,9 @@ export function AddressAutocomplete({
       {!selected && value && (
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="text-xs"
+          className="text-xs rounded-full border-0"
           onClick={() => {
             setQuery(value)
             fetchSuggestions(value)

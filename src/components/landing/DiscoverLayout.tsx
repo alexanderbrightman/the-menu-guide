@@ -8,6 +8,9 @@ const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI"
 export const DISCOVER_GRID_CLASS =
   'grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-5 sm:gap-x-8 sm:gap-y-10'
 
+/** Matches the three-up card columns on desktop so header tabs sit on the same tracks. */
+export const DISCOVER_TAB_GRID_CLASS = 'lg:grid lg:grid-cols-3 lg:gap-x-8'
+
 /**
  * Shared, readable card text block.
  * - Title stays on one line (truncate) so every card keeps the same height
