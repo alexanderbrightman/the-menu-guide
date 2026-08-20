@@ -94,12 +94,14 @@ export function LandingPage() {
       className="h-[100dvh] md:h-screen flex flex-col overflow-hidden bg-[#F5F5F5] min-h-[100dvh]"
       style={{ fontFamily: 'var(--font-raleway), sans-serif' }}
     >
-      <div className="relative z-30 flex-shrink-0 bg-[#F5F5F5]">
-        <Header
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          onResetPasswordClick={() => setShowPasswordResetModal(true)}
-        />
+      <div className="relative z-30 flex-shrink-0 bg-[#F5F5F5] px-4">
+        <div className="mx-auto w-full max-w-3xl">
+          <Header
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            onResetPasswordClick={() => setShowPasswordResetModal(true)}
+          />
+        </div>
       </div>
 
       <div

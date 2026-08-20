@@ -17,7 +17,6 @@ export const HOME_COMPACT_SIZE = 40
 export const HOME_DOCK_RADIUS = 999
 
 const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
-const FLIP_EASE = [0.22, 1, 0.36, 1] as const
 const LETTER_SPACING = '-0.025em'
 const MD_BREAKPOINT = 768
 const LABEL_WEIGHT = 400
@@ -139,22 +138,9 @@ export function HomeTabSwitcher({
       const isDesktop = window.innerWidth >= MD_BREAKPOINT
       setDesktop((prev) => (prev === isDesktop ? prev : isDesktop))
 
-      if (isDesktop && !folded) {
-        const font = 16
-        const pad = 12
-        const next: PillFit = {
-          font,
-          pad,
-          gap: 6,
-          mins: labelsFor(true).map((label) => Math.ceil(measure(label, font)) + pad * 2),
-        }
-        setFit((prev) => (sameFit(prev, next) ? prev : next))
-        return
-      }
-
-      // Desktop search flips in this same slot — keep the tab metrics so
-      // the field cannot resize the row and shove the search icon.
-      if (isDesktop && folded) return
+      // Keep previous metrics while search is flipped in so the row width
+      // cannot shove the search icon.
+      if (folded) return
 
       const available = list.parentElement?.clientWidth || list.clientWidth
       if (available <= 0) return
@@ -183,9 +169,8 @@ export function HomeTabSwitcher({
         role="tablist"
         aria-label="Browse menus"
         aria-hidden={folded}
-        className={cn('relative flex h-full min-w-0 w-full items-center md:w-auto', className)}
+        className={cn('relative flex h-full min-w-0 w-full items-center', className)}
         style={{
-          transformStyle: 'preserve-3d',
           gap: fit.gap,
           minWidth: 0,
         }}
@@ -194,7 +179,7 @@ export function HomeTabSwitcher({
           const isActive = activeTab === tab.id
           const label = desktop ? tab.label : tab.shortLabel
           return (
-            <motion.button
+            <button
               key={tab.id}
               type="button"
               role="tab"
@@ -203,13 +188,6 @@ export function HomeTabSwitcher({
               tabIndex={folded ? -1 : 0}
               onClick={() => onTabChange(tab.id)}
               className="flex items-center justify-center overflow-visible whitespace-nowrap bg-transparent font-normal"
-              initial={false}
-              animate={folded ? { rotateX: 88, opacity: 0 } : { rotateX: 0, opacity: 1 }}
-              transition={{
-                duration: 0.38,
-                ease: FLIP_EASE,
-                delay: folded ? index * 0.05 : (HOME_TABS.length - 1 - index) * 0.05,
-              }}
               style={{
                 fontFamily: APPLE_FONT,
                 fontSize: fit.font,
@@ -223,9 +201,6 @@ export function HomeTabSwitcher({
                 paddingLeft: fit.pad,
                 paddingRight: fit.pad,
                 color: isActive ? '#111111' : 'rgba(17,17,17,0.62)',
-                transformOrigin: '50% 100%',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
                 pointerEvents: folded ? 'none' : 'auto',
               }}
             >
@@ -237,7 +212,7 @@ export function HomeTabSwitcher({
               >
                 {label}
               </span>
-            </motion.button>
+            </button>
           )
         })}
       </div>

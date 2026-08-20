@@ -7,6 +7,7 @@ import {
   DiscoverCardBody,
   DiscoverSkeleton,
   EmptyPanel,
+  DISCOVER_GRID_CLASS,
 } from '@/components/landing/DiscoverLayout'
 import { SmartImage } from '@/components/ui/smart-image'
 import { formatDistanceMiles } from '@/lib/geo'
@@ -95,7 +96,7 @@ export function SpecialsCard({
       {locationDenied && (
         <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all specials</p>
       )}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+      <div className={DISCOVER_GRID_CLASS}>
         {displayedSpecials.map((special, index) => (
           <DiscoverCardShell key={special.item.id} onClick={() => onItemClick(special)}>
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_6px_20px_rgba(0,0,0,0.10)]">

@@ -74,6 +74,31 @@ export const getModalChromeGlassStyle = getThemedModalDescriptionGlassStyle
 
 export const glassFabStyle: CSSProperties = { ...glassStyle, boxShadow: glassTokens.shadowLg }
 
+/**
+ * Large sliding panels (site menu, dashboard sidebar). Slightly denser than
+ * a card so form text stays readable, with a specular inner edge.
+ */
+export const glassSidebarStyle: CSSProperties = {
+  background: 'rgba(255, 255, 255, 0.58)',
+  backdropFilter: glassFilter,
+  WebkitBackdropFilter: glassFilter,
+  border: `0.5px solid ${glassTokens.border}`,
+  boxShadow: `${glassTokens.shadowLg}, inset 0 1px 0 rgba(255,255,255,0.72)`,
+}
+
+export function getThemedGlassSidebarStyle(isDarkBackground: boolean): CSSProperties {
+  if (isDarkBackground) {
+    return {
+      background: 'rgba(28, 28, 30, 0.58)',
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
+      border: '0.5px solid rgba(255,255,255,0.18)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14)',
+    }
+  }
+  return glassSidebarStyle
+}
+
 /** Tailwind equivalents of {@link glassStyle} for class-based surfaces. */
 const GLASS_CLASS =
   'bg-white/40 backdrop-blur-[40px] backdrop-saturate-[1.8] border border-white/55'

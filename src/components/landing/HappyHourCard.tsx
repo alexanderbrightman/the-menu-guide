@@ -8,6 +8,7 @@ import {
   DiscoverCardBody,
   DiscoverSkeleton,
   EmptyPanel,
+  DISCOVER_GRID_CLASS,
 } from '@/components/landing/DiscoverLayout'
 import { SmartImage } from '@/components/ui/smart-image'
 import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
@@ -80,7 +81,7 @@ export function HappyHourCard({ onItemClick, location, locationDenied, className
       {locationDenied && (
         <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all promotions</p>
       )}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+      <div className={DISCOVER_GRID_CLASS}>
         {displayedItems.map((entry, index) => {
           const photos = entry.menu.photos || []
           const photo = photos[0]?.image_url

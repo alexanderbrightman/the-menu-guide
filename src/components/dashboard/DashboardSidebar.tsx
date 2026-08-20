@@ -8,6 +8,7 @@ import { QrCodeDialog } from '@/components/dashboard/QrCodeDialog'
 import { Utensils, Plus, FolderPlus, Scan, Edit, Settings, LogOut, QrCode, Wine, UtensilsCrossed } from 'lucide-react'
 import { Profile } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
+import { getThemedGlassSidebarStyle } from '@/lib/glass-styles'
 
 interface DashboardSidebarProps {
     profile: Profile | null
@@ -136,8 +137,12 @@ export function DashboardSidebar({
     ]
 
     const sectionLabelClass = isDarkBackground
-        ? 'text-white/50'
-        : 'text-gray-400'
+        ? 'text-[11px] font-medium uppercase tracking-[0.08em] text-white/45'
+        : 'text-[11px] font-medium uppercase tracking-[0.08em] text-black/35'
+
+    const hairline = isDarkBackground ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'
+    const hoverBg = isDarkBackground ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
+    const appleFont = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
 
 
 
@@ -153,14 +158,14 @@ export function DashboardSidebar({
         else if (activeView === 'pre-fixe') setActiveItem('pre-fixe')
     }, [activeView])
 
+    const rowClass = `
+            w-full flex items-center gap-3 px-3.5 py-[11px] text-[15px] font-medium rounded-xl
+            transition-colors duration-150 cursor-pointer relative group hover:bg-[var(--row-hover)]
+        `
+
     const renderNavButton = (item: NavItem) => {
         const isActive = activeItem === item.id
         const itemColor = navItemColors[item.id] || contrastColor
-
-        const baseClasses = `
-            w-full flex items-center gap-3 px-4 py-3 text-base font-medium rounded-lg
-            transition-all duration-150 cursor-pointer relative group
-        `
 
         const buttonContent = (
             <>
@@ -184,7 +189,13 @@ export function DashboardSidebar({
         )
 
         const buttonProps = {
-            className: baseClasses,
+            className: rowClass,
+            style: {
+                fontFamily: appleFont,
+                letterSpacing: '-0.011em',
+                ['--row-hover' as string]: hoverBg,
+                backgroundColor: isActive ? hoverBg : undefined,
+            } as React.CSSProperties,
         }
 
         if (item.isDialog && item.id === 'settings') {
@@ -217,10 +228,13 @@ export function DashboardSidebar({
 
         return (
             <button
-                className={`
-                    w-full flex items-center gap-3 px-4 py-3 text-base font-medium rounded-lg
-                    transition-all duration-150 cursor-pointer relative group
-                `}
+                className={rowClass}
+                style={{
+                    fontFamily: appleFont,
+                    letterSpacing: '-0.011em',
+                    ['--row-hover' as string]: hoverBg,
+                    backgroundColor: isActive ? hoverBg : undefined,
+                } as React.CSSProperties}
                 onClick={() => {
                     setActiveItem(id)
                     onClick()
@@ -247,29 +261,27 @@ export function DashboardSidebar({
     }
 
     return (
-        <aside
-            className="hidden lg:flex flex-col w-[280px] min-w-[280px] h-screen sticky top-0 border-r overflow-y-auto"
-            style={{
-                backgroundColor,
-                color: contrastColor,
-                borderColor: contrastColor, // Use high contrast border color
-            }}
-        >
+        <aside className="hidden lg:flex flex-col w-[292px] min-w-[292px] h-screen sticky top-0 p-3">
+            <div
+                className="flex flex-col h-full min-h-0 overflow-hidden rounded-[24px]"
+                style={{ ...getThemedGlassSidebarStyle(isDarkBackground), color: contrastColor }}
+            >
             {/* Profile Section - opens the public restaurant page */}
             <div
-                className="px-5 pt-8 pb-6 border-b"
-                style={{ borderColor: contrastColor }} // Explicit border color
+                className="px-4 pt-6 pb-5"
+                style={{ borderBottom: `0.5px solid ${hairline}` }}
             >
                 <button
                     type="button"
                     onClick={onOpenPublicMenu}
                     title="View your public restaurant page"
-                    className="group flex items-center gap-3 w-full text-left rounded-lg -mx-2 px-2 py-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                    className="group flex items-center gap-3 w-full text-left rounded-2xl px-2 py-1.5 transition-colors hover:bg-[var(--row-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                    style={{ ['--row-hover' as string]: hoverBg } as React.CSSProperties}
                 >
                     {profile?.avatar_url ? (
                         <div
-                            className="relative h-12 w-12 overflow-hidden rounded-full border flex-shrink-0"
-                            style={{ borderColor: contrastColor }}
+                            className="relative h-11 w-11 overflow-hidden rounded-full flex-shrink-0"
+                            style={{ boxShadow: `0 0 0 0.5px ${hairline}` }}
                         >
                             <Image
                                 src={profile.avatar_url}
@@ -280,21 +292,26 @@ export function DashboardSidebar({
                         </div>
                     ) : (
                         <div
-                            className="h-12 w-12 rounded-full border flex items-center justify-center text-base font-semibold flex-shrink-0"
+                            className="h-11 w-11 rounded-full flex items-center justify-center text-base font-semibold flex-shrink-0"
                             style={{
-                                backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
+                                backgroundColor: isDarkBackground ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
                                 color: contrastColor,
-                                borderColor: contrastColor,
                             }}
                         >
                             {(profile?.display_name || 'U')[0].toUpperCase()}
                         </div>
                     )}
                     <div className="min-w-0">
-                        <p className="text-lg font-semibold truncate group-hover:underline" style={{ color: contrastColor }}>
+                        <p
+                            className="text-[15px] font-semibold truncate"
+                            style={{ color: contrastColor, fontFamily: appleFont, letterSpacing: '-0.016em' }}
+                        >
                             {profile?.display_name || 'Your Restaurant'}
                         </p>
-                        <p className="text-xs truncate opacity-60" style={{ color: contrastColor }}>
+                        <p
+                            className="text-[12px] truncate"
+                            style={{ color: contrastColor, opacity: 0.5, fontFamily: appleFont }}
+                        >
                             View public page
                         </p>
                     </div>
@@ -302,25 +319,25 @@ export function DashboardSidebar({
             </div>
 
             {/* Navigation Section */}
-            <div className="px-3 py-6">
-                <p className={`text-sm font-semibold uppercase tracking-wider px-4 mb-3 ${sectionLabelClass}`}>
+            <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-5">
+                <p className={`px-3.5 mb-1.5 ${sectionLabelClass}`}>
                     Menu
                 </p>
-                <nav className="space-y-1">
+                <nav className="space-y-0.5">
                     {navItems.slice(0, 4).map(renderNavButton)}
                 </nav>
 
-                <p className={`text-sm font-semibold uppercase tracking-wider px-4 mt-8 mb-3 ${sectionLabelClass}`}>
+                <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
                     Promotions
                 </p>
-                <nav className="space-y-1">
+                <nav className="space-y-0.5">
                     {navItems.slice(4, 6).map(renderNavButton)}
                 </nav>
 
-                <p className={`text-sm font-semibold uppercase tracking-wider px-4 mt-8 mb-3 ${sectionLabelClass}`}>
+                <p className={`px-3.5 mt-6 mb-1.5 ${sectionLabelClass}`}>
                     Account
                 </p>
-                <nav className="space-y-1">
+                <nav className="space-y-0.5">
                     {navItems.slice(6).map(renderNavButton)}
                     <QrCodeDialog
                         qrCodeUrl={qrCodeUrl}
@@ -347,9 +364,7 @@ export function DashboardSidebar({
                 </nav>
             </div>
 
-            {/* Logo */}
-
-            <div className="mt-auto w-full">
+            <div className="w-full">
                 <Image
                     src="/CarolLogo.png"
                     alt="Carol Logo"
@@ -357,9 +372,13 @@ export function DashboardSidebar({
                     height={260}
                     className={`w-full h-auto block ${isDarkBackground ? 'invert' : ''}`}
                 />
-                <p className="text-xs text-center pt-4 pb-8" style={{ color: contrastColor }}>
+                <p
+                    className="text-[11px] text-center pt-2 pb-5"
+                    style={{ color: contrastColor, opacity: 0.45, fontFamily: appleFont }}
+                >
                     Thanks for using The Menu Guide :)
                 </p>
+            </div>
             </div>
         </aside>
     )

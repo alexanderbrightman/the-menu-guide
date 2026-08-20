@@ -8,6 +8,7 @@ import {
   DiscoverCardBody,
   DiscoverSkeleton,
   EmptyPanel,
+  DISCOVER_GRID_CLASS,
 } from '@/components/landing/DiscoverLayout'
 import { SmartImage } from '@/components/ui/smart-image'
 import { useRevealOnScroll } from '@/hooks/useRevealOnScroll'
@@ -100,7 +101,7 @@ export function PreFixeCard({ onItemClick, location, locationDenied, className }
       {locationDenied && (
         <p className="hidden md:block text-xs text-gray-400 text-center mb-3">Showing all pre fixe menus</p>
       )}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+      <div className={DISCOVER_GRID_CLASS}>
         {displayedItems.map((entry, index) => {
           const hero = getHeroImage(entry)
           return (

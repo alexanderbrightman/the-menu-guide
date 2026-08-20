@@ -97,7 +97,7 @@ export function SearchPanel({
       input?.blur()
       return
     }
-    const id = window.setTimeout(() => input?.focus(), 480)
+    const id = window.setTimeout(() => input?.focus(), 80)
     return () => window.clearTimeout(id)
   }, [enabled, isHeader])
 
@@ -122,7 +122,7 @@ export function SearchPanel({
       })
     }
     update()
-    const delayed = window.setTimeout(update, 520)
+    const delayed = window.setTimeout(update, 80)
     window.addEventListener('resize', update)
     window.addEventListener('scroll', update, true)
     return () => {
